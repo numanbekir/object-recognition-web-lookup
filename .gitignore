@@ -1,0 +1,9 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+models/*.pt
+*.pt
+nltk_data/
