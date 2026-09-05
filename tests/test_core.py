@@ -5,7 +5,8 @@ import tempfile
 import unittest
 
 from app.image_loader import ImageLoader, ImageLoadError
-from main import classify_input, clean_input
+from main import (classify_input, clean_input, is_single_source,
+                  is_unsupported_file, normalize_schemeless, shorten_source)
 
 
 class CleanInputTest(unittest.TestCase):
@@ -73,6 +74,70 @@ class ClassifyInputTest(unittest.TestCase):
     def test_input_length_limit(self):
         # aşırı uzun girdi hiç işlenmeden reddedilir
         self.assertEqual(classify_input("a" * 5000)[0], "too_long")
+
+    def test_long_word_does_not_crash(self):
+        # 255+ karakterlik kelime dosya yoklamasında OSError fırlatmamalı
+        long_text = "x" * 300 + " deneme " + "y" * 300
+        self.assertEqual(classify_input(long_text)[0], "text")
+        self.assertFalse(is_unsupported_file(long_text))
+
+
+class SchemelessUrlTest(unittest.TestCase):
+    def test_www_prefix_becomes_url(self):
+        kind, value = classify_input("www.testimage.com/image")
+        self.assertEqual(kind, "url")
+        self.assertEqual(value, "https://www.testimage.com/image")
+
+    def test_domain_with_path_becomes_url(self):
+        self.assertEqual(classify_input("testimage.com/image")[0], "url")
+
+    def test_bare_domain_known_tld(self):
+        self.assertEqual(classify_input("testimage.com")[0], "url")
+
+    def test_local_filename_is_not_url(self):
+        # foto.jpg alan adına benzese de görsel dosyasıdır
+        self.assertEqual(classify_input("./yok/foto.jpg")[0], "missing_file")
+
+    def test_dotted_word_is_text(self):
+        self.assertEqual(normalize_schemeless("geldi.mi"), None)
+
+
+class MultiSourceTest(unittest.TestCase):
+    def test_two_urls_rejected(self):
+        self.assertEqual(classify_input("https://a.com/bir.jpg https://b.com/iki.png")[0], "multi")
+
+    def test_two_quoted_files_rejected(self):
+        # tırnaklı çift yol da çoklu sayılmalı (shlex tırnak-güvenli)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as f1, \
+                tempfile.NamedTemporaryFile(suffix=".png") as f2:
+            self.assertEqual(classify_input(f"'{f1.name}' '{f2.name}'")[0], "multi")
+
+    def test_spaced_missing_path_is_not_multi(self):
+        # boşluklu tek dosya adı yanlışlıkla çoklu sayılmamalı
+        self.assertEqual(classify_input("./foto bir.jpg")[0], "missing_file")
+
+
+class SourceToolsTest(unittest.TestCase):
+    def test_single_source(self):
+        self.assertTrue(is_single_source("https://a.com/foto.jpg"))
+        self.assertTrue(is_single_source("foto.jpg"))
+        self.assertFalse(is_single_source("fiyatları ne kadar"))
+        self.assertFalse(is_single_source("a.jpg b.jpg"))
+
+    def test_unsupported_file(self):
+        # var olan görsel-dışı dosya girişte reddedilir, görsel ve olmayan dosya edilmez
+        with tempfile.NamedTemporaryFile(suffix=".txt") as txt:
+            self.assertTrue(is_unsupported_file(txt.name))
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as jpg:
+            self.assertFalse(is_unsupported_file(jpg.name))
+        self.assertFalse(is_unsupported_file("./yok/dosya.txt"))
+        self.assertFalse(is_unsupported_file("fiyatları ne kadar"))
+
+    def test_shorten_source(self):
+        self.assertEqual(shorten_source("/home/user/canta.jpg"), "canta.jpg")
+        short = shorten_source("https://ornek.com/cok/uzun/bir/yol/foto-adi-uzun.jpg")
+        self.assertIn("ornek.com", short)
+        self.assertLess(len(short), 45)
 
 
 class ImageLoaderTest(unittest.TestCase):

@@ -3,6 +3,7 @@
 
 import argparse
 import re
+import shlex
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -13,6 +14,23 @@ from app.image_loader import ImageLoader, ImageLoadError
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".svg")
 QUIT_WORDS = ("q", "çık", "cik", "exit", "quit")
+KNOWN_TLDS = ("com", "net", "org", "io", "co", "dev", "ai", "app", "edu", "gov", "tr", "uk", "de")
+DOMAIN_PATTERN = re.compile(r"[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,24}", re.IGNORECASE)
+
+
+def _path_exists(path: Path) -> bool:
+    # 255 bayttan uzun ad bileşeni linux'ta OSError fırlatır, dosya yok sayılır
+    try:
+        return path.exists()
+    except (OSError, ValueError):
+        return False
+
+
+def _path_is_file(path: Path) -> bool:
+    try:
+        return path.is_file()
+    except (OSError, ValueError):
+        return False
 
 
 def clean_input(raw: str) -> str:
@@ -23,15 +41,88 @@ def clean_input(raw: str) -> str:
     return text
 
 
+def _looks_like_source(token: str) -> bool:
+    # yalnız url'ler ve desteklenen dosya türleri kaynak sayılır
+    if token.startswith(("http://", "https://", "file://", "www.")):
+        return True
+    return token.lower().endswith(IMAGE_EXTENSIONS)
+
+
+def find_sources(text: str) -> list:
+    """Girdideki görsel/URL adaylarını listeler (çoklu girdi denetimi için)."""
+    try:
+        tokens = shlex.split(text)
+    except ValueError:
+        return []
+    return [token for token in tokens if _looks_like_source(token)]
+
+
+def is_unsupported_file(text: str) -> bool:
+    """Sürüklenen dosya var ama görsel değilse girişte hiç kabul edilmez."""
+    try:
+        tokens = shlex.split(text)
+    except ValueError:
+        return False
+    for token in tokens:
+        if _looks_like_source(token):
+            continue
+        if _path_is_file(Path(token).expanduser()):
+            return True
+    return False
+
+
+def is_single_source(text: str) -> bool:
+    """Metnin tamamı tek bir kaynak mı (chip'e dönüşmeye uygun mu)?"""
+    try:
+        tokens = shlex.split(text)
+    except ValueError:
+        return False
+    return len(tokens) == 1 and _looks_like_source(tokens[0])
+
+
+def normalize_schemeless(text: str):
+    """www.x.com veya x.com/yol gibi şemasız adresleri https'e yükseltir."""
+    if " " in text:
+        return None
+    if text.startswith("www.") and "." in text[4:]:
+        return "https://" + text
+    head = text.split("/", 1)[0]
+    if "/" in text and DOMAIN_PATTERN.fullmatch(head):
+        return "https://" + text
+    if DOMAIN_PATTERN.fullmatch(text) and text.rsplit(".", 1)[1].lower() in KNOWN_TLDS:
+        return "https://" + text
+    return None
+
+
+def shorten_source(source: str, limit: int = 30) -> str:
+    """Chip üzerinde gösterilecek kısaltılmış ad."""
+    if source.startswith(("http://", "https://", "www.")):
+        bare = re.sub(r"^https?://", "", source)
+        if len(bare) <= limit:
+            return bare
+        head, _, tail = bare.partition("/")
+        last = tail.rsplit("/", 1)[-1] if tail else ""
+        short = f"{head}/…/{last}" if last else head
+        return short if len(short) <= limit + 10 else short[:limit] + "…"
+    name = Path(source).name or source
+    return name if len(name) <= limit else name[:limit] + "…"
+
+
 def classify_input(raw: str):
-    """(tür, değer) döndürür; tür: empty/quit/too_long/url/bad_scheme/path/missing_file/text"""
-    text = clean_input(raw)
-    if not text:
+    """(tür, değer) döndürür; tür: empty/quit/too_long/multi/url/bad_scheme/path/missing_file/text"""
+    stripped = raw.strip()
+    if not stripped:
         return "empty", ""
-    if text.lower() in QUIT_WORDS:
+    if stripped.lower() in QUIT_WORDS:
         return "quit", ""
-    if len(text) > config.MAX_INPUT_LENGTH:
+    if len(stripped) > config.MAX_INPUT_LENGTH:
         return "too_long", ""
+
+    # çoklu denetim tırnak temizliğinden ÖNCE: shlex tırnaklı yolları doğru böler
+    if len(find_sources(stripped)) >= 2:
+        return "multi", ""
+
+    text = clean_input(raw)
 
     # sürükle-bırak bazı terminallerde file:// önekiyle gelir
     if text.startswith("file://"):
@@ -44,14 +135,17 @@ def classify_input(raw: str):
         return "bad_scheme", scheme
 
     path = Path(text).expanduser()
-    if path.exists():
+    if _path_exists(path):
         return "path", str(path)
     if "\\" in text:
         # bazı terminaller sürüklenen yolu ters bölüyle kaçışlar: foto\ 1.jpg
         unescaped = re.sub(r"\\(.)", r"\1", text)
         unescaped_path = Path(unescaped).expanduser()
-        if unescaped_path.exists():
+        if _path_exists(unescaped_path):
             return "path", str(unescaped_path)
+    upgraded = normalize_schemeless(text)
+    if upgraded:
+        return "url", upgraded
     if text.lower().endswith(IMAGE_EXTENSIONS):
         return "missing_file", text
     return "text", text
@@ -68,6 +162,9 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
         return
     if kind == "missing_file":
         emit(f"Bu konumda bir dosya bulamadım: {value}. Yolu kontrol eder misin?")
+        return
+    if kind == "multi":
+        emit("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel ya da URL verir misin?")
         return
     if kind == "text":
         emit("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
@@ -148,8 +245,14 @@ def run(args):
         run_plain(args, loader, detector)
         return
 
+    from types import SimpleNamespace
+
     from app.ui import ChatApp
-    app = ChatApp(loader, detector, process_turn, classify_input, debug=args.debug)
+    tools = SimpleNamespace(is_single_source=is_single_source,
+                            find_sources=find_sources,
+                            shorten_source=shorten_source,
+                            is_unsupported_file=is_unsupported_file)
+    app = ChatApp(loader, detector, process_turn, classify_input, tools, debug=args.debug)
     farewell = app.run()
     print(farewell or "Görüşmek üzere!")
 
