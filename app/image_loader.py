@@ -5,7 +5,7 @@ import io
 import ipaddress
 import socket
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -13,6 +13,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from . import config
 
 CHUNK_SIZE = 64 * 1024
+MAX_REDIRECTS = 5
 
 
 class ImageLoadError(Exception):
@@ -29,19 +30,31 @@ class ImageLoader:
         return self._decode(data)
 
     def _download(self, url: str) -> bytes:
-        self._reject_internal_hosts(url)
-        try:
-            response = requests.get(url, stream=True, timeout=config.DOWNLOAD_TIMEOUT,
-                                    headers={"User-Agent": "Mozilla/5.0"})
-        except requests.RequestException:
-            raise ImageLoadError("Adrese ulaşamadım. Bağlantını ve adresi kontrol eder misin?")
+        # redirect'ler elle izlenir; her durak isteğe çıkmadan ÖNCE iç ağ denetiminden geçer
+        for _ in range(MAX_REDIRECTS + 1):
+            if urlparse(url).scheme not in ("http", "https"):
+                raise ImageLoadError("Bu adresi desteklemiyorum.")
+            self._reject_internal_hosts(url)
+            try:
+                response = requests.get(url, stream=True, timeout=config.DOWNLOAD_TIMEOUT,
+                                        allow_redirects=False,
+                                        headers={"User-Agent": "Mozilla/5.0"})
+            except requests.RequestException:
+                raise ImageLoadError("Adrese ulaşamadım. Bağlantını ve adresi kontrol eder misin?")
+            if response.is_redirect or response.is_permanent_redirect:
+                target = response.headers.get("location")
+                response.close()
+                if not target:
+                    raise ImageLoadError("Adres geçersiz bir yönlendirme döndürdü.")
+                url = urljoin(url, target)
+                continue
+            break
+        else:
+            raise ImageLoadError("Adres çok fazla yönlendirme yapıyor.")
 
         with response:
             if response.status_code != 200:
                 raise ImageLoadError(f"Adres görüntü yerine {response.status_code} hatası döndürdü.")
-            if response.url != url:
-                # redirect başka bir sunucuya götürürse
-                self._reject_internal_hosts(response.url)
             content_type = response.headers.get("content-type", "").lower()
             if content_type.startswith("text/"):
                 raise ImageLoadError("Bu adres bir görüntü değil, bir web sayfası döndürüyor.")

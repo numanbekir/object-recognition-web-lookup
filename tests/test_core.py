@@ -6,7 +6,7 @@ import unittest
 
 from app.image_loader import ImageLoader, ImageLoadError
 from main import (classify_input, clean_input, is_single_source,
-                  is_unsupported_file, normalize_schemeless, shorten_source)
+                  is_unsupported_file, normalize_schemeless)
 
 
 class CleanInputTest(unittest.TestCase):
@@ -132,12 +132,6 @@ class SourceToolsTest(unittest.TestCase):
             self.assertFalse(is_unsupported_file(jpg.name))
         self.assertFalse(is_unsupported_file("./yok/dosya.txt"))
         self.assertFalse(is_unsupported_file("fiyatları ne kadar"))
-
-    def test_shorten_source(self):
-        self.assertEqual(shorten_source("/home/user/canta.jpg"), "canta.jpg")
-        short = shorten_source("https://ornek.com/cok/uzun/bir/yol/foto-adi-uzun.jpg")
-        self.assertIn("ornek.com", short)
-        self.assertLess(len(short), 45)
 
 
 class ImageLoaderTest(unittest.TestCase):

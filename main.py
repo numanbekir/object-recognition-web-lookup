@@ -94,20 +94,6 @@ def normalize_schemeless(text: str):
     return None
 
 
-def shorten_source(source: str, limit: int = 30) -> str:
-    """Chip üzerinde gösterilecek kısaltılmış ad."""
-    if source.startswith(("http://", "https://", "www.")):
-        bare = re.sub(r"^https?://", "", source)
-        if len(bare) <= limit:
-            return bare
-        head, _, tail = bare.partition("/")
-        last = tail.rsplit("/", 1)[-1] if tail else ""
-        short = f"{head}/…/{last}" if last else head
-        return short if len(short) <= limit + 10 else short[:limit] + "…"
-    name = Path(source).name or source
-    return name if len(name) <= limit else name[:limit] + "…"
-
-
 def classify_input(raw: str):
     """(tür, değer) döndürür; tür: empty/quit/too_long/multi/url/bad_scheme/path/missing_file/text"""
     stripped = raw.strip()
@@ -250,7 +236,6 @@ def run(args):
     from app.ui import ChatApp
     tools = SimpleNamespace(is_single_source=is_single_source,
                             find_sources=find_sources,
-                            shorten_source=shorten_source,
                             is_unsupported_file=is_unsupported_file)
     app = ChatApp(loader, detector, process_turn, classify_input, tools, debug=args.debug)
     farewell = app.run()
