@@ -2,13 +2,14 @@
 """Ana uygulama"""
 
 import argparse
+import re
+import sys
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from app import config
 from app.detector import ObjectDetector
 from app.image_loader import ImageLoader, ImageLoadError
-from app.ui import ConsoleUI
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".svg")
 QUIT_WORDS = ("q", "çık", "cik", "exit", "quit")
@@ -45,91 +46,112 @@ def classify_input(raw: str):
     path = Path(text).expanduser()
     if path.exists():
         return "path", str(path)
+    if "\\" in text:
+        # bazı terminaller sürüklenen yolu ters bölüyle kaçışlar: foto\ 1.jpg
+        unescaped = re.sub(r"\\(.)", r"\1", text)
+        unescaped_path = Path(unescaped).expanduser()
+        if unescaped_path.exists():
+            return "path", str(unescaped_path)
     if text.lower().endswith(IMAGE_EXTENSIONS):
         return "missing_file", text
     return "text", text
 
 
-def handle_turn(kind: str, value: str, ui: ConsoleUI, loader: ImageLoader,
-                detector: ObjectDetector):
+def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDetector,
+                 emit, emit_debug):
+    """Bir kullanıcı turunu işler; çıktıları emit(mesaj) ile arayüze iletir."""
     if kind == "too_long":
-        ui.info("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
+        emit("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
         return
     if kind == "bad_scheme":
-        ui.info("Yalnızca http/https adreslerini ve yerel dosya yollarını destekliyorum.")
+        emit("Yalnızca http/https adreslerini ve yerel dosya yollarını destekliyorum.")
         return
     if kind == "missing_file":
-        ui.info(f"Bu konumda bir dosya bulamadım: {value}. Yolu kontrol eder misin?")
+        emit(f"Bu konumda bir dosya bulamadım: {value}. Yolu kontrol eder misin?")
         return
     if kind == "text":
-        ui.info("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
+        emit("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
         return
 
     try:
         image = loader.load(value, kind)
     except ImageLoadError as error:
-        ui.info(str(error))
+        emit(str(error))
         return
-    ui.debug_line("görüntü", f"{image.width}x{image.height} yüklendi")
+    emit_debug("görüntü", f"{image.width}x{image.height} yüklendi")
 
     detections = detector.detect(image)
-    ui.debug_line("tespit", ", ".join(
+    emit_debug("tespit", ", ".join(
         f"{d.label} {d.confidence:.2f}" for d in detections) or "kutu yok")
     dominant = detector.pick_dominant(detections, image.size)
     if dominant is None:
-        ui.info("Bu görselde belirgin bir obje tespit edemedim. Başka bir görsel dener misin?")
+        emit("Bu görselde belirgin bir obje tespit edemedim. Başka bir görsel dener misin?")
         return
 
     secondary = [d.label for d in detections if d is not dominant and d.label != dominant.label]
-    ui.debug_line("baskın", f"{dominant.label} ({dominant.confidence:.2f})"
-                  + (f" · ikincil: {', '.join(secondary)}" if secondary else ""))
-    ui.info(f"Tespit ettiğim obje: {dominant.label} (güven %{dominant.confidence * 100:.0f}).")
+    emit_debug("baskın", f"{dominant.label} ({dominant.confidence:.2f})"
+               + (f" · ikincil: {', '.join(secondary)}" if secondary else ""))
+    emit(f"Tespit ettiğim obje: {dominant.label} (güven %{dominant.confidence * 100:.0f}).")
 
 
-def run(args):
-    ui = ConsoleUI(debug=args.debug)
-    loader = ImageLoader()
-    ui.welcome()
-
-    detector = ObjectDetector()
-    ui.info("Model hazırlanıyor, ilk çalıştırmada model dosyaları indirilir...")
+def run_plain(args, loader, detector):
+    # tty olmayan ortam (pipe/test) için sade satır modu
+    print("Görüntülü Sohbet")
+    if detector.is_ready_on_disk():
+        print("Model yükleniyor...")
+    else:
+        print("Model bulunamadı, tek seferlik indirme ve hazırlık yapılıyor...")
     try:
         detector.load()
-    except KeyboardInterrupt:
-        print()
-        ui.info("Kurulum yarıda kaldı. Tekrar başlattığında kaldığı yerden devam ederim.")
-        return
     except Exception as error:
-        # ilk çalıştırmada internet yoksa model inemez
-        ui.info("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı gerekiyor, "
-                "bağlantını kontrol edip tekrar dener misin?")
-        ui.debug_line("hata", repr(error))
+        print("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı gerekiyor, "
+              "bağlantını kontrol edip tekrar dener misin?")
+        if args.debug:
+            print(f"Ayrıntı: {error!r}")
         return
-    ui.info(f"Model hazır ({detector.vocab_size} kavram).")
+    print(f"Model hazır ({detector.vocab_size} kavram).")
+
+    def emit(message):
+        print(message)
+
+    def emit_debug(stage, message):
+        if args.debug:
+            print(f"{stage} · {message}")
 
     while True:
         try:
-            raw = ui.prompt()
+            raw = input("\n> ")
         except (KeyboardInterrupt, EOFError):
-            print()
-            ui.info("Görüşmek üzere!")
+            print("\nGörüşmek üzere!")
             return
-
         kind, value = classify_input(raw)
         if kind == "empty":
             continue
         if kind == "quit":
-            ui.info("Görüşmek üzere!")
+            print("Görüşmek üzere!")
             return
-
         try:
-            handle_turn(kind, value, ui, loader, detector)
+            process_turn(kind, value, loader, detector, emit, emit_debug)
         except KeyboardInterrupt:
-            ui.info("İşlemi iptal ettim.")
+            print("İşlemi iptal ettim.")
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın
-            ui.info("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")
-            ui.debug_line("hata", repr(error))
+            print("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")
+            emit_debug("hata", repr(error))
+
+
+def run(args):
+    loader = ImageLoader()
+    detector = ObjectDetector()
+
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        run_plain(args, loader, detector)
+        return
+
+    from app.ui import ChatApp
+    app = ChatApp(loader, detector, process_turn, classify_input, debug=args.debug)
+    farewell = app.run()
+    print(farewell or "Görüşmek üzere!")
 
 
 def parse_args():

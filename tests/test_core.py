@@ -50,6 +50,18 @@ class ClassifyInputTest(unittest.TestCase):
             kind, value = classify_input(f"file://{f.name}")
             self.assertEqual(kind, "path")
 
+    def test_backslash_escaped_path(self):
+        # bazı terminaller sürüklenen yolu "foto\ 1.jpg" gibi kaçışlar
+        import os
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            real = os.path.join(folder, "foto 1.jpg")
+            open(real, "w").close()
+            escaped = real.replace(" ", "\\ ")
+            kind, value = classify_input(escaped)
+            self.assertEqual(kind, "path")
+            self.assertEqual(value, real)
+
     def test_missing_image_file_is_not_text(self):
         # yanlış yazılmış dosya yolu aramaya gitmemeli
         self.assertEqual(classify_input("./yok/boyle/foto.jpg")[0], "missing_file")

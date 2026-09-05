@@ -7,3 +7,4 @@ requests>=2.31
 pillow>=10.0
 scikit-learn>=1.4
 rich>=13.0
+textual>=1.0
