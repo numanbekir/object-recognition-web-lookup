@@ -15,6 +15,15 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Uygulama tamamen CPU üzerinde çalışır. PyTorch'un varsayılan paketi büyük
+olduğundan, indirme boyutunu küçültmek isterseniz kurulumdan önce CPU
+sürümünü kurabilirsiniz (isteğe bağlı):
+
+```bash
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt
+```
+
 Model ağırlığı ve WordNet verisi ilk çalıştırmada bir kereye mahsus otomatik
 indirilir.
 
