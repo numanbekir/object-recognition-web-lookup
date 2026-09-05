@@ -49,10 +49,10 @@ class ObjectDetector:
             return
 
         # eksik adımlar baştan planlanır
+        weights = config.MODELS_DIR / config.DETECTOR_WEIGHTS
         jobs = []
-        if not self._weights_path().exists():
-            jobs.append(("weights", "Tespit modeli indiriliyor",
-                         WEIGHTS_URL, config.MODELS_DIR / config.DETECTOR_WEIGHTS))
+        if not weights.exists():
+            jobs.append(("weights", "Tespit modeli indiriliyor", WEIGHTS_URL, weights))
         clip_cache = self._clip_cache_path()
         if not clip_cache.exists():
             jobs.append(("clip", "Sözlük kodlayıcı (CLIP) indiriliyor", CLIP_URL, clip_cache))
@@ -81,19 +81,11 @@ class ObjectDetector:
                 pass
 
         report("embed", "Dağarcık modele gömülüyor (tek seferlik)", None, None)
-        weights = self._weights_path()
         # dosya hala yoksa ultralytics adı tanıyıp kendisi indirir
         self.model = YOLOWorld(str(weights) if weights.exists() else config.DETECTOR_WEIGHTS)
         self.model.set_classes(vocabulary)
         config.MODELS_DIR.mkdir(exist_ok=True)
         self.model.save(str(config.DETECTOR_CUSTOM))  # sonraki açılışlar hızlansın
-
-    def _weights_path(self) -> Path:
-        preferred = config.MODELS_DIR / config.DETECTOR_WEIGHTS
-        if preferred.exists():
-            return preferred
-        legacy = Path(config.DETECTOR_WEIGHTS)
-        return legacy if legacy.exists() else preferred
 
     def _clip_cache_path(self) -> Path:
         # CLIP kendi weights_dir ayarının altında aramaktadır

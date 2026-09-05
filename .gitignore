@@ -6,4 +6,5 @@ __pycache__/
 .vscode/
 models/*.pt
 *.pt
+*.part
 nltk_data/

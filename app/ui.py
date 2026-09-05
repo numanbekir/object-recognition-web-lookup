@@ -45,7 +45,7 @@ class SourceInput(TextArea):
             self.app.submit_current()
             return
 
-        # belirteç bölünmez bir bütündür
+        # belirteç bölünmez
         span = self._token_span()
         if span:
             start, end = span
@@ -313,11 +313,11 @@ class ChatApp(App):
         log.scroll_end(animate=False)
 
     def echo_user(self, kind: str, value: str, raw: str):
-        # işlenen her kaynak, giriş yolundan bağımsız aynı rozetle görünür
+        # işlenen her kaynak, giriş yolundan bağımsız girdi belirteciyle aynı rozetle görünür
         if kind == "url":
-            self.add_line(f"[bold cyan]›[/] [bold]URL[/] {linkify(value)}", "user")
+            self.add_line(f"[bold cyan]›[/] [bold]\\[URL][/] · {linkify(value)}", "user")
         elif kind == "path":
-            self.add_line(f"[bold cyan]›[/] [bold]Görsel[/] {escape(value)}", "user")
+            self.add_line(f"[bold cyan]›[/] [bold]\\[Görsel][/] · {escape(value)}", "user")
         else:
             self.add_line(f"[bold cyan]›[/] {escape(raw.strip())}", "user")
 
