@@ -77,13 +77,14 @@ class WebSearcher:
             pages = response.json().get("query", {}).get("pages", {})
         except Exception:
             return None
-        # arama sırası korunur, anlam ayrımı sayfaları atlanır
+        # arama sırası korunur, anlam ayrımı sayfaları ve objeden söz etmeyen sayfalar atlanır
+        anchor = object_tr.lower()[:5]
         for page in sorted(pages.values(), key=lambda p: p.get("index", 99)):
             extract = (page.get("extract") or "").strip()
             if not extract or "anlamlara gelebilir" in extract or "anlamına gelebilir" in extract:
                 continue
             first = extract.split("\n")[0].strip()
-            if len(first) < 40:
+            if len(first) < 40 or anchor not in (page.get("title", "") + " " + first).lower():
                 continue
             first = re.sub(r"\[\d+\]", "", first)  # dipnot kalıntıları
             return first[:config.MAX_PASSAGE_CHARS], page.get("fullurl", "")
