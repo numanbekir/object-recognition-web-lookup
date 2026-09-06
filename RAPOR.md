@@ -159,14 +159,26 @@ tanım tekrarlanmaz, daha önce gösterilen sayfalar seçilmez ve bloklar yeni
 kaynaklarla dolar. Hiç yeni kaynak kalmazsa önceki kaynaklara dönülür ve bu
 kullanıcıya söylenir.
 
-## 8. Kayıt
+## 8. Arayüz
+
+Terminal arayüzü her turu tek bir kart olarak gösterir. Kart girdiden hemen
+sonra açılır ve kademeli dolar. Obje adı, güven, anahtar kelimeler ve arama
+niyeti yarım saniye içinde görünür, Vikipedi tanımı bir iki saniye sonra
+eklenir, kalan bloklar arama bitince gelir. Bu sırada kartın altında tek
+satırlık ilerleme durur ve adımı söyler. Kart gövdesi markdown olarak
+üretilir ve aynı metin düz modda basılır ve kayıt dosyasına yazılır. Debug
+açıkken kartın altında katlanır bir ayrıntılar bölümü bulunur, adaylar,
+sorgular ve blok kararları orada listelenir. Kaynaklar ile süre ve kayıt
+numarası kartın alt satırındadır.
+
+## 9. Kayıt
 
 Her tur kayıt dosyasında oturum bloğu altına yazılır. Girdi, obje ve güven,
 anahtar kelimeler, bağlam, arama niyeti, arama izi, başlıklı bilgi blokları
 ve her paragrafın kaynağı ile turun durumu kaydedilir. Dosya önce geçici
 dosyaya yazılıp atomik taşınır.
 
-## 9. Sınırlılıklar
+## 10. Sınırlılıklar
 
 Karışık sahnelerde sınıflandırma belirsiz kalır, bu durumda düşük güven
 mesajı verilir. Tema dağarcığı elle derlenmiştir, kapsam dışı bir alanda

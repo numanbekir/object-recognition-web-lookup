@@ -1,15 +1,17 @@
 # Numan Bekir Özçelik - 06.09.2026
 """Terminal arayüzü. İş akışını bilmez, yalnız tur işleyicisini çağırır."""
 
+import os
 import re
 import time
+import webbrowser
 
 from rich.markup import escape
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Static, TextArea
+from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
+from textual.widgets import Collapsible, Markdown, Static, TextArea
 
 URL_PATTERN = re.compile(r"https?://\S+")
 INPUT_MAX_LINES = 3  # input alanı en fazla bu değer kadar satır oluşturur
@@ -93,6 +95,231 @@ class SourceInput(TextArea):
         self.app.handle_paste_text(event.text)
 
 
+class TurnCard(Vertical):
+    """Bir turun tüm çıktısını tutan kart. Kademeli dolar, gövde yazılıyormuş gibi akar."""
+
+    DEFAULT_CSS = """
+    TurnCard { height: auto; border: round $primary 60%; padding: 0 1; margin: 0 0 1 0; }
+    TurnCard #headbox { height: auto; border: round $primary 40%; margin-bottom: 1; }
+    TurnCard .hcell { height: 1; padding: 0 1; text-wrap: nowrap; text-overflow: ellipsis;
+                      border-right: solid $primary 40%; }
+    TurnCard #cell_object { width: 40; }
+    TurnCard #cell_keywords { width: 52; }
+    TurnCard #cell_intent { width: 1fr; border-right: none; }
+    TurnCard .card-note { color: $warning; }
+    TurnCard .card-message { color: $warning; margin-top: 1; }
+    TurnCard Markdown { margin: 0; padding: 0; background: transparent; }
+    TurnCard MarkdownH3 { margin: 1 0 0 0; padding: 0; background: transparent; color: orange; }
+    TurnCard Markdown, TurnCard MarkdownBlock { link-color: dodgerblue; link-style: none; link-background: transparent;
+                                               link-color-hover: dodgerblue; link-style-hover: underline; link-background-hover: transparent; }
+    TurnCard #sources { link-color: dodgerblue; link-style: none; link-background: transparent;
+                        link-color-hover: dodgerblue; link-style-hover: underline; link-background-hover: transparent; }
+    TurnCard #progress { height: auto; color: $text-muted; text-style: italic; margin-top: 1; }
+    TurnCard #progress_label { width: 1fr; }
+    TurnCard #progress_time { width: auto; }
+    TurnCard #footer { height: auto; margin-top: 1; border-top: solid $primary 30%; }
+    TurnCard #sources { width: 1fr; color: $text-muted; }
+    TurnCard #stats { width: auto; color: $text-muted; }
+    TurnCard Collapsible { margin-top: 1; padding: 0; border: none; background: transparent; }
+    TurnCard .detail { color: $text-muted; }
+    """
+    WORDS_PER_TICK = 6
+    TICK = 0.03
+
+    def __init__(self, debug: bool = False):
+        super().__init__()
+        self.debug = debug
+        self._stats = {}
+        self._started = time.monotonic()
+        self._progress_timer = None
+        self._dots = 0
+        self._full = ""  # gövdenin hedef metni
+        self._pos = 0  # ekranda yazılmış karakter sayısı
+        self._stream_timer = None
+
+    def compose(self) -> ComposeResult:
+        with Horizontal(id="headbox"):
+            yield Static("", id="cell_object", classes="hcell")
+            yield Static("", id="cell_keywords", classes="hcell")
+            yield Static("", id="cell_intent", classes="hcell")
+        yield Markdown("", id="body")
+        with Horizontal(id="progress"):
+            yield Static("", id="progress_label")
+            yield Static("", id="progress_time")
+        with Horizontal(id="footer"):
+            yield Static("", id="sources")
+            yield Static("", id="stats")
+        if self.debug:
+            yield Collapsible(title="ayrıntılar", collapsed=True, id="details")
+
+    def on_mount(self):
+        self.query_one("#progress").display = False
+        self.query_one("#footer").display = False
+
+    def _scroll(self):
+        parent = self.parent
+        if isinstance(parent, VerticalScroll):
+            parent.scroll_end(animate=False)
+
+    @staticmethod
+    def _title_case(text: str) -> str:
+        return " ".join(("İ" if w[:1] == "i" else w[:1].upper()) + w[1:] for w in text.split())
+
+    def set_head(self, object_tr, confidence, keywords, intent, note="", confident=True, size=""):
+        title = self._title_case(object_tr) if object_tr else ""
+        label = "BULUNAN" if confidence is None or confident else "EN YAKIN TAHMİN"
+        right = []
+        if confidence is not None:
+            right.append(f"güven %{confidence * 100:.0f}")
+        if size:
+            right.append(size)
+        detail = " · ".join(right)
+        words = " · ".join(self._title_case(k) for k in keywords)
+        cells = [
+            ("#cell_object", label, f"[b]{escape(title)}[/b]" + (f"  [dim]{escape(detail)}[/]" if detail else ""),
+             title + (f"  {detail}" if detail else "")),
+            ("#cell_keywords", "ANAHTAR KELİMELER", escape(words), words),
+            ("#cell_intent", "ARAŞTIR", f"[i]{escape(intent)}[/i]" if intent else "", intent or ""),
+        ]
+        for cell_id, name, markup, plain in cells:
+            cell = self.query_one(cell_id, Static)
+            cell.update(f"[orange]{name}:[/] {markup}" if plain else f"[orange]{name}:[/]")
+            cell.tooltip = f"{name.capitalize()}, {plain}" if plain else None  # kırpılsa da tam içerik görünür
+        if note:
+            self.mount(Static(escape(note), classes="card-note"), after=self.query_one("#headbox"))
+        self._scroll()
+
+    # gövde yazılıyormuş gibi akar
+
+    def set_body(self, markdown: str):
+        self._full, self._pos = markdown, len(markdown)
+        self.query_one("#body", Markdown).update(markdown)
+        self._scroll()
+
+    def stream_body(self, markdown: str):
+        common = len(os.path.commonprefix([self._full, markdown]))
+        self._pos = min(self._pos, common)  # ortak önek zaten yazıldı, yalnız devamı akar
+        self._full = markdown
+        if self._stream_timer is None:
+            self._stream_timer = self.set_interval(self.TICK, self._stream_tick)
+
+    def _stream_tick(self):
+        if self._pos >= len(self._full):
+            self._stream_timer.stop()
+            self._stream_timer = None
+            return
+        pos = self._pos
+        for _ in range(self.WORDS_PER_TICK):
+            nxt = self._full.find(" ", pos + 1)
+            pos = len(self._full) if nxt < 0 else nxt
+        self._pos = pos
+        self.query_one("#body", Markdown).update(self._full[:pos])
+        self._scroll()
+
+    def set_sources(self, sources: list, urls: dict = None):
+        footer = self.query_one("#footer")
+        footer.display = True
+        urls = urls or {}
+        parts = []
+        for index, source in enumerate(sources, 1):
+            label = escape(source)
+            if urls.get(source):
+                url = urls[source].replace("'", "%27")
+                label = f"[@click=app.open_url('{url}')]{label}[/]"  # tıklayınca tarayıcıda açılır
+            parts.append(f"\\[{index}] {label}")
+        self.query_one("#sources", Static).update("  ".join(parts))
+        self.query_one("#sources", Static).tooltip = "Kaynağı tarayıcıda açmak için tıkla"
+
+    # ilerleme satırı, nokta canlanır ve süre akar
+
+    def set_progress(self, text: str):
+        row = self.query_one("#progress")
+        if not text:
+            row.display = False
+            if self._progress_timer is not None:
+                self._progress_timer.stop()
+                self._progress_timer = None
+            return
+        row.display = True
+        self._progress_text = text
+        self._progress_tick()
+        if self._progress_timer is None:
+            self._progress_timer = self.set_interval(0.3, self._progress_tick)
+        self._scroll()
+
+    def _progress_tick(self):
+        self._dots = (self._dots + 1) % 4
+        dots = "." * (self._dots or 1)
+        self.query_one("#progress_label", Static).update(f"{escape(self._progress_text)} {dots}")
+        self.query_one("#progress_time", Static).update(f"⏱ {int(time.monotonic() - self._started)} sn")
+
+    def add_message(self, text: str):
+        self.mount(Static(linkify(text), classes="card-message"), before=self.query_one("#progress"))
+        self._scroll()
+
+    def add_detail(self, stage: str, text: str):
+        if not self.debug:
+            return
+        details = self.query_one("#details", Collapsible)
+        # satırlar katlanan içerik kabına girer, yoksa başlığın dışında sürekli görünür kalır
+        details.query_one(Collapsible.Contents).mount(
+            Static(f"[b]{escape(stage)}[/b]  {escape(text)}", classes="detail"))
+
+    def set_stat(self, key: str, value: str):
+        self._stats[key] = value
+        self.query_one("#footer").display = True
+        stats = self.query_one("#stats", Static)
+        parts = []
+        if "kayit" in self._stats:
+            parts.append(("kaydedildi · " if self.debug else "[green]✓[/] ") + escape(self._stats["kayit"]))
+            stats.tooltip = f"Sonuçlar kaydedildi, {self._stats['kayit']}"
+        if "sure" in self._stats:
+            parts.append("⏱ " + escape(self._stats["sure"]))
+        stats.update(" · ".join(parts))
+
+    def finish(self, elapsed: float):
+        self.set_progress("")
+        self.set_stat("sure", f"{elapsed:.1f} sn")
+        self._scroll()
+
+
+class CardView:
+    """Tur işleyicisinin çalışan iş parçacığından karta güvenli erişimi."""
+
+    def __init__(self, app, card: TurnCard):
+        self.app = app
+        self.card = card
+
+    def head(self, object_tr, confidence, keywords, intent, note="", confident=True, size=""):
+        self.app.call_from_thread(self.card.set_head, object_tr, confidence, keywords, intent,
+                                  note, confident, size)
+
+    def definition(self, markdown):
+        self.app.call_from_thread(self.card.stream_body, markdown)
+
+    def body(self, markdown, sources, urls=None):
+        self.app.call_from_thread(self.card.stream_body, markdown)
+        self.app.call_from_thread(self.card.set_sources, sources, urls)
+
+    def progress(self, text):
+        self.app.call_from_thread(self.card.set_progress, text)
+
+    def message(self, text):
+        self.app.call_from_thread(self.card.add_message, text)
+
+    def detail(self, stage, text):
+        self.app.call_from_thread(self.card.add_detail, stage, text)
+
+    def saved(self, turn_no):
+        self.app.call_from_thread(self.card.set_stat, "kayit", f"{turn_no}. tur")
+
+    def context(self, line):
+        self.app.call_from_thread(self.app._set_context, line)
+
+    def finish(self, elapsed):
+        self.app.call_from_thread(self.card.finish, elapsed)
+
+
 class ChatApp(App):
     TITLE = "Görüntülü Sohbet"
     BINDINGS = [Binding("ctrl+c", "quit", show=False)]
@@ -103,11 +330,11 @@ class ChatApp(App):
         height: auto;
         border: round $primary;
         margin: 1 1 0 1;
-        padding: 0 2;
+        padding: 1 2;
     }
     #title { width: 1fr; }
     #hints { width: auto; color: $text-muted; text-align: right; }
-    #log { padding: 1 2; }
+    #log { padding: 1 2; scrollbar-size: 0 0; }
     #log Static { margin-bottom: 0; }
     .user {
         border-left: thick $primary;
@@ -125,6 +352,7 @@ class ChatApp(App):
         border-bottom: solid #555555;
         padding: 0 1;
     }
+    #prompt { width: 3; color: $primary; text-style: bold; }
     #inputrow TextArea {
         width: 1fr;
         height: 1;
@@ -132,6 +360,8 @@ class ChatApp(App):
         padding: 0;
         background: transparent;
     }
+    #inputrow TextArea:focus { background: transparent; }
+    #inputrow TextArea .text-area--cursor-line { background: transparent; }
     #status { height: 3; margin: 0 2 1 2; }
     #status Static { height: 1; color: $text-muted; }
     #status Static.warn { color: $warning; }
@@ -161,12 +391,17 @@ class ChatApp(App):
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="topbox"):
-            yield Static("[bold cyan]GÖRÜNTÜLÜ SOHBET[/]\n"
-                         "Görselindeki objeyi tanır, web'den bilgi derlerim.", id="title")
-            yield Static("Görseli bu pencereye sürükleyip bırakman yeterli.\n"
-                         "Çıkış için q yazabilirsin.", id="hints")
+            yield Static("[bold cyan]▌ GÖRÜNTÜLÜ SOHBET[/]\n\n"
+                         "[dim]CLIP ViT-B/32 · LVIS obje adları · tema dağarcığı[/]", id="title")
+            yield Static("URL / dosya yolunu doğrudan yapıştırabilir\n"
+                         "elle yazabilir ya da görseli bu pencereye sürükleyip\n"
+                         "bırakabilirsin. Aynı anda tek görsel analiz edilir.\n"
+                         "Objeyi tanır, web'den derlediğim bilgiyi sunarım.\n"
+                         "Bir metin yazıp aynı konuda soru sorabilirsin.\n"
+                         "Çıkış için: q + enter veya ctrl+c.", id="hints")
         yield VerticalScroll(id="log")
         with Horizontal(id="inputrow"):
+            yield Static("▸", id="prompt")
             yield SourceInput(id="inbox")
         with Vertical(id="status"):
             yield Static("", id="status1")
@@ -304,7 +539,11 @@ class ChatApp(App):
     def _finish_status(self):
         self._stop_embed_timer()
         self._status_phase = "ready"
-        self._status_base = f"Model hazır ({self.vision.vocab_size} kavram)."
+        self._status_base = f"Model hazır, {self.vision.vocab_size} kavram."
+        themes = len(getattr(self.vision, "theme_keys", []) or [])
+        self.query_one("#title", Static).update(
+            "[bold cyan]▌ GÖRÜNTÜLÜ SOHBET[/]\n\n"
+            f"[dim]CLIP ViT-B/32 · {self.vision.vocab_size} LVIS obje adı · {themes} tema[/]")
         self.status_reset(self._status_base)
 
     # ekrana yazma yardımcıları
@@ -326,15 +565,15 @@ class ChatApp(App):
         else:
             self.add_line(f"[bold cyan]›[/] {escape(raw.strip())}", "user")
 
-    def emit(self, message: str, style: str = ""):
-        self.call_from_thread(self.add_line, linkify(message), style)
+    def action_open_url(self, url: str):
+        webbrowser.open(url)
 
-    def emit_debug(self, stage: str, message: str):
-        if self.debug_mode:
-            self.call_from_thread(self.add_line, escape(f"{stage} · {message}"), "debug")
-
-    def emit_context(self, line: str):
-        self.call_from_thread(self._set_context, line)
+    def open_card(self) -> TurnCard:
+        card = TurnCard(debug=self.debug_mode)
+        log = self.query_one("#log", VerticalScroll)
+        log.mount(card)
+        log.scroll_end(animate=False)
+        return card
 
     def _set_context(self, line: str):
         # input altındaki kalıcı satır iç durumu değil damıtılmış özeti gösterir
@@ -444,15 +683,14 @@ class ChatApp(App):
     @work(thread=True)
     def run_turn(self, kind: str, value: str):
         start = time.perf_counter()
+        view = CardView(self, self.call_from_thread(self.open_card))
         try:
             self.process_turn(kind, value, self.loader, self.vision, self.session,
-                              self.storage, self.emit, self.emit_debug, self.emit_context)
+                              self.storage, view)
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın
-            self.emit("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")
-            self.emit_debug("hata", repr(error))
+            view.message("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")
+            view.detail("hata", repr(error))
         finally:
-            if kind in ("url", "path"):
-                elapsed = time.perf_counter() - start
-                self.call_from_thread(self.add_line, f"⏱ {elapsed:.1f} sn", "dim")
+            view.finish(time.perf_counter() - start)
             self.call_from_thread(self.set_busy, False)

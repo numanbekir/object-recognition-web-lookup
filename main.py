@@ -18,7 +18,7 @@ from app.image_loader import ImageLoader, ImageLoadError
 from app.intent import IntentBuilder
 from app.search import WebSearcher
 from app.session import SessionContext
-from app import structure
+from app import render, structure
 from app.storage import Storage
 from app.vision import VisionModel
 
@@ -167,22 +167,14 @@ def _new_record(storage: Storage, kind: str, value: str) -> dict:
             "girdi": {"tip": kind, "deger": value}}
 
 
-def _save_record(storage: Storage, record: dict, status: str, emit):
-    # kayıt hatası akışı kesmez
-    record["durum"] = status
-    if storage.append(record):
-        emit(f"✓ Kayıt: records.json · {record['tur_no']}. tur", "dim")
-    else:
-        emit("Kaydı dosyaya yazamadım, sohbete devam ediyorum.", "dim")
-
-
 def _gather_blocks(object_tr: str, blocks: list, keywords: list, context_words: list,
-                   emit_debug, session: SessionContext = None) -> tuple:
+                   view, session: SessionContext = None) -> tuple:
     """Blok sorgularını atar, sayfaları tek havuzda indirir ve her bloğu doldurur.
     Doldurma sırası vikipedi bölümü, sayfa yapısı ve düz paragraftır. Hiçbir
     kaynaktan dolmayan blok listeye girmez. Oturumda gösterilmiş sayfalar
     atlanır, yeni sayfa kalmazsa önceki kaynaklara dönülür.
     """
+    emit_debug = view.detail
     searcher = WebSearcher()
     extractor = ContentExtractor()
     trace = {"sorgular": [block.query for block in blocks]}
@@ -201,6 +193,7 @@ def _gather_blocks(object_tr: str, blocks: list, keywords: list, context_words: 
                 emit_debug("vikipedi", "tanım önceki turda gösterildi, atlandı")
             else:
                 definition = {"metin": wiki[0], "kaynak": "tr.wikipedia.org", "url": wiki_url}
+                view.definition(render.definition_markdown(definition, linked=True))  # aramayı beklemeden gösterilir
             if any(block.section_hints for block in blocks):
                 title = unquote(wiki_url.rsplit("/wiki/", 1)[-1]).replace("_", " ")
                 wiki_sections = searcher.wikipedia_sections(title)
@@ -216,6 +209,7 @@ def _gather_blocks(object_tr: str, blocks: list, keywords: list, context_words: 
             return []
 
     # blok sorguları birlikte atılır, sonuçlar sırayla harmanlanır ki her blok pay alsın
+    view.progress("web'de aranıyor")
     with ThreadPoolExecutor(max_workers=config.SEARCH_WORKERS) as pool:
         result_lists = list(pool.map(run_search, [block.query for block in blocks]))
     for block, results in zip(blocks, result_lists):
@@ -232,6 +226,7 @@ def _gather_blocks(object_tr: str, blocks: list, keywords: list, context_words: 
                 merged.append(result)
 
     fresh = [r for r in merged if r.url not in shown]
+    view.progress(f"{min(len(fresh), config.MAX_PAGES)} sayfa okunuyor")
     pages = extractor.fetch_pages(fresh[:config.MAX_PAGES])
     emit_debug("indirme", f"{len(pages)}/{min(len(fresh), config.MAX_PAGES)} yeni sayfa açıldı")
     if not pages and shown and len(fresh) < len(merged):
@@ -240,6 +235,7 @@ def _gather_blocks(object_tr: str, blocks: list, keywords: list, context_words: 
         trace["tekrar_kaynak"] = True
         pages = extractor.fetch_pages([r for r in merged if r.url in shown][:config.MAX_PAGES])
 
+    view.progress("bloklar hazırlanıyor")
     output, used_texts = [], set()
     for index, block in enumerate(blocks):
         entry = {"baslik": block.title, "sorgu": block.query, "paragraflar": [], "yapi": None}
@@ -346,194 +342,205 @@ def _extract_structure(block, pages: list, extractor: ContentExtractor, anchor_s
     return None
 
 
-def _show_blocks(object_tr: str, blocks: list, record: dict, emit):
-    """Blokları başlıklı ve numaralı kaynak dipnotlu tek metin olarak sunar."""
-    sources = []
-    for block in blocks:
-        for passage in block["paragraflar"]:
-            if passage["kaynak"] not in sources:
-                sources.append(passage["kaynak"])
-        if block["yapi"] and block["yapi"]["kaynak"] not in sources:
-            sources.append(block["yapi"]["kaynak"])
-    emit(tr_capitalize(object_tr), "title")
-    for block in blocks:
-        emit(f"▸ {block['baslik']}", "subtitle")
-        for passage in block["paragraflar"]:
-            emit(f"{passage['metin']} [{sources.index(passage['kaynak']) + 1}]")
-        shape = block["yapi"]
-        if shape:
-            ref = f"[{sources.index(shape['kaynak']) + 1}]"
-            if shape["tip"] == "tarif":
-                if shape["malzemeler"]:
-                    emit("Malzemeler:")
-                    for item in shape["malzemeler"]:
-                        emit(f"  • {item}")
-                if shape["adimlar"]:
-                    emit("Yapılışı:")
-                    for number, step in enumerate(shape["adimlar"], 1):
-                        emit(f"  {number}. {step}")
-                    if shape.get("adim_kaynak"):
-                        ref += f" adımlar: {shape['adim_kaynak']}"
-            elif shape["tip"] == "basliklar":
-                for item in shape["ogeler"]:
-                    emit(f"  • {item['baslik']}: {item['metin']}")
-            elif shape["tip"] == "madde":
-                if shape["etiket"]:
-                    emit(f"{shape['etiket']}:")
-                for item in shape["maddeler"]:
-                    emit(f"  • {item}")
-            emit(ref, "dim")
-    emit("Kaynaklar: " + "  ".join(f"[{i}] {source}" for i, source in enumerate(sources, 1)), "dim")
+def _present(object_tr: str, blocks: list, record: dict, view, session: SessionContext):
+    """Blokları markdown olarak görünüme verir, kayda yazar ve kaynakları hafızaya alır."""
+    text, sources = render.blocks_markdown(blocks)
+    view.body(render.blocks_markdown(blocks, for_screen=True)[0], sources, render.source_urls(blocks))
     record["bloklar"] = blocks
-    record["metin"] = "\n\n".join(
-        f"{block['baslik']}: " + " ".join(p["metin"] for p in block["paragraflar"])
-        + (" " + _structure_text(block["yapi"]) if block["yapi"] else "") for block in blocks)
+    record["metin"] = text
     record["kaynaklar"] = sources
-
-
-def _structure_text(shape: dict) -> str:
-    if shape["tip"] == "tarif":
-        return ("Malzemeler: " + "; ".join(shape["malzemeler"]) + " Yapılışı: "
-                + " ".join(f"{i}. {s}" for i, s in enumerate(shape["adimlar"], 1)))
-    if shape["tip"] == "basliklar":
-        return " ".join(f"{o['baslik']}: {o['metin']}" for o in shape["ogeler"])
-    return "; ".join(shape["maddeler"])
-
-
-def _show_and_remember(object_tr, blocks, record, emit, session):
-    _show_blocks(object_tr, blocks, record, emit)
     urls = [p["url"] for block in blocks for p in block["paragraflar"]]
     urls += [block["yapi"]["url"] for block in blocks if block["yapi"]]
-    urls += [block["yapi"]["adim_url"] for block in blocks if block["yapi"] and block["yapi"].get("adim_url")]
+    urls += [block["yapi"]["adim_url"] for block in blocks
+             if block["yapi"] and block["yapi"].get("adim_url")]
     session.remember_shown(urls)
 
 
-def _refine_turn(value: str, session: SessionContext, storage: Storage, emit, emit_debug):
+def _save(storage: Storage, record: dict, status: str, view):
+    # kayıt hatası akışı kesmez
+    record["durum"] = status
+    if storage.append(record):
+        view.saved(record["tur_no"])
+    else:
+        view.message("Kaydı dosyaya yazamadım, sohbete devam ediyorum.")
+
+
+def _refine_turn(value: str, session: SessionContext, storage: Storage, view):
     """Düz metin girdisi son obje bağlamında yeni bir arama yapar."""
     anchor = session.last_object()
     record = _new_record(storage, "text", value)
     record["obje"] = {"ad_tr": anchor}
     query = WebSearcher.build_query(anchor, user_text=value)
-    emit_debug("sorgu", query)
+    view.head(anchor, None, [], query, note=f"soru · {value}")
+    view.detail("sorgu", query)
     blocks = [InfoBlock("Cevap", query, value.split(), limit=config.MAX_PASSAGES)]
     found, trace = _gather_blocks(anchor, blocks, session.last_keywords() + value.split(),
-                                  [], emit_debug, session=session)
+                                  [], view, session=session)
     record["arama_izi"] = trace
     if not found:
-        emit(f"{tr_capitalize(anchor)} hakkında bununla ilgili bir metin bulamadım. "
-             "Farklı bir ifadeyle dener misin?")
-        _save_record(storage, record, "metin_yok", emit)
+        view.message(f"{tr_capitalize(anchor)} hakkında bununla ilgili bir metin bulamadım. "
+                     "Farklı bir ifadeyle dener misin?")
+        _save(storage, record, "metin_yok", view)
         return
-    _show_and_remember(anchor, found, record, emit, session)
-    _save_record(storage, record, "tamam", emit)
+    _present(anchor, found, record, view, session)
+    _save(storage, record, "tamam", view)
 
 
 def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel,
-                 session: SessionContext, storage: Storage, emit, emit_debug, emit_context,
+                 session: SessionContext, storage: Storage, view,
                  intent: IntentBuilder = None, planner: BlockPlanner = None):
-    """Bir kullanıcı turunu işler ve çıktıları emit ile arayüze iletir."""
+    """Bir kullanıcı turunu işler ve sonuçları görünüm nesnesine kademeli olarak verir.
+
+    Görünüm nesnesi head, definition, body, progress, message, detail, saved ve
+    context çağrılarını alır. Terminal arayüzü bunları bir kart üzerinde,
+    düz mod satır satır gösterir.
+    """
     if kind == "too_long":
-        emit("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
+        view.message("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
         return
     if kind == "bad_scheme":
-        emit("Yalnızca http/https adreslerini ve yerel dosya yollarını destekliyorum.")
+        view.message("Yalnızca http ve https adreslerini ve yerel dosya yollarını destekliyorum.")
         return
     if kind == "missing_file":
-        emit(f"Bu konumda bir dosya bulamadım: {value}. Yolu kontrol eder misin?")
+        view.message(f"Bu konumda bir dosya bulamadım, {value}. Yolu kontrol eder misin?")
         return
     if kind == "multi":
-        emit("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel ya da URL verir misin?")
+        view.message("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel ya da adres verir misin?")
         return
     intent = intent or IntentBuilder()
     planner = planner or BlockPlanner()
     if kind == "text":
         if session.last_object() is None:
-            emit("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
+            view.message("Henüz analiz edilmiş bir görsel yok. Önce bir görsel adresi ya da dosya yolu verir misin?")
             return
-        _refine_turn(value, session, storage, emit, emit_debug)
+        _refine_turn(value, session, storage, view)
         return
 
     # görüntü
     record = _new_record(storage, kind, value)
+    view.progress("görüntü yükleniyor")
     try:
         image = loader.load(value, kind)
     except ImageLoadError as error:
-        emit(str(error))
-        _save_record(storage, record, "yukleme_hatasi", emit)
+        view.message(str(error))
+        _save(storage, record, "yukleme_hatasi", view)
         return
-    emit_debug("görüntü", f"{image.width}x{image.height} yüklendi")
+    view.detail("görüntü", f"{image.width}x{image.height} yüklendi")
 
     # obje ve anahtar kelimeler
+    view.progress("obje tanınıyor")
     prediction, keywords = vision.analyze(image)
     object_tr = prediction.name_tr
-    emit_debug("adaylar", f"{object_tr} {prediction.confidence:.2f}; " + "; ".join(
-        f"{name} {score:.2f}" for name, score in prediction.alternatives))
+    view.detail("adaylar", "; ".join(f"{vision.turkish_name(l)} {s:.2f}" for l, s in prediction.candidates))
     if prediction.reconciled_from:
-        emit_debug("uzlaşma", f"{prediction.reconciled_from} yerine temalarla uyumlu aday: {object_tr}")
+        view.detail("uzlaşma", f"{prediction.reconciled_from} yerine temalarla uyumlu aday, {object_tr}")
         record["uzlasma"] = {"onceki_obje": prediction.reconciled_from}
-    if prediction.confidence >= config.MIN_CONFIDENCE:
-        emit(f"Tespit ettiğim obje: {object_tr} (güven %{prediction.confidence * 100:.0f}).")
-    else:
-        # düşük güvende kesin konuşulmaz ama akış durmaz, alternatifler de söylenir
-        others = ", ".join(name for name, _ in prediction.alternatives)
-        emit(f"Tam emin olamadım, en yakın tahminim {object_tr} "
-             f"(güven %{prediction.confidence * 100:.0f}); diğer adaylar: {others}.")
+    confident = prediction.confidence >= config.MIN_CONFIDENCE
     words = [item.word for item in keywords]
-    emit_debug("temalar", ", ".join(f"{k.word} [{k.theme} {k.score:.2f}]" for k in keywords))
-    if words:
-        emit(f"Anahtar kelimeler: {', '.join(words)}")
+    view.detail("temalar", ", ".join(f"{k.word} [{k.theme} {k.score:.2f}]" for k in keywords))
     record["obje"] = {"ad_tr": object_tr, "etiket": prediction.label,
                       "guven": round(prediction.confidence, 2)}
     record["anahtar_kelimeler"] = words
 
     # bağlam, önceki turla ortak kelime varsa o tur aynı konudadır
-    # önceki objenin adı arama niyetine katılır
     shared = session.shared_context(object_tr, words)
     context_words, previous = [], None
     if shared:
         previous, common = shared
         context_words = [common]
-        emit_debug("bağlam", f"{previous} ile ortak kelime: {common}")
+        view.detail("bağlam", f"{previous} ile ortak kelime, {common}")
         record["baglam"] = {"onceki_obje": previous, "ortak_kelime": common}
     else:
         record["baglam"] = None
 
-    # arama niyeti, obje ve rol etiketli kelimeler ve bağlamdan türkçe cümle kurulur
-    # objeden emin değilsek kelimeler de güvenilmez, sade adla aranır
-    if prediction.confidence >= config.MIN_CONFIDENCE:
+    # arama niyeti, objeden emin değilsek kelimeler sorguya girmez
+    if confident:
         query = intent.build(object_tr, words, previous)
     else:
         query = object_tr
-        emit_debug("niyet", "düşük güven, kelimeler sorguya alınmadı")
-    emit(f"Arama niyeti: {query}")
+        view.detail("niyet", "düşük güven, kelimeler sorguya alınmadı")
     record["arama_niyeti"] = query
+    notes = []
+    if not confident:
+        notes.append("Tam emin olamadım, diğer adaylar " + ", ".join(n for n, _ in prediction.alternatives))
     if session.times_seen(object_tr):
-        emit(f"{tr_capitalize(object_tr)} hakkında daha önce konuştuk, bu kez "
-             "farklı kaynaklardan devam ediyorum.", "dim")
+        notes.append("Bu obje hakkında daha önce konuştuk, bu kez farklı kaynaklardan devam ediyorum.")
+    view.head(object_tr, prediction.confidence, words, query, note=" · ".join(notes),
+              confident=confident, size=f"{image.width}x{image.height}")
 
-    # bilgi blokları, tanım ve ilgili niyet ve objenin ailesine özgü açılar
-    confident = prediction.confidence >= config.MIN_CONFIDENCE
+    # bilgi blokları
     blocks = planner.plan(object_tr, words, query, confident=confident)
-    emit_debug("bloklar", f"aile {planner.family(words)}: " + ", ".join(b.title for b in blocks))
-    found, trace = _gather_blocks(object_tr, blocks, words, context_words, emit_debug,
-                                  session=session)
+    view.detail("bloklar", f"aile {planner.family(words)}, " + ", ".join(b.title for b in blocks))
+    found, trace = _gather_blocks(object_tr, blocks, words, context_words, view, session=session)
     record["arama_izi"] = trace
     if trace.get("tekrar_kaynak"):
-        emit("Yeni bir kaynak bulamadım, daha önce gösterdiğim bilgileri hatırlatıyorum.", "dim")
+        view.message("Yeni bir kaynak bulamadım, daha önce gösterdiğim bilgileri hatırlatıyorum.")
     if not found:
-        emit(f"{tr_capitalize(object_tr)} hakkında şu anda bir metin derleyemedim. "
-             "Bağlantını kontrol edip tekrar dener misin?")
-        _save_record(storage, record, "metin_yok", emit)
+        view.message(f"{tr_capitalize(object_tr)} hakkında şu anda bir metin derleyemedim. "
+                     "Bağlantını kontrol edip tekrar dener misin?")
+        _save(storage, record, "metin_yok", view)
         return
-    _show_and_remember(object_tr, found, record, emit, session)
-    _save_record(storage, record, "tamam", emit)
+    _present(object_tr, found, record, view, session)
+    _save(storage, record, "tamam", view)
 
     # bağlam güncellenir
     session.add_turn(object_tr, words)
-    emit_context(session.summary_line())
+    view.context(session.summary_line())
 
 
 # arayüzler
+
+class PlainView:
+    """Düz mod görünümü, her bildirimi satır olarak basar."""
+
+    def __init__(self, debug: bool):
+        self.debug = debug
+        self.console = None
+
+    def _print_markdown(self, text: str):
+        from rich.console import Console
+        from rich.markdown import Markdown
+        self.console = self.console or Console()
+        self.console.print(Markdown(text))
+
+    def head(self, object_tr, confidence, keywords, intent, note="", confident=True, size=""):
+        if confidence is None:
+            print(f"\n{tr_capitalize(object_tr)}")
+        elif confident:
+            print(f"\n{tr_capitalize(object_tr)}  güven %{confidence * 100:.0f}")
+        else:
+            print(f"\nEmin değilim, en yakın tahmin {object_tr}  güven %{confidence * 100:.0f}")
+        if keywords:
+            print("anahtar kelimeler · " + ", ".join(keywords))
+        print(f"araştırılan konu · {intent}")
+        if note:
+            print(note)
+
+    def definition(self, markdown):
+        pass  # düz modda tanım gövdeyle birlikte basılır
+
+    def body(self, markdown, sources, urls=None):
+        print()
+        self._print_markdown(markdown)
+        print("kaynaklar · " + render.sources_line(sources))
+
+    def progress(self, text):
+        if self.debug:
+            print(f"… {text}")
+
+    def message(self, text):
+        print(text)
+
+    def detail(self, stage, text):
+        if self.debug:
+            print(f"{stage} · {text}")
+
+    def saved(self, turn_no):
+        print(f"kaydedildi · {turn_no}. tur")
+
+    def context(self, line):
+        print(f"↻ {line}")
+
 
 def run_plain(args, loader, vision, session, storage, storage_note):
     # tty olmayan ortam için sade satır modu
@@ -548,19 +555,10 @@ def run_plain(args, loader, vision, session, storage, storage_note):
         print("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı gerekiyor, "
               "bağlantını kontrol edip tekrar dener misin?")
         if args.debug:
-            print(f"Ayrıntı: {error!r}")
+            print(f"Ayrıntı, {error!r}")
         return
-    print(f"Model hazır ({vision.vocab_size} kavram).")
-
-    def emit(message, style=""):
-        print(message)
-
-    def emit_debug(stage, message):
-        if args.debug:
-            print(f"{stage} · {message}")
-
-    def emit_context(line):
-        print(f"↻ {line}")
+    print(f"Model hazır, {vision.vocab_size} kavram.")
+    view = PlainView(args.debug)
 
     while True:
         try:
@@ -575,14 +573,13 @@ def run_plain(args, loader, vision, session, storage, storage_note):
             print("Görüşmek üzere!")
             return
         try:
-            process_turn(kind, value, loader, vision, session, storage,
-                         emit, emit_debug, emit_context)
+            process_turn(kind, value, loader, vision, session, storage, view)
         except KeyboardInterrupt:
             print("İşlemi iptal ettim.")
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın
             print("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")
-            emit_debug("hata", repr(error))
+            view.detail("hata", repr(error))
 
 
 def run(args):
