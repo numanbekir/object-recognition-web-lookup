@@ -165,11 +165,17 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
     emit_debug("görüntü", f"{image.width}x{image.height} yüklendi")
 
     detections = detector.detect(image)
-    emit_debug("tespit", ", ".join(
-        f"{d.label} {d.confidence:.2f}" for d in detections) or "kutu yok")
+    emit_debug("tespit", f"[{detector.last_engine}] " + (", ".join(
+        f"{d.label} {d.confidence:.2f}" for d in detections) or "kutu yok"))
     dominant = detector.pick_dominant(detections, image.size)
     if dominant is None:
         emit("Bu görselde belirgin bir obje tespit edemedim. Başka bir görsel dener misin?")
+        return
+    if dominant.confidence < config.MIN_DOMINANT_CONFIDENCE or detector.last_uncertain:
+        # düşük güven ya da model uyuşmazlığında emin cevap yerine dürüst mesaj
+        emit_debug("düşük güven", f"{dominant.label} ({dominant.confidence:.2f})")
+        emit("Görseldeki nesneden yeterince emin olamadım. Nesnenin daha net "
+             "göründüğü bir görsel dener misin?")
         return
 
     secondary = [d.label for d in detections if d is not dominant and d.label != dominant.label]

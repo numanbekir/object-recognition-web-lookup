@@ -8,12 +8,17 @@ DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
 RECORDS_PATH = BASE_DIR / "records.json"
 
-# Tespit
+# Tespit (hibrit: yaygın nesnelerde COCO modeli, gerisinde açık dağarcık)
+PRIMARY_WEIGHTS = "yolo11n.pt"
 DETECTOR_WEIGHTS = "yolov8s-worldv2.pt"
 DETECTOR_CUSTOM = MODELS_DIR / "detector-lvis.pt"
 VOCABULARY_PATH = DATA_DIR / "vocabulary.txt"
 CONFIDENCE_THRESHOLD = 0.20
 IOU_DEDUP_THRESHOLD = 0.6
+MIN_DOMINANT_CONFIDENCE = 0.30  # altındaysa dürüst "seçemedim" mesajı
+PERSON_OVERRIDE_MIN = 0.25  # bu güveni aşan insan-dışı aday baskınlıkta insana tercih edilir
+PRIMARY_TRUST_CONFIDENCE = 0.55  # COCO bu güvenin üstündeyse çapraz kontrolsüz kabul
+DOMINANT_CONF_GAP = 0.20  # bu kadar daha emin bir aday, büyük kutuya yenilmez
 
 # Görüntü
 MIN_IMAGE_SIDE = 64
@@ -29,6 +34,7 @@ CONCEPT_STATS_PATH = DATA_DIR / "concept_stats.json"
 MAX_KEYWORDS = 6
 MAX_SUGGESTION_KEYWORDS = 2
 SUGGESTION_TIMEOUT = 3
+SUGGESTION_FILL_THRESHOLD = 3  # baskın nesne bu sayıda kelimeye ulaştıysa öneri istenmez
 
 # Arama ve içerik
 SEARCH_REGION = "tr-tr"

@@ -37,7 +37,9 @@ SENSE_TIERS = (
 )
 
 SUGGEST_URL = "https://duckduckgo.com/ac/"
-SUGGEST_NOISE = ("fiyat", "kdv", "nasıl yazılır", "ne demek", "şikayet", "ekşi")
+SUGGEST_NOISE = ("fiyat", "kdv", "nasıl yazılır", "ne demek", "şikayet", "ekşi",
+                 "kampanya", "taksit")
+SUGGEST_BAD_STARTS = {"ve", "ile", "mi", "mı"}  # bağlaçla başlayan ek kırıktır
 
 
 class Keyword:
@@ -180,29 +182,29 @@ class KeywordExtractor:
 
         found = []
         for phrase in phrases:
-            if not phrase.startswith(turkish):
+            # kelime sınırı şart: bitişik türevler ek değildir
+            if not phrase.startswith(turkish + " "):
                 continue
             suffix = phrase[len(turkish):].strip()
             if not suffix or len(suffix.split()) > 2 or any(ch.isdigit() for ch in suffix):
                 continue
+            if suffix.split()[0] in SUGGEST_BAD_STARTS:
+                continue
             if any(noise in suffix for noise in SUGGEST_NOISE):
                 continue
-            if suffix not in found:
-                found.append(suffix)
+            # tam ifade doğal ve aranabilir
+            phrase_full = f"{turkish} {suffix}"
+            if phrase_full not in found:
+                found.append(phrase_full)
             if len(found) >= config.MAX_SUGGESTION_KEYWORDS:
                 break
-        return [Keyword(word, "arama önerisi", 0.5 * self._top_score()) for word in found]
+        # dolgu rolü: diğer kaynaklar doluyken öne geçemez
+        return [Keyword(word, "arama önerisi", 0.25 * self._top_score()) for word in found]
 
-    def extract_scored(self, label: str, secondary_labels: list,
-                       use_suggestions: bool = True) -> list:
-        """Puanlı, kaynak etiketli anahtar kelime listesi (en fazla MAX_KEYWORDS)."""
-        candidates = self._collect(label, 1.0)
-        if use_suggestions:
-            candidates += self._intent_keywords(self.turkish_name(label))
-        for secondary in secondary_labels:
-            candidates += self._collect(secondary, 0.5)
-
-        best = {}  # kelime -> en yüksek puanlı adayı
+    @staticmethod
+    def _rank(candidates: list) -> list:
+        """Kelime başına en iyi puanı tutar, tepenin beşte biri altını eler."""
+        best = {}
         for keyword in candidates:
             current = best.get(keyword.word)
             if current is None or keyword.score > current.score:
@@ -212,7 +214,37 @@ class KeywordExtractor:
         top = max(item.score for item in best.values())
         kept = [item for item in best.values() if item.score >= 0.2 * top]
         kept.sort(key=lambda item: -item.score)
-        return kept[:config.MAX_KEYWORDS]
+        return kept
+
+    def extract_scored(self, label: str, secondary_labels: list,
+                       use_suggestions: bool = True) -> list:
+        """Puanlı, kaynak etiketli anahtar kelime listesi (en fazla MAX_KEYWORDS).
+
+        BASKIN ÖNCE: kelimeler objeyi anlatmalı; sahnedeki yan nesneler ancak
+        baskın nesnenin kelimelerinden slot artarsa listeye girer (aksi halde
+        kitaplıklı bir masada dizüstünün 'bilgisayar' teması listeye giremiyordu).
+        """
+        ranked = self._rank(self._collect(label, 1.0))
+        # öneriler puan yarışına girmez: baskın nesne kelime kıtlığı çekiyorsa temaların ARKASINA dolgu olarak eklenir
+        if use_suggestions and len(ranked) < config.SUGGESTION_FILL_THRESHOLD:
+            seen = {item.word for item in ranked}
+            ranked += [item for item in self._intent_keywords(self.turkish_name(label))
+                       if item.word not in seen]
+        result = ranked[:config.MAX_KEYWORDS]
+
+        if len(result) < config.MAX_KEYWORDS and secondary_labels:
+            seen = {item.word for item in result}
+            scene = []
+            for secondary in secondary_labels:
+                scene += self._collect(secondary, 0.5)
+            for item in self._rank(scene):
+                if item.word in seen:
+                    continue
+                result.append(item)
+                seen.add(item.word)
+                if len(result) >= config.MAX_KEYWORDS:
+                    break
+        return result
 
     def extract(self, label: str, secondary_labels: list,
                 use_suggestions: bool = True) -> list:

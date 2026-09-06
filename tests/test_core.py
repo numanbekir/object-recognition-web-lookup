@@ -191,13 +191,86 @@ class KeywordExtractorTest(unittest.TestCase):
         extractor = KeywordExtractor()
         extractor.load()
         extractor._fetch_suggestions = lambda q: [
-            f"{q} kadın", f"{q} fiyatları", f"{q} 2024", f"{q} su geçirmez"]
-        scored = extractor.extract_scored("backpack", [])
+            f"{q} kadın", f"{q} fiyatları", f"{q} 2024", f"{q}kolik", f"{q} ve tarih"]
+        # suitcase kelime kıtlığı çeker (<3), öneri ancak bu durumda istenir
+        scored = extractor.extract_scored("suitcase", [])
         by_word = {item.word: item for item in scored}
-        self.assertIn("kadın", by_word)
-        self.assertEqual(by_word["kadın"].source, "arama önerisi")
-        self.assertNotIn("fiyatları", by_word)  # gürültü süzgeci
-        self.assertNotIn("2024", by_word)  # rakamlı ek süzgeci
+        # ek tam ifadeye dönüşür: "kadın" değil "bavul kadın"
+        self.assertIn("bavul kadın", by_word)
+        self.assertEqual(by_word["bavul kadın"].source, "arama önerisi")
+        self.assertNotIn("bavul fiyatları", by_word)  # gürültü süzgeci
+        self.assertNotIn("bavul 2024", by_word)  # rakamlı ek süzgeci
+        self.assertNotIn("bavulkolik", by_word)  # bitişik türev, kelime sınırı süzgeci
+        self.assertNotIn("bavul ve tarih", by_word)  # bağlaçla başlayan kırık ek
+        # öneriler dolgudur: gerçek temaların önüne geçemez
+        self.assertLess([k.word for k in scored].index("valiz"),
+                        [k.word for k in scored].index("bavul kadın"))
+
+    def test_dominant_keywords_come_before_scene(self):
+        # kitaplıklı masadaki dizüstü: kelimeler önce dizüstünü anlatmalı
+        words = self.extract("laptop computer", ["book", "person", "chair"])
+        self.assertIn(words[0], ("bilgisayar", "teknoloji"))
+        self.assertLess(words.index("bilgisayar"), words.index("insan"))
+
+    def test_coco_mouse_is_a_device(self):
+        # COCO köprüsünden gelen mouse aygıttır, kemirgen temaları üretmemeli
+        words = self.extract("computer mouse")
+        self.assertIn("bilgisayar", words)
+        self.assertNotIn("hayvan", words)
+
+    def test_suggestions_only_fill_scarce_lists(self):
+        # diğer kaynaklar yeterliyken öneri ucuna hiç gidilmemeli
+        extractor = KeywordExtractor()
+        extractor.load()
+        extractor._fetch_suggestions = lambda q: (_ for _ in ()).throw(AssertionError(
+            "kelime kıtlığı yokken öneri istendi"))
+        words = extractor.extract("sandwich", [])
+        self.assertGreaterEqual(len(words), config.SUGGESTION_FILL_THRESHOLD)
+
+
+class PickDominantTest(unittest.TestCase):
+    def test_confident_object_beats_large_background(self):
+        # masa/koltuk gibi büyük düşük güvenli kutu, emin nesneyi ezmemeli
+        from app.detector import Detection, ObjectDetector
+        table = Detection("table", 0.28, (0, 0, 1000, 1000))
+        sandwich = Detection("sandwich", 0.52, (350, 350, 650, 650))
+        picked = ObjectDetector().pick_dominant([table, sandwich], (1000, 1000))
+        self.assertEqual(picked.label, "sandwich")
+
+    def test_person_yields_to_carried_object(self):
+        # elinde çantayla poz veren insan: konu insan değil çantadır
+        from app.detector import Detection, ObjectDetector
+        person = Detection("person", 0.74, (100, 0, 900, 1000))
+        handbag = Detection("handbag", 0.29, (400, 400, 700, 800))
+        picked = ObjectDetector().pick_dominant([person, handbag], (1000, 1000))
+        self.assertEqual(picked.label, "handbag")
+
+    def test_much_more_confident_small_object_wins(self):
+        # kazağın üstündeki papyon: belirgin daha emin küçük aday büyük kutuyu yener
+        from app.detector import Detection, ObjectDetector
+        sweater = Detection("sweater", 0.43, (100, 100, 900, 1900))
+        bow_tie = Detection("bow-tie", 0.64, (400, 300, 600, 500))
+        picked = ObjectDetector().pick_dominant([sweater, bow_tie], (1000, 2000))
+        self.assertEqual(picked.label, "bow-tie")
+
+    def test_person_alone_stays_dominant(self):
+        # sahnede yalnızca insan varsa insan cevaptır, reddedilmez
+        from app.detector import Detection, ObjectDetector
+        person = Detection("person", 0.74, (200, 100, 800, 900))
+        picked = ObjectDetector().pick_dominant([person], (1000, 1000))
+        self.assertEqual(picked.label, "person")
+
+
+class CocoBridgeTest(unittest.TestCase):
+    def test_every_mapped_label_has_turkish_name(self):
+        # COCO'dan gelen her etiket Türkçe ad haritasında karşılık bulmalı
+        import json
+        from app.detector import COCO_TO_VOCAB
+        from app import config
+        names = json.loads(config.OBJECT_NAMES_TR_PATH.read_text(encoding="utf-8"))
+        for target in COCO_TO_VOCAB.values():
+            self.assertIn(target, names, target)
+        self.assertIn("hot dog", names)  # köprüden aynen geçen COCO sınıfı
 
 
 class ImageLoaderTest(unittest.TestCase):
