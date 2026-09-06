@@ -354,6 +354,18 @@ class ExtractorFilterTest(unittest.TestCase):
         self.assertFalse(ok("Püf Noktası - Ekmek seçimi: tam buğday ekmekleri "
                             "sandviçe ekstra lezzet katan seçenekler arasındadır."))
 
+    def test_non_turkish_and_mojibake_rejected(self):
+        ok = self.extractor._passes_rules
+        # ingilizce cümlede türkçe harf de işlev kelimesi de yok
+        self.assertFalse(ok("Hamburgers are commonly prepared at home and usually "
+                            "associated with fast food restaurants worldwide."))
+        # almanca cümlede türkçe harfler var ama işlev kelimesi yok
+        self.assertFalse(ok("Der Hamburger ist ein weltweit verbreitetes Gericht "
+                            "für die schnelle Küche über alle Länder hinweg."))
+        # bozuk kodlanmış cümlede işlev kelimeleri sağlam ama gerçek türkçe harf yok
+        self.assertFalse(ok("Genel olarak Ã§iÃ§ekli bir bitki olarak "
+                            "sÄ±nÄ±flandÄ±rÄ±lan muz bitkisi buna Ã¶rnektir."))
+
     def test_relevance_needs_anchor(self):
         score = self.extractor._relevance(
             "sandviç hazırlarken taze ekmek kullanmak lezzeti artırır.",

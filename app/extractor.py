@@ -15,6 +15,7 @@ from . import config
 SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+|(?<=[?!])(?=[A-ZÇĞİÖŞÜ])")
 MIN_SENTENCE_CHARS = 60
 MAX_SENTENCE_CHARS = 400
+TURKISH_CHARS = set("çğıöşü")
 
 # pazarlama, navigasyon ve site kalıpları
 CTA_PATTERNS = (
@@ -69,6 +70,7 @@ class ContentExtractor:
     def __init__(self):
         self._classifier = None
         self._classifier_checked = False
+        self.last_classifier_drops = 0
 
     # --- sayfa indirme ---
 
@@ -105,6 +107,7 @@ class ContentExtractor:
         context_stems = [word.lower()[:5] for word in context_words if len(word) >= 4]
 
         selected = []
+        self.last_classifier_drops = 0
         for result, text in pages:
             for raw in SENTENCE_SPLIT.split(text):
                 sentence = " ".join(raw.split())
@@ -115,6 +118,7 @@ class ContentExtractor:
                 if score <= 0:
                     continue
                 if not self._classifier_approves(sentence):
+                    self.last_classifier_drops += 1
                     continue
                 hits = sum(1 for stem in context_stems if stem in lower)
                 selected.append(Sentence(sentence, result.domain, score, hits))
@@ -127,13 +131,18 @@ class ContentExtractor:
             return False
         if not sentence[0].isupper():
             return False
+        lower = sentence.lower()
+        # çift dil denetimi, yabancı dildeki ve bozuk kodlanmış cümleler elenir
+        if not TURKISH_CHARS.intersection(lower):
+            return False
+        if not STOPWORDS.intersection(re.findall(r"[a-zçğıöşü]+", lower)):
+            return False
         if ":" in sentence or "|" in sentence:  # başlık ve menü kalıntıları
             return False
         if IMPERATIVE_ENDINGS.search(sentence):
             return False
         if TITLE_GLUE.search(sentence):
             return False
-        lower = sentence.lower()
         if any(pattern in lower for pattern in CTA_PATTERNS):
             return False
         if any(pattern in lower for pattern in PERSONAL_PATTERNS):

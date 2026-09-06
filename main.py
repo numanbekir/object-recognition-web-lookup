@@ -188,7 +188,9 @@ def _compose_from_web(query: str, fallback_query: str, anchor: str, words: list,
     pages = extractor.fetch_pages(results[:config.MAX_PAGES])
     emit_debug("indirme", f"{len(pages)}/{min(len(results), config.MAX_PAGES)} sayfa açıldı")
     sentences = extractor.select_sentences(pages, anchor, words, context_words)
-    emit_debug("süzgeç", f"{len(sentences)} cümle üç katmanı geçti")
+    emit_debug("süzgeç", f"{len(sentences)} cümle üç katmanı geçti"
+               + (f", sınıflandırıcı {extractor.last_classifier_drops} eledi"
+                  if extractor.last_classifier_drops else ""))
 
     composer = TextComposer()
     text, sources, mapping = composer.compose(sentences, anchor, aliases)

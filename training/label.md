@@ -17,13 +17,11 @@ Kişisel anlatı, okuyucuya seslenme, blog sohbeti.
 Başlık yapışığı, malzeme listesi yığını, yarım veya kopuk cümle.
 Obje adı geçse bile başka şeyi anlatan cümle.
 
+Cümle olması gereken haliyle değil, göründüğü haliyle değerlendirilir.
+İçeriği anlamlı olsa da başındaki başlık artığı okumayı bozuyorsa dolgu
+sayılır. Soru şu, bu cümle bu haliyle metne girse rahatsız eder miydi.
+
 ## s = atla
 
 İki okumada da karar verilemeyen cümle etiketlenmez. Zorlama etiket
 gürültüden kötüdür.
-
-## Hedef
-
-500 ile 800 arası etiket yeterli. Denge şart değil ama her iki sınıftan
-da yeterli örnek olmalı. Aynı siteden art arda gelen benzer cümlelerde
-hızlı geçilmeli, çeşitlilik sayıdan değerli.
