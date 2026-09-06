@@ -11,6 +11,7 @@ from urllib.parse import unquote, urlparse
 from app import config
 from app.detector import ObjectDetector
 from app.image_loader import ImageLoader, ImageLoadError
+from app.keywords import KeywordExtractor
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".svg")
 QUIT_WORDS = ("q", "çık", "cik", "exit", "quit")
@@ -138,7 +139,7 @@ def classify_input(raw: str):
 
 
 def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDetector,
-                 emit, emit_debug):
+                 keywords: KeywordExtractor, emit, emit_debug):
     """Bir kullanıcı turunu işler; çıktıları emit(mesaj) ile arayüze iletir."""
     if kind == "too_long":
         emit("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
@@ -174,10 +175,17 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
     secondary = [d.label for d in detections if d is not dominant and d.label != dominant.label]
     emit_debug("baskın", f"{dominant.label} ({dominant.confidence:.2f})"
                + (f" · ikincil: {', '.join(secondary)}" if secondary else ""))
-    emit(f"Tespit ettiğim obje: {dominant.label} (güven %{dominant.confidence * 100:.0f}).")
+    emit(f"Tespit ettiğim obje: {keywords.turkish_name(dominant.label)} "
+         f"(güven %{dominant.confidence * 100:.0f}).")
+
+    scored = keywords.extract_scored(dominant.label, secondary)
+    emit_debug("kelimeler", ", ".join(
+        f"{item.word} [{item.source} {item.score:.1f}]" for item in scored) or "tema bulunamadı")
+    if scored:
+        emit(f"Anahtar kelimeler: {', '.join(item.word for item in scored)}")
 
 
-def run_plain(args, loader, detector):
+def run_plain(args, loader, detector, keywords):
     # tty olmayan ortam (pipe/test) için sade satır modu
     print("Görüntülü Sohbet")
     if detector.is_ready_on_disk():
@@ -186,6 +194,7 @@ def run_plain(args, loader, detector):
         print("Model bulunamadı, tek seferlik indirme ve hazırlık yapılıyor...")
     try:
         detector.load()
+        keywords.load()
     except Exception as error:
         print("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı gerekiyor, "
               "bağlantını kontrol edip tekrar dener misin?")
@@ -214,7 +223,7 @@ def run_plain(args, loader, detector):
             print("Görüşmek üzere!")
             return
         try:
-            process_turn(kind, value, loader, detector, emit, emit_debug)
+            process_turn(kind, value, loader, detector, keywords, emit, emit_debug)
         except KeyboardInterrupt:
             print("İşlemi iptal ettim.")
         except Exception as error:
@@ -226,9 +235,10 @@ def run_plain(args, loader, detector):
 def run(args):
     loader = ImageLoader()
     detector = ObjectDetector()
+    keywords = KeywordExtractor()
 
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
-        run_plain(args, loader, detector)
+        run_plain(args, loader, detector, keywords)
         return
 
     from types import SimpleNamespace
@@ -237,7 +247,8 @@ def run(args):
     tools = SimpleNamespace(is_single_source=is_single_source,
                             find_sources=find_sources,
                             is_unsupported_file=is_unsupported_file)
-    app = ChatApp(loader, detector, process_turn, classify_input, tools, debug=args.debug)
+    app = ChatApp(loader, detector, keywords, process_turn, classify_input, tools,
+                  debug=args.debug)
     farewell = app.run()
     print(farewell or "Görüşmek üzere!")
 

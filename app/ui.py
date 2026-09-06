@@ -136,10 +136,12 @@ class ChatApp(App):
     #status Static.warn { color: $warning; }
     """
 
-    def __init__(self, loader, detector, process_turn, classify_input, tools, debug=False):
+    def __init__(self, loader, detector, keywords, process_turn, classify_input, tools,
+                 debug=False):
         super().__init__()
         self.loader = loader
         self.detector = detector
+        self.keywords = keywords
         self.process_turn = process_turn
         self.classify_input = classify_input
         self.tools = tools
@@ -341,6 +343,7 @@ class ChatApp(App):
     def load_model(self):
         try:
             self.detector.load(progress=self._load_progress)
+            self.keywords.load()
         except Exception as error:
             message = ("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı "
                        "gerekiyor, bağlantını kontrol edip tekrar dener misin?")
@@ -432,7 +435,7 @@ class ChatApp(App):
     def run_turn(self, kind: str, value: str):
         start = time.perf_counter()
         try:
-            self.process_turn(kind, value, self.loader, self.detector,
+            self.process_turn(kind, value, self.loader, self.detector, self.keywords,
                               self.emit, self.emit_debug)
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın

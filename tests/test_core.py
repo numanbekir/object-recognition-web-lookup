@@ -4,7 +4,9 @@
 import tempfile
 import unittest
 
+from app import config
 from app.image_loader import ImageLoader, ImageLoadError
+from app.keywords import KeywordExtractor
 from main import (classify_input, clean_input, is_single_source,
                   is_unsupported_file, normalize_schemeless)
 
@@ -132,6 +134,70 @@ class SourceToolsTest(unittest.TestCase):
             self.assertFalse(is_unsupported_file(jpg.name))
         self.assertFalse(is_unsupported_file("./yok/dosya.txt"))
         self.assertFalse(is_unsupported_file("fiyatları ne kadar"))
+
+
+class KeywordExtractorTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.extractor = KeywordExtractor()
+        cls.extractor.load()
+
+    def extract(self, label, secondary=()):
+        return self.extractor.extract(label, list(secondary), use_suggestions=False)
+
+    def test_turkish_name_with_fallback(self):
+        self.assertEqual(self.extractor.turkish_name("bus"), "otobüs")
+        # haritada olmayan etiket olduğu gibi döner, sorgu boş kalmaz
+        self.assertEqual(self.extractor.turkish_name("bilinmeyen"), "bilinmeyen")
+
+    def test_category_and_ingredient_sources(self):
+        # sandviç: üst kavramdan kategori, meronym ilişkisinden bileşen gelir
+        words = self.extract("sandwich")
+        self.assertIn("aperatif yemek", words)
+        self.assertIn("ekmek", words)
+        self.assertLessEqual(len(words), config.MAX_KEYWORDS)
+
+    def test_secondary_object_adds_scene_theme(self):
+        words = self.extract("bus", ["person"])
+        self.assertIn("toplu taşıma", words)
+        self.assertIn("insan", words)
+
+    def test_no_duplicates_and_cap(self):
+        words = self.extract("apple", ["banana", "orange", "guitar", "dog"])
+        self.assertEqual(len(words), len(set(words)))
+        self.assertLessEqual(len(words), config.MAX_KEYWORDS)
+
+    def test_sense_selection_skips_nonphysical_meanings(self):
+        # dalmatian: ilk anlam Dalmaçyalı insan; alan filtresi köpeğe düşürmeli
+        self.assertIn("köpek", self.extract("dalmatian"))
+        # date: takvim anlamı atlanır, meyve anlamı seçilir
+        self.assertIn("meyve", self.extract("date"))
+        # mouse: hayvan anlamı; aygıt temaları karışmamalı
+        words = self.extract("mouse")
+        self.assertIn("hayvan", words)
+        self.assertNotIn("teknoloji", words)
+
+    def test_scoring_drops_distant_leaks(self):
+        # wheeled_vehicle -> container kenarından sızan uzak tema elenmeli
+        self.assertNotIn("ev eşyası", self.extract("ambulance"))
+
+    def test_meronym_requires_sense_match(self):
+        # gaydanın "drone" parçası uçan cihaz çevirisine düşmemeli
+        self.assertNotIn("drone", self.extract("bagpipe"))
+        # balonun "envelope" gövdesi mektup zarfı çevirisine düşmemeli
+        self.assertNotIn("zarf", self.extract("balloon"))
+
+    def test_suggestion_keywords_filtered_and_labeled(self):
+        extractor = KeywordExtractor()
+        extractor.load()
+        extractor._fetch_suggestions = lambda q: [
+            f"{q} kadın", f"{q} fiyatları", f"{q} 2024", f"{q} su geçirmez"]
+        scored = extractor.extract_scored("backpack", [])
+        by_word = {item.word: item for item in scored}
+        self.assertIn("kadın", by_word)
+        self.assertEqual(by_word["kadın"].source, "arama önerisi")
+        self.assertNotIn("fiyatları", by_word)  # gürültü süzgeci
+        self.assertNotIn("2024", by_word)  # rakamlı ek süzgeci
 
 
 class ImageLoaderTest(unittest.TestCase):

@@ -557,7 +557,6 @@ horse
 horse buggy
 horse carriage
 hose
-hot dog
 hot sauce
 hot-air balloon
 hotplate
@@ -684,7 +683,7 @@ mirror
 mitten
 mixer
 money
-monitor (computer equipment) computer monitor
+monitor
 monkey
 mop
 motor

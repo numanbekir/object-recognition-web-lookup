@@ -13,6 +13,7 @@ DETECTOR_WEIGHTS = "yolov8s-worldv2.pt"
 DETECTOR_CUSTOM = MODELS_DIR / "detector-lvis.pt"
 VOCABULARY_PATH = DATA_DIR / "vocabulary.txt"
 CONFIDENCE_THRESHOLD = 0.20
+IOU_DEDUP_THRESHOLD = 0.6
 
 # Görüntü
 MIN_IMAGE_SIDE = 64
@@ -24,7 +25,10 @@ MAX_INPUT_LENGTH = 2000
 # Anahtar kelime
 THEME_MAP_PATH = DATA_DIR / "theme_map.json"
 OBJECT_NAMES_TR_PATH = DATA_DIR / "object_names_tr.json"
+CONCEPT_STATS_PATH = DATA_DIR / "concept_stats.json"
 MAX_KEYWORDS = 6
+MAX_SUGGESTION_KEYWORDS = 2
+SUGGESTION_TIMEOUT = 3
 
 # Arama ve içerik
 SEARCH_REGION = "tr-tr"

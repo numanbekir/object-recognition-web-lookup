@@ -11,11 +11,13 @@ SOURCE_URL = ("https://raw.githubusercontent.com/facebookresearch/"
               "detectron2/main/detectron2/data/datasets/lvis_v1_categories.py")
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "data" / "vocabulary.txt"
 
-# LVIS'te olmayan, elle eklenen nesneler
-EXTRA_TERMS = ["hot dog"]
+# LVIS'te olmayan, elle eklenen nesneler (boş tutulur; gerçek bir ihtiyaç
+# gözlemlenirse eklenir, ekleme prosedürü için proje notlarına bakılır)
+EXTRA_TERMS = []
 
 
 def clean(name: str) -> str:
+    name = name.split()[0]  # boşluk sonrası eşanlamlı yazımlar atılır
     name = re.sub(r"_\(.*\)$", "", name)  # flip-flop_(sandal) -> flip-flop
     return name.replace("_", " ").strip()
 

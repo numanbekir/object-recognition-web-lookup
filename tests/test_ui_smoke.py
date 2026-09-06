@@ -16,9 +16,14 @@ class DummyDetector:
         pass
 
 
+class DummyKeywords:
+    def load(self):
+        pass
+
+
 class UiSmokeTest(unittest.IsolatedAsyncioTestCase):
     async def test_app_mounts(self):
-        app = ChatApp(None, DummyDetector(), None, None, None)
+        app = ChatApp(None, DummyDetector(), DummyKeywords(), None, None, None)
         async with app.run_test() as pilot:
             await pilot.pause()
             self.assertTrue(app.query_one("#inbox"))
