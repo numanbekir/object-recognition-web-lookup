@@ -1,4 +1,4 @@
-# Numan Bekir Özçelik - 05.09.2026
+# Numan Bekir Özçelik - 06.09.2026
 """Arayüzün headless açılıp kapanabildiğini doğrular; CSS hataları burada yakalanır"""
 
 import unittest
@@ -6,8 +6,8 @@ import unittest
 from app.ui import ChatApp
 
 
-class DummyDetector:
-    vocab_size = 1199
+class DummyVision:
+    vocab_size = 1200
 
     def is_ready_on_disk(self):
         return True
@@ -16,14 +16,9 @@ class DummyDetector:
         pass
 
 
-class DummyKeywords:
-    def load(self):
-        pass
-
-
 class UiSmokeTest(unittest.IsolatedAsyncioTestCase):
     async def test_app_mounts(self):
-        app = ChatApp(None, DummyDetector(), DummyKeywords(), None, None, None)
+        app = ChatApp(None, DummyVision(), None, None, None, None, None)
         async with app.run_test() as pilot:
             await pilot.pause()
             self.assertTrue(app.query_one("#inbox"))

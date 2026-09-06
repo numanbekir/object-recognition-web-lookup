@@ -189,6 +189,9 @@
   "fırın",
   "kahvaltı"
  ],
+ "breakfast": [
+  "kahvaltı"
+ ],
  "broom": [
   "temizlik",
   "ev gereci"
@@ -279,6 +282,9 @@
   "oyun",
   "strateji"
  ],
+ "cheese": [
+  "peynir"
+ ],
  "cherry": [
   "meyve",
   "vitamin"
@@ -297,6 +303,9 @@
  ],
  "cincture": [
   "giyim aksesuarı"
+ ],
+ "classical_music": [
+  "klasik müzik"
  ],
  "cleaning_implement": [
   "temizlik"
@@ -352,13 +361,19 @@
   "bilgisayar",
   "teknoloji"
  ],
+ "concert": [
+  "konser"
+ ],
  "condiment": [
-  "sos",
-  "lezzet"
+  "sos"
  ],
  "cone": [
   "trafik",
   "uyarı"
+ ],
+ "consumer_electronics": [
+  "elektronik",
+  "teknoloji"
  ],
  "container": [
   "ev eşyası"
@@ -369,6 +384,10 @@
  "cookie": [
   "tatlı",
   "fırın"
+ ],
+ "cooking": [
+  "yemek pişirme",
+  "mutfak"
  ],
  "cooking_utensil": [
   "mutfak gereci"
@@ -450,6 +469,9 @@
  "dental_floss": [
   "diş bakımı"
  ],
+ "dessert": [
+  "tatlı"
+ ],
  "dish": [
   "yemek tarifi"
  ],
@@ -468,6 +490,9 @@
  "doorknob": [
   "kapı",
   "hırdavat"
+ ],
+ "dough_based_food": [
+  "hamurlu yemek"
  ],
  "dress": [
   "giyim",
@@ -533,6 +558,9 @@
   "kırtasiye",
   "okul"
  ],
+ "ergonomic_design": [
+  "ergonomi"
+ ],
  "eyepatch": [
   "sağlık"
  ],
@@ -543,6 +571,13 @@
  "fan": [
   "serinleme",
   "ev aleti"
+ ],
+ "fashion_accessory": [
+  "aksesuar",
+  "moda"
+ ],
+ "fast_food": [
+  "fast food"
  ],
  "fastener": [
   "hırdavat"
@@ -587,6 +622,10 @@
   "balıkçılık",
   "olta"
  ],
+ "fitness": [
+  "fitness",
+  "spor"
+ ],
  "flagpole": [
   "bayrak"
  ],
@@ -608,8 +647,7 @@
   "bahçe"
  ],
  "food": [
-  "yemek",
-  "beslenme"
+  "yemek"
  ],
  "footwear": [
   "ayakkabı"
@@ -639,6 +677,10 @@
   "uyku",
   "mobilya"
  ],
+ "gadget": [
+  "teknoloji",
+  "cihaz"
+ ],
  "gag": [
   "aksesuar"
  ],
@@ -649,6 +691,9 @@
  "gameboard": [
   "oyun",
   "eğlence"
+ ],
+ "garden": [
+  "bahçe"
  ],
  "garden_hose": [
   "bahçe",
@@ -684,6 +729,10 @@
   "meyve",
   "bağ"
  ],
+ "grilled_meat": [
+  "ızgara",
+  "et"
+ ],
  "guitar": [
   "müzik aleti",
   "akor",
@@ -716,6 +765,9 @@
  "handle": [
   "hırdavat"
  ],
+ "handmade": [
+  "el yapımı"
+ ],
  "handwear": [
   "giyim aksesuarı"
  ],
@@ -744,6 +796,9 @@
  "headstall": [
   "binicilik"
  ],
+ "healthy_food": [
+  "sağlıklı beslenme"
+ ],
  "heater": [
   "ısıtma",
   "ev aleti",
@@ -761,6 +816,14 @@
  ],
  "home_appliance": [
   "ev aleti"
+ ],
+ "home_cooking": [
+  "ev yemeği",
+  "tarif"
+ ],
+ "home_decor": [
+  "dekorasyon",
+  "ev"
  ],
  "honey": [
   "kahvaltı",
@@ -803,6 +866,9 @@
   "ütü",
   "ev işi"
  ],
+ "italian_cuisine": [
+  "İtalyan mutfağı"
+ ],
  "jacket": [
   "giyim",
   "moda"
@@ -815,6 +881,9 @@
   "takı",
   "aksesuar"
  ],
+ "ketchup": [
+  "ketçap"
+ ],
  "kettle": [
   "çay",
   "su ısıtıcı"
@@ -826,6 +895,9 @@
  "keycard": [
   "güvenlik",
   "erişim"
+ ],
+ "kitchen": [
+  "mutfak"
  ],
  "kitchen_appliance": [
   "mutfak",
@@ -873,6 +945,10 @@
   "deri",
   "malzeme"
  ],
+ "leather_goods": [
+  "deri",
+  "aksesuar"
+ ],
  "lego": [
   "oyuncak",
   "çocuk"
@@ -902,6 +978,9 @@
  "lightning_rod": [
   "elektrik",
   "güvenlik"
+ ],
+ "luxury": [
+  "lüks"
  ],
  "machine": [
   "makine"
@@ -949,6 +1028,10 @@
  "medical_instrument": [
   "sağlık"
  ],
+ "mens_fashion": [
+  "erkek modası",
+  "moda"
+ ],
  "microphone": [
   "ses kaydı",
   "yayın"
@@ -969,6 +1052,10 @@
   "dekorasyon",
   "ev eşyası",
   "ev"
+ ],
+ "mobile_device": [
+  "mobil",
+  "taşınabilir"
  ],
  "mollusk": [
   "deniz canlısı"
@@ -1002,6 +1089,9 @@
   "sebze",
   "yemek"
  ],
+ "music": [
+  "müzik"
+ ],
  "musical_instrument": [
   "müzik",
   "enstrüman"
@@ -1033,6 +1123,10 @@
   "kürek",
   "denizcilik"
  ],
+ "office": [
+  "ofis",
+  "iş"
+ ],
  "olive_oil": [
   "mutfak",
   "sağlıklı beslenme"
@@ -1043,6 +1137,10 @@
  ],
  "optical_instrument": [
   "optik"
+ ],
+ "outdoor_activity": [
+  "outdoor",
+  "doğa sporu"
  ],
  "overgarment": [
   "dış giyim"
@@ -1120,9 +1218,15 @@
   "insan",
   "yaşam"
  ],
+ "pet": [
+  "evcil hayvan"
+ ],
  "phonograph_record": [
   "müzik",
   "koleksiyon"
+ ],
+ "photography": [
+  "fotoğrafçılık"
  ],
  "piano": [
   "klasik müzik",
@@ -1264,6 +1368,12 @@
  "saddle_blanket": [
   "binicilik"
  ],
+ "sauce": [
+  "sos"
+ ],
+ "sausage": [
+  "sosis"
+ ],
  "saxophone": [
   "caz",
   "müzik aleti"
@@ -1276,6 +1386,9 @@
   "giyim",
   "kış",
   "aksesuar"
+ ],
+ "school": [
+  "okul"
  ],
  "scientific_instrument": [
   "bilim"
@@ -1347,9 +1460,17 @@
   "oyun parkı",
   "çocuk"
  ],
+ "smartphone": [
+  "akıllı telefon",
+  "mobil"
+ ],
  "snack_food": [
   "aperatif yemek",
   "atıştırmalık"
+ ],
+ "sneaker": [
+  "spor ayakkabı",
+  "spor"
  ],
  "snowboard": [
   "kış sporu"
@@ -1409,6 +1530,9 @@
   "meyve",
   "vitamin"
  ],
+ "street_food": [
+  "sokak lezzeti"
+ ],
  "stringed_instrument": [
   "müzik",
   "enstrüman"
@@ -1455,6 +1579,9 @@
  "teapot": [
   "çay",
   "demleme"
+ ],
+ "technology": [
+  "teknoloji"
  ],
  "teddy_bear": [
   "oyuncak",
@@ -1517,6 +1644,9 @@
  "train": [
   "demiryolu"
  ],
+ "travel": [
+  "seyahat"
+ ],
  "tray": [
   "mutfak",
   "sunum"
@@ -1570,6 +1700,10 @@
   "nostalji",
   "kayıt"
  ],
+ "vintage": [
+  "nostalji",
+  "antika"
+ ],
  "violin": [
   "yaylı çalgı",
   "klasik müzik",
@@ -1620,6 +1754,10 @@
  "white_goods": [
   "beyaz eşya"
  ],
+ "wildlife": [
+  "yaban hayatı",
+  "doğa"
+ ],
  "wind_instrument": [
   "müzik",
   "enstrüman"
@@ -1627,6 +1765,10 @@
  "windsock": [
   "havacılık",
   "rüzgar"
+ ],
+ "womens_fashion": [
+  "kadın modası",
+  "moda"
  ],
  "wooden_leg": [
   "tarih"

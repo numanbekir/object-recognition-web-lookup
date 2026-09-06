@@ -1,6 +1,5 @@
-# Numan Bekir Özçelik - 04.09.2026
-"""Proje kedni terminal arayüzü oluşturuldu,
-responsive tasarım """
+# Numan Bekir Özçelik - 06.09.2026
+"""Terminal arayüzü (Textual). İş akışını bilmez, process_turn'ü çağırır."""
 
 import re
 import time
@@ -137,12 +136,11 @@ class ChatApp(App):
     #status Static.warn { color: $warning; }
     """
 
-    def __init__(self, loader, detector, keywords, session, storage, process_turn,
+    def __init__(self, loader, vision, session, storage, process_turn,
                  classify_input, tools, debug=False, storage_note=None):
         super().__init__()
         self.loader = loader
-        self.detector = detector
-        self.keywords = keywords
+        self.vision = vision
         self.session = session
         self.storage = storage
         self.storage_note = storage_note
@@ -179,10 +177,10 @@ class ChatApp(App):
             self.add_line(self.storage_note, "dim")
         self.query_one("#inbox", SourceInput).focus()
         self.set_busy(True)  # tek bilgi kaynağı durum satırıdır
-        if self.detector.is_ready_on_disk():
+        if self.vision.is_ready_on_disk():
             self.status_line(0, "Model yükleniyor...")
         else:
-            self.status_line(0, "Model dosyaları denetleniyor...")
+            self.status_line(0, "Model hazırlanıyor (ilk çalıştırma)...")
         self.load_model()
 
     # --- belirteç, kaynak metnin içinde yaşar ---
@@ -273,23 +271,22 @@ class ChatApp(App):
         self.query_one("#status1", Static).remove_class("warn")
         self.status_line(0, self._status_base)
 
-    def _load_progress(self, key, index, total, label, done, size):
-        # worker thread'inden gelir, adım sırası plandan geldiği için satırlar sabittir
-        if key == "embed":
-            self.call_from_thread(self._start_embed_status, f"[{index}/{total}] {label}")
+    def _load_progress(self, stage, label, done=None, total=None):
+        # worker thread'inden gelir; indirme MB ilerlemesi, kodlama geçen süre gösterir
+        if stage == "encode":
+            self.call_from_thread(self._start_embed_status, label)
             return
-        text = f"[{index}/{total}] {label}"
-        if size:
-            text += f" · {done / 1e6:.1f}/{size / 1e6:.1f} MB  %{done * 100 // size}"
-        elif done:
-            text += f" · {done / 1e6:.1f} MB"
-        self.call_from_thread(self._set_download_status, index - 1, text)
+        if self._embed_timer is not None:
+            self.call_from_thread(self._stop_embed_timer)
+        text = label
+        if total:
+            text += f" · {done / 1e6:.1f}/{total / 1e6:.1f} MB  %{done * 100 // total}"
+        self.call_from_thread(self.status_line, 0, text)
 
-    def _set_download_status(self, slot: int, text: str):
-        if self._status_phase != "download":
-            self._status_phase = "download"
-            self.status_reset()  # "denetleniyor" satırı görev satırlarına yerini bırakır
-        self.status_line(slot, text)
+    def _stop_embed_timer(self):
+        if self._embed_timer is not None:
+            self._embed_timer.stop()
+            self._embed_timer = None
 
     def _start_embed_status(self, label: str):
         self._status_phase = "embed"
@@ -304,11 +301,9 @@ class ChatApp(App):
         self.status_line(0, f"{self._embed_label} · geçen süre {minutes}:{seconds:02d}")
 
     def _finish_status(self):
-        if self._embed_timer is not None:
-            self._embed_timer.stop()
-            self._embed_timer = None
+        self._stop_embed_timer()
         self._status_phase = "ready"
-        self._status_base = f"Model hazır ({self.detector.vocab_size} kavram)."
+        self._status_base = f"Model hazır ({self.vision.vocab_size} kavram)."
         self.status_reset(self._status_base)
 
     # --- ekrana yazma yardımcıları ---
@@ -357,8 +352,7 @@ class ChatApp(App):
     @work(thread=True)
     def load_model(self):
         try:
-            self.detector.load(progress=self._load_progress)
-            self.keywords.load()
+            self.vision.load(progress=self._load_progress)
         except Exception as error:
             message = ("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı "
                        "gerekiyor, bağlantını kontrol edip tekrar dener misin?")
@@ -450,9 +444,8 @@ class ChatApp(App):
     def run_turn(self, kind: str, value: str):
         start = time.perf_counter()
         try:
-            self.process_turn(kind, value, self.loader, self.detector, self.keywords,
-                              self.session, self.storage, self.emit, self.emit_debug,
-                              self.emit_context)
+            self.process_turn(kind, value, self.loader, self.vision, self.session,
+                              self.storage, self.emit, self.emit_debug, self.emit_context)
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın
             self.emit("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")

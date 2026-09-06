@@ -1,8 +1,10 @@
-# Numan Bekir Özçelik - 04.09.2026
-"""Sayfaları indirir, işe yarar cümleleri ayıklar.
+# Numan Bekir Özçelik - 06.09.2026
+"""Sayfaları indirir, objeyle en alakalı paragrafları seçer.
 
-Kural filtresi, eğitilmiş sınıflandırıcı ve alaka skoru üç ayrı katmandır.
-Kalan cümleler kaynaklar arası tekilleştirmeden geçer.
+Cümle cümle kolaj yerine bütün paragraf alınır, böylece metin okunabilir
+kalır. Aday paragraflar birkaç sade kuralla elenir, sonra objenin adı ve
+anahtar kelimelerden kurulan sorguya TF-IDF kosinüs benzerliğiyle
+sıralanır. Kaynak başına bir paragraf, benzer paragraflar teklenir.
 """
 
 import re
@@ -12,72 +14,38 @@ import requests
 
 from . import config
 
-SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+|(?<=[?!])(?=[A-ZÇĞİÖŞÜ])")
-MIN_SENTENCE_CHARS = 60
-MAX_SENTENCE_CHARS = 400
 TURKISH_CHARS = set("çğıöşü")
-
-# pazarlama, navigasyon ve site kalıpları
-CTA_PATTERNS = (
-    "tıkla", "satın al", "sepet", "üye ol", "abone", "kayıt ol", "giriş yap",
-    "çerez", "gizlilik", "kvkk", "indirim", "kampanya", "ücretsiz kargo",
-    "hemen al", "sipariş", "stok", "fiyat", " tl", "keşfet", "takip et",
-    "paylaş", "yorum yap", "devamını oku", "tüm hakları", "©", "e-posta",
-    "bülten", "reklam", "iletişim", "hakkımızda", "web sitemiz", "sitemizde",
-    "satılık", "satılan", "satış", "mağaza", "garanti",
-    "firma", "kurumsal", "sektör",
-    " ilan", ".com", ".net", "www.",
-)
-# birinci şahıs veya okuyucuya seslenen kalıplar ve ekler
-PERSONAL_PATTERNS = (
-    "ben ", "benim", "bizim", "bize", "biz ", "sizin", "size ", "sizi ", "sizler",
-    "düşünüyorum", "bence", "kanımca",
-    "sınız", "siniz", "sunuz", "sünüz", "sanız", "seniz",
-    "ınız", "iniz", "unuz", "ünüz",
-    "yoruz",  # birinci çoğul anlatı, blog ve tarif dili
-)
-MOJIBAKE_CHARS = "ÃÄÅ"  # bozuk kodlanmış sayfalardan sızan işaretler
-# emir kipiyle biten tarif adımları
-IMPERATIVE_ENDINGS = re.compile(
-    r"\b\w+(ın|in|un|ün|ınız|iniz|unuz|ünüz|alım|elim)\.$")
-# gövdeye yapışan büyük harfli başlık dizisi
-TITLE_GLUE = re.compile(
-    r"(?:[A-ZÇĞİÖŞÜ][a-zçğıöşü]+\s+){3}[A-ZÇĞİÖŞÜ][a-zçğıöşü]+")
-# önceki cümleye yaslanan başlangıçlar tek başına kopuk kalır
-DEPENDENT_STARTS = (
-    "bu ", "bunlar", "bunun", "buna", "böylece", "ayrıca", "ancak", "ama ",
-    "fakat", "yani", "çünkü", "oysa", "üstelik", "o yüzden", "bu yüzden",
-    "hatta", "örneğin", "ise ", "de ", "da ",
-)
-
+WORD = re.compile(r"[a-zçğıöşüâîû]+")
+STEM_LENGTH = 5  # Türkçe ekleri hoş görmek için kelimelerin ilk beş harfi kıyaslanır
 STOPWORDS = {
-    "ve", "veya", "ile", "bir", "bu", "şu", "o", "da", "de", "ki", "mi", "mı",
-    "mu", "mü", "için", "gibi", "kadar", "çok", "daha", "en", "ama", "fakat",
-    "ancak", "ise", "olarak", "olan", "her", "hiç", "ya", "hem", "çünkü",
-    "yani", "sonra", "önce", "göre", "kendi", "tüm", "bütün", "bazı", "diğer",
-    "aynı", "başka", "olur", "olabilir", "vardır", "yoktur", "ya da",
+    "ve", "veya", "ile", "bir", "bu", "şu", "da", "de", "ki", "mi", "mı", "mu", "mü",
+    "için", "gibi", "kadar", "çok", "daha", "en", "ama", "ancak", "ise", "olarak",
+    "olan", "her", "ya", "hem", "çünkü", "yani", "sonra", "önce", "göre", "kendi",
+    "tüm", "bazı", "diğer", "aynı", "başka", "olur", "vardır",
 }
+# site kalıntısı olduğu kesin olan birkaç işaret, gerisini alaka sıralaması halleder
+NOISE_PATTERNS = ("çerez", "kvkk", "sepet", "giriş yap", "üye ol", "©", "tıkla",
+                  "gizlilik politikası", "tüm hakları", "sitemiz", "web sitemiz")
 
 
-class Sentence:
-    def __init__(self, text: str, source: str, score: float = 0.0,
-                 context_hits: int = 0):
+class Passage:
+    def __init__(self, text: str, source: str, url: str, score: float = 0.0):
         self.text = text
-        self.source = source  # dipnot ve kayıt için domain
+        self.source = source  # kaynak domain
+        self.url = url
         self.score = score
-        self.context_hits = context_hits  # sohbet bağlamına değen kök sayısı
+
+
+def stems(text: str) -> list:
+    return [word[:STEM_LENGTH] for word in WORD.findall(text.lower())
+            if len(word) > 2 and word not in STOPWORDS]
 
 
 class ContentExtractor:
-    def __init__(self):
-        self._classifier = None
-        self._classifier_checked = False
-        self.last_classifier_drops = 0
-
     # --- sayfa indirme ---
 
     def fetch_pages(self, results: list) -> list:
-        """Açılan sayfaların ana metnini döndürür, açılamayan sessizce atlanır."""
+        """(sonuç, ana metin) çiftleri döndürür, açılamayan sayfa sessizce atlanır."""
         import trafilatura  # import ağır olduğu için fonksiyon içinde
 
         def fetch(result):
@@ -86,10 +54,10 @@ class ContentExtractor:
                                         headers={"User-Agent": "Mozilla/5.0"})
                 if response.status_code != 200:
                     return None
-                text = trafilatura.extract(response.text)
+                # ham bayt verilir, karakter kodlamasını trafilatura tespit eder
+                text = trafilatura.extract(response.content, include_comments=False)
                 if text:
-                    # wikipedia dipnot ve düzenleme kalıntıları temizlenir
-                    text = re.sub(r"\[[^\]]{0,40}\]", "", text)
+                    text = re.sub(r"\[\d+\]", "", text)  # dipnot kalıntıları
                 return (result, text) if text else None
             except Exception:
                 return None
@@ -98,123 +66,72 @@ class ContentExtractor:
             pages = list(pool.map(fetch, results))
         return [page for page in pages if page]
 
-    # --- cümle seçimi ---
+    # --- paragraf seçimi ---
 
-    def select_sentences(self, pages: list, object_tr: str, keywords: list,
-                         context_words: list = ()) -> list:
-        anchor = object_tr.lower()
-        # ek toleransı için kök benzeri karşılaştırma yapılır
-        keyword_stems = [word.lower()[:5] for word in keywords if len(word) >= 4]
-        # bağlam eşiği aşamaz, yalnız kapıyı geçen cümleler arasında öncelik verir
-        context_stems = [word.lower()[:5] for word in context_words if len(word) >= 4]
-
-        selected = []
-        self.last_classifier_drops = 0
+    def select_passages(self, pages: list, object_tr: str, keywords: list,
+                        context_words: list = (), limit: int = None) -> list:
+        limit = config.MAX_PASSAGES if limit is None else limit
+        anchor_stems = stems(object_tr)
+        candidates = []
         for result, text in pages:
-            for raw in SENTENCE_SPLIT.split(text):
-                sentence = " ".join(raw.split())
-                if not self._passes_rules(sentence):
-                    continue
-                lower = sentence.lower()
-                score = self._relevance(lower, anchor, keyword_stems)
-                if score <= 0:
-                    continue
-                if not self._classifier_approves(sentence):
-                    self.last_classifier_drops += 1
-                    continue
-                hits = sum(1 for stem in context_stems if stem in lower)
-                selected.append(Sentence(sentence, result.domain, score, hits))
-        return self._deduplicate(selected)
+            for raw in text.split("\n"):
+                paragraph = " ".join(raw.split())
+                if self._passes_rules(paragraph, anchor_stems):
+                    candidates.append(Passage(paragraph, result.domain, result.url))
+        if not candidates:
+            return []
 
-    def _passes_rules(self, sentence: str) -> bool:
-        if not MIN_SENTENCE_CHARS <= len(sentence) <= MAX_SENTENCE_CHARS:
-            return False
-        if not sentence.endswith("."):  # soru, ünlem ve yarım satırlar elenir
-            return False
-        if not sentence[0].isupper():
-            return False
-        lower = sentence.lower()
-        # çift dil denetimi, yabancı dildeki ve bozuk kodlanmış cümleler elenir
-        if not TURKISH_CHARS.intersection(lower):
-            return False
-        if not STOPWORDS.intersection(re.findall(r"[a-zçğıöşü]+", lower)):
-            return False
-        # kısmen bozuk kodlanmış cümle dil denetimini geçebiliyor
-        if any(ch in sentence for ch in MOJIBAKE_CHARS):
-            return False
-        # arama kalıbını yankılayan seo giriş cümleleri
-        if " nedir" in lower:
-            return False
-        if ":" in sentence or "|" in sentence:  # başlık ve menü kalıntıları
-            return False
-        if IMPERATIVE_ENDINGS.search(sentence):
-            return False
-        if TITLE_GLUE.search(sentence):
-            return False
-        if any(pattern in lower for pattern in CTA_PATTERNS):
-            return False
-        if any(pattern in lower for pattern in PERSONAL_PATTERNS):
-            return False
-        if any(lower.startswith(start) for start in DEPENDENT_STARTS):
-            return False
-        return True
-
-    def _relevance(self, lower: str, anchor: str, keyword_stems: list) -> float:
-        """Obje adı zorunludur, kelimeler destekler.
-
-        Çapasız cümle kelime kökleriyle içeri giremez. Destek ifadesi
-        alakasız bir kavramın sayfasını getirdiğinde o sayfanın cümleleri
-        bu kapıda ölür.
-        """
-        # çok kelimeli adın her parçası ayrı aranır
-        anchor_parts = [part[:5] for part in anchor.split() if len(part) >= 3]
-        if anchor_parts and not all(part in lower for part in anchor_parts):
-            return 0.0
-        score = 2.0 if anchor_parts else 0.0
-        score += sum(0.5 for stem in keyword_stems if stem in lower)
-        return score if score >= 1.0 else 0.0
-
-    def _classifier_approves(self, sentence: str) -> bool:
-        # eğitilmiş sınıflandırıcı varsa dolgu cümlelerini eler
-        # dolgu kararı yalnız yüksek güvenle verilir
-        if not self._classifier_checked:
-            self._classifier_checked = True
-            if config.SENTENCE_CLASSIFIER_PATH.exists():
-                try:
-                    import joblib
-                    self._classifier = joblib.load(config.SENTENCE_CLASSIFIER_PATH)
-                except Exception:
-                    self._classifier = None
-        if self._classifier is None:
-            return True
-        try:
-            filler_probability = self._classifier.predict_proba([sentence])[0][0]
-            return filler_probability < config.CLASSIFIER_FILLER_THRESHOLD
-        except Exception:
-            return True
-
-    # --- kaynaklar arası tekilleştirme ---
+        query = " ".join([object_tr, *keywords, *context_words])
+        for passage, score in zip(candidates, self._similarity(query, candidates)):
+            passage.score = score
+        return self._pick(sorted(candidates, key=lambda p: -p.score), limit)
 
     @staticmethod
-    def _content_words(text: str) -> set:
-        words = re.findall(r"[a-zçğıöşü]+", text.lower())
-        return {word for word in words if len(word) > 2 and word not in STOPWORDS}
+    def _passes_rules(paragraph: str, anchor_stems: list) -> bool:
+        if not config.MIN_PASSAGE_CHARS <= len(paragraph) <= config.MAX_PASSAGE_CHARS:
+            return False
+        if not paragraph.endswith((".", "!", "?")):  # yarım kalmış satırlar
+            return False
+        if not paragraph[0].isupper():  # madde işareti, tarih ve başlık artıkları
+            return False
+        if paragraph.count("?") >= 3:  # soru yığını SEO girişleri bilgi vermez
+            return False
+        lower = paragraph.lower()
+        if not TURKISH_CHARS.intersection(lower):  # bozuk kodlama
+            return False
+        # Türkçe metin bağlaç ve edatlarını mutlaka kullanır, yabancı dil burada elenir
+        if len(STOPWORDS.intersection(WORD.findall(lower))) < 2:
+            return False
+        if any(noise in lower for noise in NOISE_PATTERNS):
+            return False
+        # paragraf objeden söz etmeli, çok kelimeli adın bir parçası yeter
+        return any(stem in lower for stem in anchor_stems)
 
-    def _deduplicate(self, sentences: list) -> list:
-        # kopya içerik yaygın olduğu için aynı bilgi ikinci kez sunulmaz
-        kept = []
-        kept_words = []
-        for sentence in sorted(sentences, key=lambda s: -s.score):
-            words = self._content_words(sentence.text)
-            if not words:
+    @staticmethod
+    def _similarity(query: str, passages: list) -> list:
+        """Sorgu ile her paragraf arasındaki TF-IDF kosinüs benzerliği."""
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        vectorizer = TfidfVectorizer(analyzer=stems)
+        matrix = vectorizer.fit_transform([p.text for p in passages])
+        query_vector = vectorizer.transform([query])
+        return cosine_similarity(query_vector, matrix)[0].tolist()
+
+    @staticmethod
+    def _pick(ranked: list, limit: int) -> list:
+        """Kaynak başına bir paragraf alır, aynı bilgiyi tekrar edenleri atlar."""
+        chosen, used_sources, chosen_stems = [], set(), []
+        for passage in ranked:
+            if passage.source in used_sources:
                 continue
-            duplicate = False
-            for other in kept_words:
-                union = len(words | other)
-                if union and len(words & other) / union >= config.JACCARD_THRESHOLD:
-                    duplicate = True
-                    break
-            if not duplicate:
-                kept.append(sentence)
-                kept_words.append(words)
-        return kept
+            words = set(stems(passage.text))
+            if any(len(words & other) / len(words | other) >= config.JACCARD_THRESHOLD
+                   for other in chosen_stems if words | other):
+                continue
+            chosen.append(passage)
+            used_sources.add(passage.source)
+            chosen_stems.append(words)
+            if len(chosen) >= limit:
+                break
+        return chosen

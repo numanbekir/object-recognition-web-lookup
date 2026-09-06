@@ -1,21 +1,27 @@
-# Numan Bekir Özçelik - 04.09.2026
-"""Sorguyu kurar ve ddgs ile arar.
+# Numan Bekir Özçelik - 06.09.2026
+"""Web araması: Vikipedi tanımı ve DuckDuckGo sonuçları.
 
-    sorgu = objenin türkçe adı + destek kelimesi + bağlam + kullanıcı metni
-    sonuçlar süzülür, domain başına tek sayfa alınır
+    sorgu = objenin Türkçe adı [+ bağlam kelimesi] [+ kullanıcı metni]
+    Vikipedi her turda tanım paragrafı sağlar, arama sonuçları detay getirir.
 """
 
+import re
 from urllib.parse import urlparse
+
+import requests
 
 from . import config
 
+WIKI_API = "https://tr.wikipedia.org/w/api.php"
+USER_AGENT = "GoruntuluSohbet/1.0 (ogrenci projesi)"
+
 # içerik sayfası vermeyen alanlar
 DOMAIN_BLACKLIST = (
+    "wikipedia.org",  # Vikipedi ayrı kanaldan alınır, ikinci kez gelmesin
+    "grokipedia.",  # yapay zeka üretimi, çoğu zaman İngilizce
     "pinterest.", "instagram.", "facebook.", "twitter.", "x.com", "tiktok.",
-    "youtube.", "youtu.be", "linkedin.", "reddit.", "pbs.twimg",
-    "trendyol.", "hepsiburada.", "n11.", "amazon.", "teknosa.", "mediamarkt.",
-    "vatanbilgisayar.", "gittigidiyor.", "akakce.", "cimri.", "epey.",
-    "sahibinden.", "letgo.", "dolap.", "ciceksepeti.",
+    "youtube.", "youtu.be", "linkedin.", "reddit.",
+    "trendyol.", "hepsiburada.", "n11.", "amazon.", "sahibinden.", "letgo.",
 )
 
 
@@ -27,46 +33,22 @@ class SearchResult:
 
 
 class WebSearcher:
-    def support_term(self, object_tr: str, keywords: list) -> str:
-        """Sorguya eşlik edecek tek destek kelimesini seçer, çapayı içerenler atlanır."""
-        for word in keywords:
-            if object_tr in word or word in object_tr:
-                continue
-            return word
-        return ""
-
-    def build_query(self, object_tr: str, keywords: list,
-                    context_terms: list = (), user_text: str = "") -> str:
-        """Objenin adı sorgudan hiç çıkmaz."""
-        # her ek kelime aramayı kendi alanına çeker, tek destek yeterli
+    @staticmethod
+    def build_query(object_tr: str, context_word: str = "", user_text: str = "") -> str:
+        """Objenin adı sorgudan hiç çıkmaz, bağlam ve kullanıcı metni eklenir."""
         terms = [object_tr]
-        for word in keywords:
-            if object_tr in word or any(word in term for term in terms):
-                continue
-            terms.append(word)
-            if len(terms) >= 2:
-                break
-        for term in context_terms:
-            if term not in terms:
-                terms.append(term)
+        if context_word and context_word.lower() not in object_tr.lower():
+            terms.append(context_word)
         if user_text:
             terms.append(user_text)
         return " ".join(terms)
 
     def search(self, query: str) -> list:
-        """Süzülmüş sonuç listesi döndürür."""
+        """Süzülmüş sonuç listesi döndürür, servis hatası yukarı fırlar."""
         from ddgs import DDGS  # import ağır olduğu için fonksiyon içinde
 
-        rows = None
-        for attempt in (1, 2):  # geçici hataya ikinci deneme
-            try:
-                rows = DDGS().text(query, region=config.SEARCH_REGION,
-                                   max_results=config.SEARCH_RESULT_COUNT)
-                break
-            except Exception:
-                if attempt == 2:
-                    raise
-
+        rows = DDGS().text(query, region=config.SEARCH_REGION,
+                           max_results=config.SEARCH_RESULT_COUNT)
         results, seen_domains = [], set()
         for row in rows or []:
             url = row.get("href") or ""
@@ -82,3 +64,27 @@ class WebSearcher:
             seen_domains.add(result.domain)
             results.append(result)
         return results
+
+    def wikipedia(self, object_tr: str):
+        """Türkçe Vikipedi'den giriş paragrafını (metin, url) olarak döndürür, yoksa None."""
+        params = {"action": "query", "generator": "search", "gsrsearch": object_tr,
+                  "gsrlimit": 3, "prop": "extracts|info", "exintro": 1, "explaintext": 1,
+                  "inprop": "url", "format": "json"}
+        try:
+            response = requests.get(WIKI_API, params=params, timeout=config.WIKI_TIMEOUT,
+                                    headers={"User-Agent": USER_AGENT})
+            response.raise_for_status()
+            pages = response.json().get("query", {}).get("pages", {})
+        except Exception:
+            return None
+        # arama sırası korunur, anlam ayrımı sayfaları atlanır
+        for page in sorted(pages.values(), key=lambda p: p.get("index", 99)):
+            extract = (page.get("extract") or "").strip()
+            if not extract or "anlamlara gelebilir" in extract or "anlamına gelebilir" in extract:
+                continue
+            first = extract.split("\n")[0].strip()
+            if len(first) < 40:
+                continue
+            first = re.sub(r"\[\d+\]", "", first)  # dipnot kalıntıları
+            return first[:config.MAX_PASSAGE_CHARS], page.get("fullurl", "")
+        return None
