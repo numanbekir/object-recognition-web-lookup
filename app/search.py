@@ -66,26 +66,45 @@ class WebSearcher:
         return results
 
     def wikipedia(self, object_tr: str):
-        """Türkçe Vikipedi'den giriş paragrafını (metin, url) olarak döndürür, yoksa None."""
-        params = {"action": "query", "generator": "search", "gsrsearch": object_tr,
-                  "gsrlimit": 3, "prop": "extracts|info", "exintro": 1, "explaintext": 1,
-                  "inprop": "url", "format": "json"}
+        """Türkçe Vikipedi'den giriş paragrafını (metin, url) olarak döndürür, yoksa None.
+
+        Önce tam başlık denenir (yönlendirmeler izlenir), bulunamazsa tam
+        metin araması yapılır. Anlam ayrımı sayfaları ve objeden söz etmeyen
+        sayfalar atlanır.
+        """
+        base = {"action": "query", "prop": "extracts|info", "exintro": 1, "explaintext": 1,
+                "inprop": "url", "redirects": 1, "format": "json"}
+        by_title = {**base, "titles": tr_capitalize(object_tr)}
+        by_search = {**base, "generator": "search", "gsrsearch": object_tr, "gsrlimit": 3}
+        anchor = object_tr.lower()[:5]
+        for params in (by_title, by_search):
+            for page in self._wiki_pages(params):
+                extract = (page.get("extract") or "").strip()
+                if not extract or "anlamlara gelebilir" in extract or "anlamına gelebilir" in extract:
+                    continue
+                first = re.sub(r"\[\d+\]", "", extract.split("\n")[0].strip())  # dipnot kalıntıları
+                if len(first) < 40 or anchor not in (page.get("title", "") + " " + first).lower():
+                    continue
+                return first[:config.MAX_PASSAGE_CHARS], page.get("fullurl", "")
+        return None
+
+    @staticmethod
+    def _wiki_pages(params: dict) -> list:
         try:
             response = requests.get(WIKI_API, params=params, timeout=config.WIKI_TIMEOUT,
                                     headers={"User-Agent": USER_AGENT})
             response.raise_for_status()
             pages = response.json().get("query", {}).get("pages", {})
         except Exception:
-            return None
-        # arama sırası korunur, anlam ayrımı sayfaları ve objeden söz etmeyen sayfalar atlanır
-        anchor = object_tr.lower()[:5]
-        for page in sorted(pages.values(), key=lambda p: p.get("index", 99)):
-            extract = (page.get("extract") or "").strip()
-            if not extract or "anlamlara gelebilir" in extract or "anlamına gelebilir" in extract:
-                continue
-            first = extract.split("\n")[0].strip()
-            if len(first) < 40 or anchor not in (page.get("title", "") + " " + first).lower():
-                continue
-            first = re.sub(r"\[\d+\]", "", first)  # dipnot kalıntıları
-            return first[:config.MAX_PASSAGE_CHARS], page.get("fullurl", "")
-        return None
+            return []
+        # arama sırası korunur, eksik sayfalar (negatif id) elenir
+        return [page for page in sorted(pages.values(), key=lambda p: p.get("index", 99))
+                if "missing" not in page]
+
+
+def tr_capitalize(text: str) -> str:
+    # python'un capitalize'ı türkçe i'yi I yapar, İ olmalı
+    if not text:
+        return text
+    first = "İ" if text[0] == "i" else text[0].upper()
+    return first + text[1:]
