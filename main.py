@@ -1,11 +1,9 @@
 # Numan Bekir Özçelik - 06.09.2026
-"""Ana uygulama: girdi ayrıştırma ve tur akışı.
-
-    girdi ─► görüntü yükle ─► CLIP: obje + anahtar kelimeler ─► kaydet
-          ─► Vikipedi tanımı + web araması ─► alakalı paragraflar ─► göster ─► kaydet
-"""
+"""Ana uygulama. Girdiyi ayrıştırır ve bir turun tüm adımlarını yürütür."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from itertools import zip_longest
 import re
 import shlex
 import sys
@@ -14,15 +12,18 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from app import config
-from app.extractor import ContentExtractor
+from app.blocks import BlockPlanner, InfoBlock
+from app.extractor import ContentExtractor, stems
 from app.image_loader import ImageLoader, ImageLoadError
+from app.intent import IntentBuilder
 from app.search import WebSearcher
 from app.session import SessionContext
+from app import structure
 from app.storage import Storage
 from app.vision import VisionModel
 
 def tr_capitalize(text: str) -> str:
-    # python'un capitalize'ı türkçe i'yi I yapar, İ olmalı
+    # capitalize türkçe i harfini I yapar, İ olması gerekir
     if not text:
         return text
     first = "İ" if text[0] == "i" else text[0].upper()
@@ -35,7 +36,7 @@ DOMAIN_PATTERN = re.compile(r"[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,24}", re.IGNORE
 
 
 def _path_exists(path: Path) -> bool:
-    # 255 bayttan uzun ad bileşeni linux'ta OSError fırlatır, dosya yok sayılır
+    # çok uzun ad bileşeni linuxta hata fırlatır, dosya yok sayılır
     try:
         return path.exists()
     except (OSError, ValueError):
@@ -58,14 +59,14 @@ def clean_input(raw: str) -> str:
 
 
 def _looks_like_source(token: str) -> bool:
-    # yalnız url'ler ve desteklenen dosya türleri kaynak sayılır
+    # yalnız adresler ve desteklenen dosya türleri kaynak sayılır
     if token.startswith(("http://", "https://", "file://", "www.")):
         return True
     return token.lower().endswith(IMAGE_EXTENSIONS)
 
 
 def find_sources(text: str) -> list:
-    """Girdideki görsel/URL adaylarını listeler (çoklu girdi denetimi için)."""
+    """Girdideki görsel ve adres adaylarını listeler."""
     try:
         tokens = shlex.split(text)
     except ValueError:
@@ -74,7 +75,7 @@ def find_sources(text: str) -> list:
 
 
 def is_unsupported_file(text: str) -> bool:
-    """Sürüklenen dosya var ama görsel değilse girişte hiç kabul edilmez."""
+    """Sürüklenen dosya var ama görsel değilse girişte kabul edilmez."""
     try:
         tokens = shlex.split(text)
     except ValueError:
@@ -88,7 +89,7 @@ def is_unsupported_file(text: str) -> bool:
 
 
 def is_single_source(text: str) -> bool:
-    """Metnin tamamı tek bir kaynak mı (chip'e dönüşmeye uygun mu)?"""
+    """Metnin tamamı tek bir kaynak mı diye bakar."""
     try:
         tokens = shlex.split(text)
     except ValueError:
@@ -97,7 +98,7 @@ def is_single_source(text: str) -> bool:
 
 
 def normalize_schemeless(text: str):
-    """www.x.com veya x.com/yol gibi şemasız adresleri https'e yükseltir."""
+    """Şemasız adresleri https ile tamamlar."""
     if " " in text:
         return None
     if text.startswith("www.") and "." in text[4:]:
@@ -111,7 +112,7 @@ def normalize_schemeless(text: str):
 
 
 def classify_input(raw: str):
-    """Tür ve değer ikilisi döndürür, dokuz girdi türü vardır."""
+    """Girdinin türünü ve değerini döndürür."""
     stripped = raw.strip()
     if not stripped:
         return "empty", ""
@@ -126,7 +127,7 @@ def classify_input(raw: str):
 
     text = clean_input(raw)
 
-    # sürükle-bırak bazı terminallerde file:// önekiyle gelir
+    # sürükle bırak bazı terminallerde file önekiyle gelir
     if text.startswith("file://"):
         text = unquote(urlparse(text).path)
 
@@ -155,7 +156,7 @@ def classify_input(raw: str):
 
 
 
-# --- tur akışı ---
+# tur akışı
 
 def _now() -> str:
     return datetime.now().isoformat(timespec="seconds")
@@ -175,48 +176,236 @@ def _save_record(storage: Storage, record: dict, status: str, emit):
         emit("Kaydı dosyaya yazamadım, sohbete devam ediyorum.", "dim")
 
 
-def _gather_text(object_tr: str, query: str, keywords: list, context_words: list,
-                 emit_debug, with_wikipedia: bool = True) -> tuple:
-    """Vikipedi tanımı ve web paragraflarını toplar, (paragraflar, iz) döndürür.
-
-    Her paragraf {"metin", "kaynak", "url"} sözlüğüdür. Arama servisi
-    düşerse Vikipedi tek başına yeter, ikisi de boşsa liste boş döner.
+def _gather_blocks(object_tr: str, blocks: list, keywords: list, context_words: list,
+                   emit_debug, session: SessionContext = None) -> tuple:
+    """Blok sorgularını atar, sayfaları tek havuzda indirir ve her bloğu doldurur.
+    Doldurma sırası vikipedi bölümü, sayfa yapısı ve düz paragraftır. Hiçbir
+    kaynaktan dolmayan blok listeye girmez. Oturumda gösterilmiş sayfalar
+    atlanır, yeni sayfa kalmazsa önceki kaynaklara dönülür.
     """
     searcher = WebSearcher()
     extractor = ContentExtractor()
-    passages, trace = [], {"sorgu": query}
+    trace = {"sorgular": [block.query for block in blocks]}
+    shown = session.shown_urls if session else set()
+    anchor_stems = stems(object_tr)
 
-    if with_wikipedia:
+    # vikipedi tanımı ve bölümleri
+    definition, wiki_sections, wiki_url = None, [], ""
+    if blocks and blocks[0].title == "Tanım":
         wiki = searcher.wikipedia(object_tr)
         trace["vikipedi"] = bool(wiki)
-        emit_debug("vikipedi", "tanım bulundu" if wiki else "sayfa yok")
         if wiki:
-            passages.append({"metin": wiki[0], "kaynak": "tr.wikipedia.org", "url": wiki[1]})
+            wiki_url = wiki[1]
+            if wiki_url in shown:
+                trace["vikipedi"] = "önceki turda gösterildi"
+                emit_debug("vikipedi", "tanım önceki turda gösterildi, atlandı")
+            else:
+                definition = {"metin": wiki[0], "kaynak": "tr.wikipedia.org", "url": wiki_url}
+            if any(block.section_hints for block in blocks):
+                title = unquote(wiki_url.rsplit("/wiki/", 1)[-1]).replace("_", " ")
+                wiki_sections = searcher.wikipedia_sections(title)
+        emit_debug("vikipedi", ("tanım bulundu" if wiki else "sayfa yok")
+                   + (f", {len(wiki_sections)} bölüm" if wiki_sections else ""))
 
-    try:
-        results = searcher.search(query)
-    except Exception as error:
-        results = []
-        trace["arama_hatasi"] = repr(error)
-        emit_debug("arama hatası", repr(error))
-    emit_debug("arama", f"{len(results)} aday: " + ", ".join(r.domain for r in results))
-    pages = extractor.fetch_pages(results[:config.MAX_PAGES])
-    emit_debug("indirme", f"{len(pages)}/{min(len(results), config.MAX_PAGES)} sayfa açıldı")
-    for passage in extractor.select_passages(pages, object_tr, keywords, context_words):
-        emit_debug("paragraf", f"{passage.source} · benzerlik {passage.score:.2f}")
-        passages.append({"metin": passage.text, "kaynak": passage.source, "url": passage.url})
-    trace.update({"aday": len(results), "sayfa": len(pages), "paragraf": len(passages)})
-    return passages, trace
+    def run_search(text):
+        try:
+            return searcher.search(text)
+        except Exception as error:
+            trace.setdefault("arama_hatasi", []).append(f"{text}: {error!r}")
+            emit_debug("arama hatası", f"{text}: {error!r}")
+            return []
+
+    # blok sorguları birlikte atılır, sonuçlar sırayla harmanlanır ki her blok pay alsın
+    with ThreadPoolExecutor(max_workers=config.SEARCH_WORKERS) as pool:
+        result_lists = list(pool.map(run_search, [block.query for block in blocks]))
+    for block, results in zip(blocks, result_lists):
+        emit_debug("arama", f"{block.title}: {len(results)} aday: "
+                   + ", ".join(f"{r.domain} [{r.priority():+d}]" for r in results[:6]))
+    merged, seen, origin = [], set(), {}  # sayfa hangi blok sorgularından geldi
+    for row in zip_longest(*result_lists):
+        for index, result in enumerate(row):
+            if result is None:
+                continue
+            origin.setdefault(result.url, set()).add(index)
+            if result.url not in seen:
+                seen.add(result.url)
+                merged.append(result)
+
+    fresh = [r for r in merged if r.url not in shown]
+    pages = extractor.fetch_pages(fresh[:config.MAX_PAGES])
+    emit_debug("indirme", f"{len(pages)}/{min(len(fresh), config.MAX_PAGES)} yeni sayfa açıldı")
+    if not pages and shown and len(fresh) < len(merged):
+        # yeni kaynak kalmadıysa boş dönmek yerine önceki kaynaklar yeniden kullanılır
+        emit_debug("hafıza", "yeni kaynak yok, önceki kaynaklara dönüldü")
+        trace["tekrar_kaynak"] = True
+        pages = extractor.fetch_pages([r for r in merged if r.url in shown][:config.MAX_PAGES])
+
+    output, used_texts = [], set()
+    for index, block in enumerate(blocks):
+        entry = {"baslik": block.title, "sorgu": block.query, "paragraflar": [], "yapi": None}
+        note = ""
+        if block.title == "Tanım":
+            if definition:
+                entry["paragraflar"].append(definition)
+            elif wiki_url:
+                emit_debug("blok", "Tanım: önceki turda gösterildi, atlandı")
+                continue  # tanım zaten verildi, yerine satış metni koymak anlamsız
+
+        own = [page for page in pages if index in origin.get(page[0].url, ())]
+
+        # yapılı bloklarda önce sayfa yapısı, yalnız bloğun kendi sorgusunun sayfalarından
+        if block.fmt != "paragraf":
+            structure_found = _extract_structure(block, own, extractor, anchor_stems)
+            if structure_found:
+                entry["yapi"] = structure_found
+                note = f"yapı ({block.fmt}) {structure_found['kaynak']}"
+
+        # vikipedinin ilgili bölümü
+        if not entry["paragraflar"] and not entry["yapi"] and block.section_hints:
+            for section in wiki_sections:
+                url = f"{wiki_url}#{section['baslik'].replace(' ', '_')}"
+                if url in shown or section["metin"] in used_texts:
+                    continue
+                if any(hint in section["baslik"].lower() for hint in block.section_hints):
+                    entry["paragraflar"].append({"metin": section["metin"],
+                                                 "kaynak": "tr.wikipedia.org", "url": url})
+                    used_texts.add(section["metin"])
+                    note = f"vikipedi bölümü '{section['baslik']}'"
+                    break
+
+        # düz paragraf
+        remaining = block.limit - len(entry["paragraflar"])
+        if remaining > 0 and not entry["yapi"]:
+            if block.required_hints:
+                options = dict(keywords=list(block.hints), hint_stems=stems(" ".join(block.hints)),
+                               min_hint_hits=config.BLOCK_MIN_HINT_HITS,
+                               min_score=config.BLOCK_MIN_SIMILARITY, exclude_texts=used_texts,
+                               limit=remaining)
+                selected = extractor.select_passages(own, object_tr, **options)
+                note = "kendi sayfalarından" if selected else ""
+                if not selected:
+                    options["min_score"] = config.BLOCK_POOL_MIN_SIMILARITY
+                    selected = extractor.select_passages(pages, object_tr, **options)
+                    note = "havuzdan" if selected else "eşik altı, gösterilmedi"
+            else:
+                selected = extractor.select_passages(
+                    pages, object_tr, block.hints + list(keywords), context_words,
+                    limit=remaining, exclude_texts=used_texts)
+            for passage in selected:
+                used_texts.add(passage.text)
+                entry["paragraflar"].append({"metin": passage.text, "kaynak": passage.source,
+                                             "url": passage.url})
+                note += f" · {passage.source} {passage.score:.2f}"
+        emit_debug("blok", f"{block.title}: {len(entry['paragraflar'])} paragraf"
+                   + (", yapı" if entry["yapi"] else "") + (f" · {note}" if note else ""))
+        if entry["paragraflar"] or entry["yapi"]:
+            output.append(entry)
+    trace.update({"aday": len(merged), "sayfa": len(pages), "blok": len(output)})
+    return output, trace
 
 
-def _show_text(object_tr: str, passages: list, record: dict, emit):
+def _extract_structure(block, pages: list, extractor: ContentExtractor, anchor_stems: list):
+    """Sayfa yapısından bloğun biçimine uygun içeriği çıkarır. Sayfa başlığı objeyi anmalıdır."""
+    relevant = [(result, extractor.html.get(result.url)) for result, _ in pages
+                if extractor.html.get(result.url)
+                and any(stem in result.title.lower() for stem in anchor_stems)]
+    if block.fmt == "tarif":
+        # ikisini de veren sayfa tercih edilir, yoksa malzeme ve adımlar ayrı sayfalardan birleşir
+        parsed = [(result, structure.pick_list(structure.extract_lists(html), ("malzeme",), 10),
+                   structure.extract_steps(html)[:8]) for result, html in relevant]
+        complete = next(((r, i, s) for r, i, s in parsed if i and s), None)
+        if complete:
+            result, found, steps = complete
+            return {"tip": "tarif", "malzemeler": found["maddeler"], "adimlar": steps,
+                    "kaynak": result.domain, "url": result.url}
+        with_items = next(((r, i) for r, i, _ in parsed if i), None)
+        with_steps = next(((r, s) for r, _, s in parsed if s), None)
+        if with_items or with_steps:
+            main = with_items[0] if with_items else with_steps[0]
+            shape = {"tip": "tarif", "malzemeler": with_items[1]["maddeler"] if with_items else [],
+                     "adimlar": with_steps[1] if with_steps else [],
+                     "kaynak": main.domain, "url": main.url}
+            if with_items and with_steps and with_steps[0] is not with_items[0]:
+                shape["adim_kaynak"] = with_steps[0].domain
+                shape["adim_url"] = with_steps[0].url
+            return shape
+    elif block.fmt == "basliklar":
+        candidates = [(result.domain, result.url, structure.extract_sections(html))
+                      for result, html in relevant]
+        best = structure.best_sections(candidates, anchor_stems, 5)
+        if best:
+            source, url, sections = best
+            return {"tip": "basliklar", "ogeler": sections, "kaynak": source, "url": url}
+    elif block.fmt == "madde":
+        hints = tuple(stem for stem in stems(" ".join(block.hints)))
+        for result, html in relevant:
+            found = structure.pick_list(structure.extract_lists(html), hints, 8)
+            if found:
+                return {"tip": "madde", "etiket": found["etiket"], "maddeler": found["maddeler"],
+                        "kaynak": result.domain, "url": result.url}
+    return None
+
+
+def _show_blocks(object_tr: str, blocks: list, record: dict, emit):
+    """Blokları başlıklı ve numaralı kaynak dipnotlu tek metin olarak sunar."""
+    sources = []
+    for block in blocks:
+        for passage in block["paragraflar"]:
+            if passage["kaynak"] not in sources:
+                sources.append(passage["kaynak"])
+        if block["yapi"] and block["yapi"]["kaynak"] not in sources:
+            sources.append(block["yapi"]["kaynak"])
     emit(tr_capitalize(object_tr), "title")
-    for passage in passages:
-        emit(passage["metin"])
-        emit(f"— {passage['kaynak']}", "dim")
-    record["metin"] = "\n\n".join(p["metin"] for p in passages)
-    record["paragraflar"] = passages
-    record["kaynaklar"] = list(dict.fromkeys(p["kaynak"] for p in passages))
+    for block in blocks:
+        emit(f"▸ {block['baslik']}", "subtitle")
+        for passage in block["paragraflar"]:
+            emit(f"{passage['metin']} [{sources.index(passage['kaynak']) + 1}]")
+        shape = block["yapi"]
+        if shape:
+            ref = f"[{sources.index(shape['kaynak']) + 1}]"
+            if shape["tip"] == "tarif":
+                if shape["malzemeler"]:
+                    emit("Malzemeler:")
+                    for item in shape["malzemeler"]:
+                        emit(f"  • {item}")
+                if shape["adimlar"]:
+                    emit("Yapılışı:")
+                    for number, step in enumerate(shape["adimlar"], 1):
+                        emit(f"  {number}. {step}")
+                    if shape.get("adim_kaynak"):
+                        ref += f" adımlar: {shape['adim_kaynak']}"
+            elif shape["tip"] == "basliklar":
+                for item in shape["ogeler"]:
+                    emit(f"  • {item['baslik']}: {item['metin']}")
+            elif shape["tip"] == "madde":
+                if shape["etiket"]:
+                    emit(f"{shape['etiket']}:")
+                for item in shape["maddeler"]:
+                    emit(f"  • {item}")
+            emit(ref, "dim")
+    emit("Kaynaklar: " + "  ".join(f"[{i}] {source}" for i, source in enumerate(sources, 1)), "dim")
+    record["bloklar"] = blocks
+    record["metin"] = "\n\n".join(
+        f"{block['baslik']}: " + " ".join(p["metin"] for p in block["paragraflar"])
+        + (" " + _structure_text(block["yapi"]) if block["yapi"] else "") for block in blocks)
+    record["kaynaklar"] = sources
+
+
+def _structure_text(shape: dict) -> str:
+    if shape["tip"] == "tarif":
+        return ("Malzemeler: " + "; ".join(shape["malzemeler"]) + " Yapılışı: "
+                + " ".join(f"{i}. {s}" for i, s in enumerate(shape["adimlar"], 1)))
+    if shape["tip"] == "basliklar":
+        return " ".join(f"{o['baslik']}: {o['metin']}" for o in shape["ogeler"])
+    return "; ".join(shape["maddeler"])
+
+
+def _show_and_remember(object_tr, blocks, record, emit, session):
+    _show_blocks(object_tr, blocks, record, emit)
+    urls = [p["url"] for block in blocks for p in block["paragraflar"]]
+    urls += [block["yapi"]["url"] for block in blocks if block["yapi"]]
+    urls += [block["yapi"]["adim_url"] for block in blocks if block["yapi"] and block["yapi"].get("adim_url")]
+    session.remember_shown(urls)
 
 
 def _refine_turn(value: str, session: SessionContext, storage: Storage, emit, emit_debug):
@@ -226,21 +415,23 @@ def _refine_turn(value: str, session: SessionContext, storage: Storage, emit, em
     record["obje"] = {"ad_tr": anchor}
     query = WebSearcher.build_query(anchor, user_text=value)
     emit_debug("sorgu", query)
-    passages, trace = _gather_text(anchor, query, session.last_keywords() + value.split(),
-                                   [], emit_debug, with_wikipedia=False)
+    blocks = [InfoBlock("Cevap", query, value.split(), limit=config.MAX_PASSAGES)]
+    found, trace = _gather_blocks(anchor, blocks, session.last_keywords() + value.split(),
+                                  [], emit_debug, session=session)
     record["arama_izi"] = trace
-    if not passages:
+    if not found:
         emit(f"{tr_capitalize(anchor)} hakkında bununla ilgili bir metin bulamadım. "
              "Farklı bir ifadeyle dener misin?")
         _save_record(storage, record, "metin_yok", emit)
         return
-    _show_text(anchor, passages, record, emit)
+    _show_and_remember(anchor, found, record, emit, session)
     _save_record(storage, record, "tamam", emit)
 
 
 def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel,
-                 session: SessionContext, storage: Storage, emit, emit_debug, emit_context):
-    """Bir kullanıcı turunu işler; çıktıları emit(mesaj) ile arayüze iletir."""
+                 session: SessionContext, storage: Storage, emit, emit_debug, emit_context,
+                 intent: IntentBuilder = None, planner: BlockPlanner = None):
+    """Bir kullanıcı turunu işler ve çıktıları emit ile arayüze iletir."""
     if kind == "too_long":
         emit("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
         return
@@ -253,6 +444,8 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
     if kind == "multi":
         emit("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel ya da URL verir misin?")
         return
+    intent = intent or IntentBuilder()
+    planner = planner or BlockPlanner()
     if kind == "text":
         if session.last_object() is None:
             emit("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
@@ -260,7 +453,7 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
         _refine_turn(value, session, storage, emit, emit_debug)
         return
 
-    # 1. görüntü
+    # görüntü
     record = _new_record(storage, kind, value)
     try:
         image = loader.load(value, kind)
@@ -270,7 +463,7 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
         return
     emit_debug("görüntü", f"{image.width}x{image.height} yüklendi")
 
-    # 2. obje ve anahtar kelimeler
+    # obje ve anahtar kelimeler
     prediction, keywords = vision.analyze(image)
     object_tr = prediction.name_tr
     emit_debug("adaylar", f"{object_tr} {prediction.confidence:.2f}; " + "; ".join(
@@ -290,9 +483,10 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
                       "guven": round(prediction.confidence, 2)}
     record["anahtar_kelimeler"] = words
 
-    # 3. bağlam: önceki turla ortak kelime varsa sorguya girer
+    # bağlam, önceki turla ortak kelime varsa o tur aynı konudadır
+    # önceki objenin adı arama niyetine katılır
     shared = session.shared_context(object_tr, words)
-    context_words = []
+    context_words, previous = [], None
     if shared:
         previous, common = shared
         context_words = [common]
@@ -300,26 +494,42 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
         record["baglam"] = {"onceki_obje": previous, "ortak_kelime": common}
     else:
         record["baglam"] = None
-    query = WebSearcher.build_query(object_tr, context_words[0] if context_words else "")
-    emit_debug("sorgu", query)
 
-    # 4. web metni
-    passages, trace = _gather_text(object_tr, query, words, context_words, emit_debug)
+    # arama niyeti, obje ve rol etiketli kelimeler ve bağlamdan türkçe cümle kurulur
+    # objeden emin değilsek kelimeler de güvenilmez, sade adla aranır
+    if prediction.confidence >= config.MIN_CONFIDENCE:
+        query = intent.build(object_tr, words, previous)
+    else:
+        query = object_tr
+        emit_debug("niyet", "düşük güven, kelimeler sorguya alınmadı")
+    emit(f"Arama niyeti: {query}")
+    record["arama_niyeti"] = query
+    if session.times_seen(object_tr):
+        emit(f"{tr_capitalize(object_tr)} hakkında daha önce konuştuk, bu kez "
+             "farklı kaynaklardan devam ediyorum.", "dim")
+
+    # bilgi blokları, tanım ve ilgili niyet ve objenin ailesine özgü açılar
+    blocks = planner.plan(object_tr, words, query)
+    emit_debug("bloklar", f"aile {planner.family(words)}: " + ", ".join(b.title for b in blocks))
+    found, trace = _gather_blocks(object_tr, blocks, words, context_words, emit_debug,
+                                  session=session)
     record["arama_izi"] = trace
-    if not passages:
+    if trace.get("tekrar_kaynak"):
+        emit("Yeni bir kaynak bulamadım, daha önce gösterdiğim bilgileri hatırlatıyorum.", "dim")
+    if not found:
         emit(f"{tr_capitalize(object_tr)} hakkında şu anda bir metin derleyemedim. "
              "Bağlantını kontrol edip tekrar dener misin?")
         _save_record(storage, record, "metin_yok", emit)
         return
-    _show_text(object_tr, passages, record, emit)
+    _show_and_remember(object_tr, found, record, emit, session)
     _save_record(storage, record, "tamam", emit)
 
-    # 5. bağlam güncellenir
+    # bağlam güncellenir
     session.add_turn(object_tr, words)
     emit_context(session.summary_line())
 
 
-# --- arayüzler ---
+# arayüzler
 
 def run_plain(args, loader, vision, session, storage, storage_note):
     # tty olmayan ortam için sade satır modu

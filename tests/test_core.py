@@ -1,17 +1,20 @@
 # Numan Bekir Özçelik - 06.09.2026
-"""Ağ ve model gerektirmeyen birim testleri: python3 -m unittest"""
+"""Ağ ve model gerektirmeyen birim testleri"""
 
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from app.extractor import ContentExtractor, stems
+from app.extractor import ContentExtractor, cosine, stems
 from app.search import SearchResult, WebSearcher
 from app.session import SessionContext
 from app.storage import Storage
 from app.vision import VisionModel
+from app import config
 from main import classify_input, find_sources, normalize_schemeless
+
+ROLES = {"aile", "alan", "nitelik", "kullanım", "bileşen", "malzeme"}
 
 
 class InputTest(unittest.TestCase):
@@ -31,6 +34,23 @@ class InputTest(unittest.TestCase):
         self.assertEqual(classify_input("a.jpg b.png")[0], "multi")
 
 
+class VocabularyTest(unittest.TestCase):
+    """Veri dosyaları elle düzenlenir, tutarsızlık burada yakalanır."""
+
+    def test_every_theme_word_has_a_role(self):
+        themes = json.loads(config.THEME_MAP_PATH.read_text(encoding="utf-8"))
+        roles = json.loads(config.WORD_ROLES_PATH.read_text(encoding="utf-8"))
+        words = {word for values in themes.values() for word in values}
+        self.assertEqual(sorted(words - set(roles)), [], "rolü olmayan kelime")
+        self.assertEqual(sorted(set(roles) - words), [], "haritada geçmeyen kelime")
+        self.assertEqual(sorted(set(roles.values()) - ROLES), [], "tanımsız rol")
+
+    def test_object_names_are_unique_and_turkish(self):
+        names = json.loads(config.OBJECT_NAMES_TR_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(len(names), len(set(names)))
+        self.assertTrue(all(value.strip() for value in names.values()))
+
+
 class VisionRankingTest(unittest.TestCase):
     def test_rank_orders_descending(self):
         self.assertEqual(VisionModel.rank([0.1, 0.7, 0.2], ["a", "b", "c"], 2),
@@ -43,8 +63,15 @@ class VisionRankingTest(unittest.TestCase):
         scores = [0.5, 0.3, 0.001, 0.2]
         words = [k.word for k in VisionModel.keywords_from_themes(
             scores, keys, themes, "sırt çantası", 5)]
-        # tema başına önce bir kelime, çanta (obje adı) ve oyuncak (zayıf tema) yok
+        # tema başına önce bir kelime, obje adı olan çanta ve zayıf tema oyuncak yok
         self.assertEqual(words, ["aksesuar", "seyahat", "moda"])
+
+    def test_minimum_keywords_filled_from_weaker_themes(self):
+        themes = {"pizza": ["hamurlu yemek"], "cheese": ["peynir"], "food": ["yemek"], "toy": ["oyuncak"]}
+        keys = sorted(themes)  # cheese, food, pizza, toy
+        scores = [0.02, 0.01, 0.9, 0.001]  # yalnız pizza eşiği geçer
+        words = [k.word for k in VisionModel.keywords_from_themes(scores, keys, themes, "pizza", 5)]
+        self.assertEqual(words[:3], ["hamurlu yemek", "peynir", "yemek"])
 
 
 class SessionTest(unittest.TestCase):
@@ -58,6 +85,15 @@ class SessionTest(unittest.TestCase):
         session.add_turn("pizza", ["fast food"])
         self.assertEqual([e["obje"] for e in session.entries], ["el çantası", "pizza"])
         self.assertIn("→", session.summary_line())
+
+    def test_memory_of_shown_sources_and_repeats(self):
+        session = SessionContext()
+        session.remember_shown(["https://a.com/x", ""])
+        self.assertEqual(session.shown_urls, {"https://a.com/x"})
+        session.add_turn("pizza", ["sos"])
+        session.add_turn("pizza", ["peynir"])
+        self.assertEqual(session.times_seen("pizza"), 2)
+        self.assertEqual(session.times_seen("keman"), 0)
 
 
 class ExtractorTest(unittest.TestCase):
@@ -76,11 +112,61 @@ class ExtractorTest(unittest.TestCase):
         self.assertEqual(len(passages), 1)  # aynı paragraf ikinci kaynaktan teklendi
         self.assertTrue(texts[0].startswith("Sandviç, iki dilim"))
 
+    def test_clean_strips_recipe_boilerplate(self):
+        text = ("C: Sandviç pratik bir yiyecektir ve her öğünde tüketilebilir. "
+                "Peki; sandviç nasıl yapılır? İşte tarifi ve malzemeleri... Afiyet olsun!")
+        self.assertEqual(ContentExtractor.clean(text),
+                         "Sandviç pratik bir yiyecektir ve her öğünde tüketilebilir.")
+
+    def test_block_hints_and_threshold(self):
+        page = SearchResult("x", "https://x.com/a")
+        history = ("Keman ilk kez 16. yüzyılda İtalya'da ortaya çıkmış, Cremona'daki ustaların "
+                   "elinde bugünkü biçimini almış ve iki yüzyıl içinde tüm Avrupa'ya yayılmıştır.")
+        lesson = ("Keman dersleri her yaştan öğrenciye açıktır ve kurslarda haftalık programlar "
+                  "dahilinde başlangıç seviyesinden ileri seviyeye kadar eğitim verilmektedir.")
+        hints = ["tarih", "yüzyıl", "ilk", "ortaya", "köken"]
+        passages = ContentExtractor().select_passages(
+            [(page, history + "\n" + lesson)], "keman", hints, limit=2,
+            hint_stems=stems(" ".join(hints)), min_hint_hits=2, min_score=0.12)
+        self.assertEqual([p.text for p in passages], [history])  # ders paragrafı iki kök taşımıyor
+
+    def test_anchor_terms(self):
+        from app.extractor import anchor_terms
+        self.assertEqual(anchor_terms("sosisli sandviç"), ["sosis", "sandv"])
+        self.assertEqual(anchor_terms("el çantası"), ["el çanta"])
+        self.assertTrue(ContentExtractor._passes_rules(
+            "Sosis ve sandviç ekmeği ile hazırlanan bu yiyecek, pratik bir öğün olarak dünyanın "
+            "her yerinde severek tüketilir ve çeşitli soslarla zenginleştirilir.", ["sosis", "sandv"]))
+        self.assertFalse(ContentExtractor._passes_rules(
+            "Alet çantası, çeşitli el aletlerini saklamak ve taşımak için kullanılan dayanıklı "
+            "bir çantadır ve ustalar tarafından her gün işe götürülür.", ["el çanta"]))
+
     def test_stems_tolerate_suffixes(self):
         self.assertEqual(stems("sandviçler sandviçin"), ["sandv", "sandv"])
 
+    def test_cosine(self):
+        self.assertAlmostEqual(cosine({"a": 1.0, "b": 1.0}, {"a": 1.0, "b": 1.0}), 1.0)
+        self.assertEqual(cosine({"a": 1.0}, {"b": 1.0}), 0.0)
+        self.assertEqual(cosine({}, {"b": 1.0}), 0.0)
+
+    def test_similarity_prefers_rare_shared_stems(self):
+        page = SearchResult("x", "https://x.com/a")
+        about = ("Keman yapımında kullanılan akçaağaç ve ladin, çalgının sesini belirleyen "
+                 "en önemli malzemelerdir ve ustalar bu ağaçları yıllarca kurutarak ahşabın "
+                 "nemini dengeler, ardından gövdeyi ince tabakalar halinde oyarak biçimlendirir.")
+        generic = ("Keman dersleri her yaştan öğrenciye açıktır ve kurslarda haftalık programlar "
+                   "dahilinde başlangıç seviyesinden ileri seviyeye kadar eğitim verilmektedir, "
+                   "dersler bireysel ya da grup halinde düzenlenebilmektedir.")
+        passages = ContentExtractor().select_passages(
+            [(page, about + "\n" + generic)], "keman", ["ahşap", "malzeme"], limit=2)
+        self.assertTrue(passages[0].text.startswith("Keman yapımında"))
+
 
 class SearchTest(unittest.TestCase):
+    def test_title_priority(self):
+        self.assertGreater(SearchResult("Keman nedir? Tarihçesi", "https://a.com").priority(),
+                           SearchResult("Keman fiyatları ve modelleri", "https://b.com").priority())
+
     def test_build_query(self):
         self.assertEqual(WebSearcher.build_query("el çantası", "aksesuar"), "el çantası aksesuar")
         self.assertEqual(WebSearcher.build_query("çanta", "çanta"), "çanta")

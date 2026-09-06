@@ -46,7 +46,7 @@
  ],
  "avocado": [
   "meyve",
-  "sağlıklı beslenme"
+  "sağlıklı"
  ],
  "award": [
   "ödül",
@@ -185,8 +185,8 @@
   "dekorasyon"
  ],
  "bread": [
+  "ekmek",
   "fırın ürünü",
-  "fırın",
   "kahvaltı"
  ],
  "breakfast": [
@@ -559,7 +559,7 @@
   "okul"
  ],
  "ergonomic_design": [
-  "ergonomi"
+  "ergonomik"
  ],
  "eyepatch": [
   "sağlık"
@@ -797,7 +797,7 @@
   "binicilik"
  ],
  "healthy_food": [
-  "sağlıklı beslenme"
+  "sağlıklı"
  ],
  "heater": [
   "ısıtma",
@@ -1029,7 +1029,7 @@
   "sağlık"
  ],
  "mens_fashion": [
-  "erkek modası",
+  "erkek",
   "moda"
  ],
  "microphone": [
@@ -1128,8 +1128,8 @@
   "iş"
  ],
  "olive_oil": [
-  "mutfak",
-  "sağlıklı beslenme"
+  "zeytinyağı",
+  "sağlıklı"
  ],
  "onion": [
   "sebze",
@@ -1701,8 +1701,8 @@
   "kayıt"
  ],
  "vintage": [
-  "nostalji",
-  "antika"
+  "antika",
+  "nostalji"
  ],
  "violin": [
   "yaylı çalgı",
@@ -1767,7 +1767,7 @@
   "rüzgar"
  ],
  "womens_fashion": [
-  "kadın modası",
+  "kadın",
   "moda"
  ],
  "wooden_leg": [
@@ -1789,7 +1789,7 @@
  ],
  "yogurt": [
   "süt ürünü",
-  "sağlıklı beslenme"
+  "sağlıklı"
  ],
  "young_mammal": [
   "yavru hayvan"

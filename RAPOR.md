@@ -1,107 +1,166 @@
-# Teknik Rapor: Görüntülü Sohbet Uygulaması
+# Teknik Rapor
 
-Numan Bekir Özçelik · Eylül 2026
+Numan Bekir Özçelik, Eylül 2026
 
 ## 1. Problem ve yaklaşım
 
-Kullanıcı bir görsel adresi verir; uygulama görseldeki objeyi adlandırır,
-anahtar kelimeler üretir, web'den objeyle ilgili metin derler ve tüm bunları
-kaydeder. Akış kullanıcı çıkana kadar sürer ve önceki turlar sonraki
-aramaları etkiler.
+Kullanıcı bir görsel adresi verir. Uygulama görseldeki objeyi adlandırır,
+anahtar kelimeler üretir, web üzerinden objeyle ilgili bilgi derler ve bunları
+kaydeder. Akış kullanıcı çıkana kadar sürer ve önceki turlar sonraki aramaları
+etkiler.
 
-Görev üç alt probleme ayrılır: (1) görüntüden obje adı, (2) objeden anahtar
-kelime, (3) obje ve kelimelerden anlamlı metin. İlk ikisi tek bir modelle,
-üçüncüsü klasik bilgi erişim yöntemleriyle çözülür.
+Görev üç alt probleme ayrılır. Görüntüden obje adı çıkarmak, objeden anahtar
+kelime üretmek ve obje ile kelimelerden anlamlı metin derlemek. İlk ikisi tek
+bir görüş modeliyle, üçüncüsü kendi yazdığımız bilgi erişim ve doğal dil
+üretim kurallarıyla çözülür.
 
-## 2. Obje tespiti: CLIP ile sıfır atış sınıflandırma
+## 2. Obje tespiti
 
-**Model:** OpenAI CLIP ViT-B/32 (açık kaynak, 400 milyon görüntü-metin çiftiyle
-eğitilmiş). Görüntü ve metin aynı 512 boyutlu uzaya kodlanır; bir görüntünün
-sınıfı, aday isimlerin metin vektörleriyle kosinüs benzerliği üzerinden
-softmax ile bulunur. Sınıf listesi modelin dışında, `data/object_names_tr.json`
-dosyasında durur (LVIS veri setinin 1200 kategori adı ve Türkçe karşılıkları).
+Kullanılan model açık kaynak CLIP ViT-B/32 modelidir. Model yüz milyonlarca
+görüntü ve altyazı çiftiyle, doğru çiftler vektör uzayında yakın ve yanlış
+çiftler uzak olacak biçimde eğitilmiştir. Bir görüntünün sınıfı, aday isimlerin
+metin vektörleriyle kosinüs benzerliği hesaplanıp softmax uygulanarak bulunur.
+Sınıf listesi modelin dışında, veri klasöründeki obje adları dosyasında durur.
+Bu liste LVIS veri setinin 1200 kategori adı ve Türkçe karşılıklarından oluşur.
+Listeye satır eklemek yeni objeyi tanınır kılar, kod değişmez.
 
-**Çıkarım kodu** (`app/vision.py`) tarafımızdan yazılmıştır: kalıp topluluğu
-("a photo of a {}", "a close-up photo of a {}") ile metin kodlama, tam görüntü
-ve merkez kırpımının öznitelik ortalaması, kosinüs ve softmax hesabı, tema
-skorlarından kelime seçimi. Kütüphaneden yalnızca model ağırlıkları ve ön
-işleme alınır.
+Çıkarım hattı tarafımızdan yazılmıştır. Birden çok kalıpla metin kodlama ve
+ortalama alma, tam görüntü ile merkez kırpımının öznitelik ortalaması, kosinüs
+ve softmax hesabı, tema skorlarından kelime seçimi bu hatta yer alır.
+Kütüphaneden yalnızca model ağırlıkları ve görüntü ön işleme alınır.
 
-**Neden CLIP, alternatifleri neden değil:**
+Model seçimi ölçüme dayanır. Geliştirme sırasında üç aday kıyaslandı. Kapalı
+kümeli YOLO11n modeli seksen sınıfla sınırlıdır, kapsam dışı objede sessiz
+kalır ya da en yakın sınıfa zorlar. Ölçümde keman görselini makas olarak
+sınıfladı. Açık dağarcıklı YOLO-World modeli isim listesi büyüdükçe skor
+seyrelmesi yaşar, aynı objeyi yirmi isimli listede bulurken bin isimli
+listede bulamadı. Ayrıca bu görev konum bilgisi istemez, görselde ön plana
+çıkan tek obje olduğu varsayılır. CLIP binlerce isim arasında ayrım yapabilir,
+aynı öznitelik vektörü hem obje adını hem temaları verir ve işlemci üzerinde
+görüntü başına elli milisaniyede çalışır.
 
-| Aday | Kapsam | Sorun |
-|---|---|---|
-| YOLO11n (COCO) | 80 sınıf | Kapsam dışı objede sessiz kalır ya da en yakın sınıfa zorlar; keman görselini "makas" saydı. |
-| YOLO-World (açık dağarcık) | Sınırsız isim | Büyük listede skor seyrelmesi: aynı objeyi 20 isimle 0.62, 1200 isimle görünmez buluyor. Konum bilgisi bu görevde gerekmiyor. |
-| CLIP ViT-B/32 | Sınırsız isim | Binlerce isim arasında ayrım yapabilir; aynı vektör hem obje adını hem temaları verir; CPU'da 50 ms. |
+Ölçüm on iki görsellik bir test setiyle yapıldı. Sette görev senaryolarındaki
+yedi obje ile keman, fotoğraf makinesi, demlik, karışık bir sahne ve alakasız
+bir görsel vardır. Ön planda tek obje olan on görselin dokuzu doğru bulundu,
+ortalama güven 0.62 oldu. Karışık sahne ve alakasız görsel düşük güven
+eşiğinin altında kalarak emin olamadım mesajı aldı. Alışılmadık bir sosisli
+görseli pide olarak sınıflandı, klasik sosisli görsellerinde güven 0.90 oldu.
 
-Görev "görüntüde ön plana çıkan bir obje" varsayımıyla tanımlandığından
-lokalizasyon gereksizdir; sınıflandırma yeterlidir. Merkez kırpımı ön plandaki
-objenin ağırlığını artırır.
+## 3. Anahtar kelimeler
 
-**Ölçüm:** 12 görsellik test seti (görev senaryolarındaki 7 obje + keman,
-fotoğraf makinesi, demlik, karışık sahne, kaya). Ön planda tek obje olan 10
-görselin 9'u doğru (%90), ortalama güven 0.62. Karışık sahne ve alakasız
-görsel düşük güven eşiğinin (0.25) altında kalarak "emin değilim" mesajı
-aldı. Bir chili dog görseli "pide" olarak sınıflandı; klasik sosisli
-görsellerinde güven 0.90.
+Görev tanımındaki görüntüden öznitelik çıkarıp önceden belirlenmiş
+özniteliklerle karşılaştırma yaklaşımı uygulanır. Tema haritası dosyasında
+480 tema kavramı bulunur. Her kavramın İngilizce bir adı ve Türkçe anahtar
+kelimeleri vardır. Görüntü vektörü bu temalarla karşılaştırılır. En iyi
+temanın yüzde on beşinin ve mutlak eşiğin üstündeki temalardan kelime alınır.
+Her temadan önce bir kelime alınır ki liste tek temaya kilitlenmesin. Objenin
+kendi adı kelime olarak tekrar edilmez. Eşik üçten az kelime bırakırsa
+sıradaki temalardan üçe tamamlanır.
 
-## 3. Anahtar kelimeler: tema dağarcığıyla karşılaştırma
+Kelimeler görüntüye özgüdür. Aynı obje farklı görsellerde farklı kelimeler
+alabilir, bu da sohbet bağlamının ayırt edici olmasını sağlar.
 
-Görev tanımındaki "görüntüden öznitelik çıkarıp önceden belirlenmiş
-özniteliklerle karşılaştırma" yaklaşımı uygulanır. `data/theme_map.json`
-dosyasında 480 tema kavramı (İngilizce anahtar → Türkçe kelimeler) bulunur:
-`fast_food → fast food`, `italian_cuisine → İtalyan mutfağı`,
-`baggage → valiz, seyahat`. Görüntü vektörü bu temalarla karşılaştırılır,
-en iyi temanın %15'inin ve mutlak 0.05 eşiğinin üstündeki temalardan kelime
-alınır. Her temadan önce bir kelime alınır ki liste tek temaya kilitlenmesin;
-objenin kendi adı kelime olarak tekrar edilmez.
+## 4. Arama niyeti
 
-Kelimeler görüntüye özgüdür: ketçaplı sosisli görseli "ketçap, fast food,
-sos, sosis" verirken pizza "hamurlu yemek, İtalyan mutfağı", sırt çantası
-"valiz, aksesuar, seyahat" verir. Aynı obje farklı görsellerde farklı
-kelimeler alabilir; bu, sohbet bağlamının ayrıştırıcı olmasını sağlar.
+Obje adı, anahtar kelimeler ve bağlamdan kural tabanlı doğal dil üretimiyle
+Türkçe bir arama cümlesi kurulur. Her anahtar kelimenin kelime rolleri
+dosyasında bir rolü vardır. Nitelik ve malzeme kelimeleri başa sıfat olarak
+girer. Bileşen kelimeleri ünlü uyumuna göre lı, li, lu ya da lü ekini alır.
+Kullanım kelimeleri ve bağlacıyla listelenir. Aile ve alan kelimeleri sorguya
+girmez çünkü obje adı o bilgiyi zaten taşır.
 
-## 4. Web araması ve metin derleme
+Obje adı çoğullanır, tamlamalarda çoğul eki kökle iyelik eki arasına girer.
+Tek kelimeli objede kullanım kelimesi tamlama kurar. Bağlamdaki önceki obje
+son kelimeyi paylaşıyorsa iki ad tek tamlamada birleşir. Yemek ailesinde
+cümle tarifleri kelimesiyle biter. Ünlü uyumu, ünsüz yumuşaması, iyelik ve
+çoğul ekleri küçük bir Türkçe morfoloji üreteciyle hesaplanır. Bu cümle hem
+ekranda gösterilir hem de arama sorgusudur. Obje güveni eşiğin altındaysa
+anahtar kelimeler de güvenilmez sayılır ve sorgu yalnız obje adı olur.
+Kullanıcı düz metin yazdığında sorgu obje adı ile metnin birleşimidir.
 
-- **Sorgu:** Türkçe obje adı, varsa bağlam kelimesi, varsa kullanıcının yazdığı
-  metin. Fazladan kelime aramayı kendi alanına çektiği için sorgu kısa tutulur.
-- **Vikipedi:** MediaWiki API ile giriş paragrafı alınır; her turda güvenilir
-  bir tanım garantilenir, anlam ayrımı sayfaları atlanır.
-- **DuckDuckGo:** `ddgs` ile 10 sonuç, sosyal medya ve pazaryeri alanları elenir,
-  alan başına bir sayfa, 5 sayfa paralel indirilir.
-- **Paragraf seçimi** (`app/extractor.py`): `trafilatura` ana metni çıkarır,
-  metin paragraflara bölünür. Kurallar sade tutulur: 150-900 karakter, nokta ile
-  biten, Türkçe karakter içeren, obje adından söz eden, site kalıntısı
-  içermeyen paragraflar aday olur. Adaylar obje adı + anahtar kelimelerden
-  kurulan sorguya TF-IDF kosinüs benzerliğiyle sıralanır (Türkçe ekleri hoş
-  görmek için kelimelerin ilk beş harfi kök olarak kullanılır). Kaynak başına
-  bir paragraf, Jaccard benzerliği 0.6'yı aşan tekrarlar elenir, en iyi 3
-  paragraf gösterilir.
+## 5. Web araması ve paragraf seçimi
 
-Cümle cümle seçim yerine bütün paragraf alınması metnin okunabilirliğini
-korur; her paragrafın altında kaynağı yazılır.
+Vikipedi için önce tam başlıkla sayfa istenir, bulunamazsa arama yapılır.
+Anlam ayrımı sayfaları ve objeden söz etmeyen sayfalar atlanır. Giriş tek
+cümleyse yeterli uzunluğa ulaşana kadar sonraki paragraflar eklenir. Sayfanın
+kendi bölümleri de tek istekle okunur ve bilgi bloklarını besler.
 
-## 5. Sohbet bağlamı
+Arama motoru sonuçlarında sosyal medya, pazaryeri, sözlük ve çeviri siteleri
+elenir, alan başına bir sayfa alınır. Sonuçlar başlığa göre önceliklendirilir.
+Bilgi vadeden kelimeler içeren başlıklar öne, satış dili taşıyan başlıklar
+arkaya alınır. Servis geçici hata verirse sorgu kısa bir bekleme sonrası bir
+kez daha denenir.
 
-Son 3 turun objesi ve kelimeleri tutulur. Yeni turun kelimeleri önceki bir
-turla kesişiyorsa iki tur aynı konudadır ve ortak kelime sorguya eklenir
-(sırt çantası → el çantası turunda "aksesuar"). Kesişim yoksa konu değişmiş
-sayılır ve eski tur aramaya karışmaz. Düz metin girdisi son objenin
-bağlamında yeni arama yapar ("kalorisi ne kadar" → "sosisli sandviç kalorisi
-ne kadar").
+Sayfaların ana metni çıkarılır ve paragraflara bölünür. Paragraf yüz elli ile
+dokuz yüz karakter arasında olmalı, nokta ile bitmeli, Türkçe bağlaç içermeli,
+objeden söz etmeli ve site kalıntısı taşımamalıdır. Tarif ve soru cevap
+sitelerinin bilgi taşımayan kalıp cümleleri paragraftan kırpılır. Adaylar obje
+adı ve anahtar kelimelerden kurulan sorguya tf-idf kosinüs benzerliğiyle
+sıralanır. Terim sıklığı, kökün paragraftaki sayısının paragraftaki toplam kök
+sayısına oranıdır. Ters belge sıklığı, aday sayısı artı birin kökü içeren
+paragraf sayısı artı bire oranının doğal logaritması artı birdir. Bu hesap
+hazır kütüphane kullanılmadan yazılmıştır. Türkçe ekleri hoş görmek için
+kelimelerin ilk beş harfi kök olarak kullanılır. Kaynak başına bir paragraf
+alınır, Jaccard benzerliği yüksek tekrarlar elenir.
 
-## 6. Kayıt
+## 6. Bilgi blokları
 
-Her tur `records.json` dosyasında oturum bloğu altına yazılır: girdi, obje ve
-güven, anahtar kelimeler, bağlam, sorgu, arama izi, gösterilen paragraflar ve
-kaynakları, durum. Dosya önce geçici dosyaya yazılıp atomik taşınır.
+Çıktı düz bir paragraf listesi değil, objenin ailesine göre başlıklı
+bloklardır. Her tur tanım bloğuyla başlar. Arama niyeti obje adından farklıysa
+ilgili bloğu gelir. Ardından aileye özgü bloklar gelir. Yemekte tarif ve
+tarihçe, enstrümanda tarihçe ve nasıl çalınır, canlıda özellikleri ve yaşam
+alanı, taşıtta tarihçe ve türleri, diğer ürünlerde çeşitleri ve kullanım
+alanları. Aile, anahtar kelimelerin aile rolündeki kelimelerinden bulunur.
+Şema veri klasöründeki blok dosyasında durur.
 
-## 7. Sınırlılıklar
+Her blok kendi sorgusunu atar, sorgular ikişer paralel gönderilir ve tüm
+sonuçlar tek havuzda indirilir. Her sayfa hangi blok sorgusundan geldiğini
+taşır. Blok önce kendi sorgusunun sayfalarına bakar, havuz yedektir. Blok
+paragrafı en az iki farklı açı kökü içermeli ve açı sorgusuna belirli bir
+eşiğin üstünde benzemelidir. Eşiği geçen paragraf yoksa blok gösterilmez.
+Böylece her turda sabit sayıda blok değil, kaynağın gerçekten desteklediği
+bloklar görünür. Eşikler on iki turluk ölçümde blok skorlarının dağılımına
+bakılarak seçildi.
 
-- Karışık sahnelerde (birden çok eşit ağırlıklı obje) sınıflandırma belirsiz
-  kalır; bu durumda düşük güven mesajı verilir.
-- Tema dağarcığı elle derlenmiştir; kapsam dışı bir alanda kelimeler genel
-  kalabilir. Dosyaya satır eklemek yeterlidir.
-- Arama servisi zaman zaman istek sınırlar; bu durumda Vikipedi paragrafı tek
-  başına gösterilir.
+Tarif ya da çeşit listesi düz paragraf değil yapıdır. Sayfanın html yapısı
+lxml ile okunur, dil modeli kullanılmaz. Madde listeleri, yapılış başlığından
+sonra gelen adımlar ve alt başlıklarla altındaki ilk cümle çıkarılır. Gezinme,
+altbilgi ve yorum alanları atılır. Alt başlıklar yalnız objeyi anıyorsa ve
+satış dili taşımıyorsa çeşit sayılır. Blok şemasındaki biçim alanı hangi
+yapının aranacağını söyler. Yapı yalnız bloğun kendi sorgusunun sayfalarından
+ve başlığı objeyi anan sayfalardan alınır. Yapılı bloklarda doldurma sırası
+sayfa yapısı, Vikipedi bölümü ve düz paragraftır. Paragraf bloklarında önce
+Vikipedi bölümü denenir.
+
+Bloklar başlıklı, paragraflar numaralı dipnotlu, sonda kaynak listesiyle tek
+metin olarak sunulur. Ölçümde sosisli için tarif bloğu on maddelik malzeme
+listesi ve altı adımlık yapılış verdi. Fotoğraf makinesi için çeşitleri bloğu
+beş makine türünü kısa açıklamalarıyla listeledi.
+
+## 7. Sohbet bağlamı ve hafıza
+
+Son üç turun objesi ve kelimeleri tutulur. Yeni tur önceki bir turla anahtar
+kelime paylaşıyorsa ya da obje adları ortak kelime içeriyorsa iki tur aynı
+konudadır. Önceki objenin adı arama niyetine katılır ve ortak kelime paragraf
+sıralamasında öncelik verir. Kesişim yoksa konu değişmiş sayılır ve eski tur
+aramaya karışmaz.
+
+Oturum gösterilen kaynak adreslerini hatırlar. Aynı obje ikinci kez geldiğinde
+tanım tekrarlanmaz, daha önce gösterilen sayfalar seçilmez ve bloklar yeni
+kaynaklarla dolar. Hiç yeni kaynak kalmazsa önceki kaynaklara dönülür ve bu
+kullanıcıya söylenir.
+
+## 8. Kayıt
+
+Her tur kayıt dosyasında oturum bloğu altına yazılır. Girdi, obje ve güven,
+anahtar kelimeler, bağlam, arama niyeti, arama izi, başlıklı bilgi blokları
+ve her paragrafın kaynağı ile turun durumu kaydedilir. Dosya önce geçici
+dosyaya yazılıp atomik taşınır.
+
+## 9. Sınırlılıklar
+
+Karışık sahnelerde sınıflandırma belirsiz kalır, bu durumda düşük güven
+mesajı verilir. Tema dağarcığı elle derlenmiştir, kapsam dışı bir alanda
+kelimeler genel kalabilir. Arama servisi yoğun kullanımda istek sınırlar, bu
+durumda kalan sorgular ve Vikipedi ile devam edilir. Yapılandırılmış çıkarım
+sayfa yapısına bağlıdır, standart dışı sayfalarda düz paragrafa düşülür.

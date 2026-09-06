@@ -1,0 +1,249 @@
+{
+ "yemek": {
+  "aileler": [
+   "yemek",
+   "fast food",
+   "atıştırmalık",
+   "aperatif yemek",
+   "yemek tarifi",
+   "hamurlu yemek",
+   "sokak lezzeti",
+   "ev yemeği",
+   "tarif",
+   "tatlı",
+   "fırın ürünü",
+   "et ürünü",
+   "süt ürünü",
+   "sebze",
+   "meyve",
+   "tropikal meyve",
+   "içecek",
+   "şekerleme",
+   "deniz ürünü",
+   "baklagil"
+  ],
+  "bloklar": [
+   {
+    "baslik": "Tarif",
+    "sorgu": "tarifi",
+    "ipucu": [
+     "tarif",
+     "malzeme",
+     "hazırla",
+     "pişir",
+     "yapılır",
+     "ekle"
+    ],
+    "bicim": "tarif",
+    "bolum": [
+     "hazırlan",
+     "yapılış"
+    ]
+   },
+   {
+    "baslik": "Tarihçe",
+    "sorgu": "tarihçesi",
+    "ipucu": [
+     "tarih",
+     "yüzyıl",
+     "ilk",
+     "ortaya",
+     "köken",
+     "yıllar"
+    ],
+    "bicim": "paragraf",
+    "bolum": [
+     "tarih",
+     "köken",
+     "etimoloji"
+    ]
+   }
+  ]
+ },
+ "enstrüman": {
+  "aileler": [
+   "enstrüman",
+   "müzik aleti",
+   "yaylı çalgı",
+   "tuşlu çalgı"
+  ],
+  "bloklar": [
+   {
+    "baslik": "Tarihçe",
+    "sorgu": "tarihçesi",
+    "ipucu": [
+     "tarih",
+     "yüzyıl",
+     "ilk",
+     "ortaya",
+     "köken",
+     "yıllar"
+    ],
+    "bicim": "paragraf",
+    "bolum": [
+     "tarih",
+     "köken"
+    ]
+   },
+   {
+    "baslik": "Nasıl çalınır",
+    "sorgu": "nasıl çalınır",
+    "ipucu": [
+     "çalın",
+     "çalma",
+     "teknik",
+     "yay",
+     "tel",
+     "tuş",
+     "öğren"
+    ],
+    "bicim": "paragraf",
+    "bolum": [
+     "çalım",
+     "teknik",
+     "çalma"
+    ]
+   }
+  ]
+ },
+ "canlı": {
+  "aileler": [
+   "hayvan",
+   "kuş",
+   "balık",
+   "evcil hayvan",
+   "kedi",
+   "köpek",
+   "böcek",
+   "sürüngen",
+   "bitki",
+   "çiçek",
+   "ağaç",
+   "yaban hayatı",
+   "yavru hayvan",
+   "deniz canlısı"
+  ],
+  "bloklar": [
+   {
+    "baslik": "Özellikleri",
+    "sorgu": "özellikleri nelerdir",
+    "ipucu": [
+     "özellik",
+     "boy",
+     "ağırlık",
+     "renk",
+     "yapı",
+     "tüy"
+    ],
+    "bicim": "madde",
+    "bolum": [
+     "özellik",
+     "anatomi",
+     "fiziksel"
+    ]
+   },
+   {
+    "baslik": "Yaşam alanı",
+    "sorgu": "yaşam alanı",
+    "ipucu": [
+     "yaşa",
+     "bölge",
+     "iklim",
+     "doğal",
+     "beslen",
+     "alan"
+    ],
+    "bicim": "paragraf",
+    "bolum": [
+     "yaşam",
+     "dağılım",
+     "habitat",
+     "beslenme"
+    ]
+   }
+  ]
+ },
+ "taşıt": {
+  "aileler": [
+   "taşıt",
+   "motorlu taşıt",
+   "ticari araç",
+   "toplu taşıma"
+  ],
+  "bloklar": [
+   {
+    "baslik": "Tarihçe",
+    "sorgu": "tarihçesi",
+    "ipucu": [
+     "tarih",
+     "yüzyıl",
+     "ilk",
+     "ortaya",
+     "icat",
+     "yıllar"
+    ],
+    "bicim": "paragraf",
+    "bolum": [
+     "tarih",
+     "köken"
+    ]
+   },
+   {
+    "baslik": "Türleri",
+    "sorgu": "türleri nelerdir",
+    "ipucu": [
+     "tür",
+     "çeşit",
+     "model",
+     "tip",
+     "sınıf"
+    ],
+    "bicim": "basliklar",
+    "bolum": [
+     "tür",
+     "çeşit",
+     "sınıf"
+    ]
+   }
+  ]
+ },
+ "ürün": {
+  "aileler": [],
+  "varsayilan": true,
+  "bloklar": [
+   {
+    "baslik": "Çeşitleri",
+    "sorgu": "türleri nelerdir",
+    "ipucu": [
+     "çeşit",
+     "tür",
+     "model",
+     "tip",
+     "farklı"
+    ],
+    "bicim": "basliklar",
+    "bolum": [
+     "tür",
+     "çeşit",
+     "sınıf"
+    ]
+   },
+   {
+    "baslik": "Kullanım alanları",
+    "sorgu": "nerelerde kullanılır",
+    "ipucu": [
+     "kullan",
+     "amaç",
+     "için",
+     "alan",
+     "ihtiyaç"
+    ],
+    "bicim": "paragraf",
+    "bolum": [
+     "kullanım",
+     "kullanılış"
+    ]
+   }
+  ]
+ }
+}

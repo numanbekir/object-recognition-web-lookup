@@ -1,5 +1,5 @@
 # Numan Bekir Özçelik - 06.09.2026
-"""Terminal arayüzü (Textual). İş akışını bilmez, process_turn'ü çağırır."""
+"""Terminal arayüzü. İş akışını bilmez, yalnız tur işleyicisini çağırır."""
 
 import re
 import time
@@ -16,7 +16,7 @@ INPUT_MAX_LINES = 3  # input alanı en fazla bu değer kadar satır oluşturur
 
 
 def linkify(text: str) -> str:
-    # url'ler ctrl tık ile açılan terminal köprüsüne dönüşür
+    # adresler ctrl+click ile açılan terminal köprüsüne dönüşür
     parts, last = [], 0
     for match in URL_PATTERN.finditer(text):
         parts.append(escape(text[last:match.start()]))
@@ -118,6 +118,7 @@ class ChatApp(App):
     .dim { color: $text-muted; }
     .debug { color: $text-muted; text-style: italic; }
     .title { text-style: bold; margin-top: 1; }
+    .subtitle { text-style: bold; color: $accent; margin-top: 1; }
     #inputrow {
         height: auto;
         border-top: solid #555555;
@@ -183,7 +184,7 @@ class ChatApp(App):
             self.status_line(0, "Model hazırlanıyor (ilk çalıştırma)...")
         self.load_model()
 
-    # --- belirteç, kaynak metnin içinde yaşar ---
+    # belirteç, kaynak metnin içinde yaşar
 
     def attach_source(self, source: str):
         label = "URL" if source.startswith(("http://", "https://", "www.")) else "Görsel"
@@ -249,7 +250,7 @@ class ChatApp(App):
         lines = max(1, box.wrapped_document.height)
         box.styles.height = min(lines, INPUT_MAX_LINES)
 
-    # --- input altındaki durum alanı ---
+    # girdi altındaki durum alanı
 
     def status_line(self, slot: int, text: str):
         self.query_one(f"#status{slot + 1}", Static).update(text)
@@ -272,7 +273,7 @@ class ChatApp(App):
         self.status_line(0, self._status_base)
 
     def _load_progress(self, stage, label, done=None, total=None):
-        # worker thread'inden gelir; indirme MB ilerlemesi, kodlama geçen süre gösterir
+        # çalışan iş parçacığından gelir, indirme ilerlemesi ve kodlama süresi gösterilir
         if stage == "encode":
             self.call_from_thread(self._start_embed_status, label)
             return
@@ -306,7 +307,7 @@ class ChatApp(App):
         self._status_base = f"Model hazır ({self.vision.vocab_size} kavram)."
         self.status_reset(self._status_base)
 
-    # --- ekrana yazma yardımcıları ---
+    # ekrana yazma yardımcıları
 
     def add_line(self, text: str, style_class: str = ""):
         line = Static(text)
@@ -347,7 +348,7 @@ class ChatApp(App):
         if not busy:
             box.focus()
 
-    # --- iş akışı ---
+    # iş akışı
 
     @work(thread=True)
     def load_model(self):
@@ -370,7 +371,7 @@ class ChatApp(App):
             box.focus()
 
     def handle_paste_text(self, raw: str):
-        # tüm yapıştırma/bırakma yolları bu tek denetimden geçer
+        # tüm yapıştırma ve bırakma yolları bu tek denetimden geçer
         box = self.query_one("#inbox", SourceInput)
         if box.disabled:
             return

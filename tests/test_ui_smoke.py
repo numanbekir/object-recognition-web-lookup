@@ -1,5 +1,5 @@
 # Numan Bekir Özçelik - 06.09.2026
-"""Arayüzün headless açılıp kapanabildiğini doğrular; CSS hataları burada yakalanır"""
+"""Arayüzün ekransız açılıp kapanabildiğini doğrular, css hataları burada yakalanır"""
 
 import unittest
 

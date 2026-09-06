@@ -1,5 +1,5 @@
 # Numan Bekir Özçelik - 04.09.2026
-"""URL'den veya yerelden görüntü okur, modele girmeden önce toparlar"""
+"""Adresten veya yerel dosyadan görüntü okur, modele girmeden önce toparlar"""
 
 import io
 import ipaddress
@@ -22,7 +22,7 @@ class ImageLoadError(Exception):
 
 class ImageLoader:
     def load(self, source: str, kind: str):
-        """RGB görüntü döndürür, sorun varsa ImageLoadError"""
+        """RGB görüntü döndürür, sorun varsa ImageLoadError fırlatır"""
         if source.lower().split("?")[0].endswith(".svg"):
             # svg piksel değil çizim talimatı içerir, tespit modeli fotoğraf bekler
             raise ImageLoadError("SVG gibi vektörel formatları desteklemiyorum. JPG ya da PNG dener misin?")
@@ -30,7 +30,7 @@ class ImageLoader:
         return self._decode(data)
 
     def _download(self, url: str) -> bytes:
-        # redirect'ler elle izlenir, her durak isteğe çıkmadan önce iç ağ denetiminden geçer
+        # yönlendirmeler elle izlenir, her durak isteğe çıkmadan önce iç ağ denetiminden geçer
         for _ in range(MAX_REDIRECTS + 1):
             if urlparse(url).scheme not in ("http", "https"):
                 raise ImageLoadError("Bu adresi desteklemiyorum.")

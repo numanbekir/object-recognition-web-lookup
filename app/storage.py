@@ -1,11 +1,11 @@
 # Numan Bekir Özçelik - 06.09.2026
-"""Tur kayıtlarını records.json'a yazar.
+"""Tur kayıtlarını json dosyasına yazar.
 
-Sıfır kurulum şartı için veritabanı yerine tek JSON dosyası kullanılır.
-Kayıtlar oturum bloklarında birikir. Her açılış yeni bir blok açar ve tur
-numarası oturum içinde 1'den başlar. Boş oturum bloğu yazılmaz. Dosyanın
-tamamı önce geçici dosyaya yazılıp atomik taşınır, yarım yazım eski kaydı
-bozamaz. Kayıt hatası uygulamayı düşürmez.
+Kurulum gerektirmediği için veritabanı yerine tek dosya kullanılır. Kayıtlar
+oturum bloklarında birikir. Her açılış yeni bir blok açar ve tur numarası
+oturum içinde 1'den başlar. Boş oturum bloğu yazılmaz. Dosyanın tamamı önce
+geçici dosyaya yazılıp atomik taşınır, yarım yazım eski kaydı bozamaz. Kayıt
+hatası uygulamayı düşürmez.
 """
 
 import json

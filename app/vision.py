@@ -1,24 +1,19 @@
 # Numan Bekir Özçelik - 06.09.2026
 """Görüntüden obje adını ve anahtar kelimeleri çıkarır.
 
-Tek model kullanılır: CLIP ViT-B/32. Görüntü ve metin aynı vektör uzayına
-kodlandığı için sınıflandırma, önceden belirlenmiş isim listeleriyle
-kosinüs benzerliği hesaplayarak yapılır (sıfır atış). Eğitim yok, sınıf
-listesi kod dışında JSON dosyalarında durur ve istenildiği gibi büyütülür.
+Tek model kullanılır. Görüntü ve metin aynı vektör uzayına kodlandığı için
+sınıflandırma, önceden belirlenmiş isim listeleriyle kosinüs benzerliği
+hesaplanarak sıfır atışla yapılır. Eğitim yoktur, sınıf listesi kod dışında
+json dosyalarında durur ve istenildiği gibi büyütülür.
 
-    görüntü ─► görüntü kodlayıcı ─► v (512 boyut, birim uzunluk)
-    obje isimleri ─► metin kodlayıcı ─► O   (1200 x 512)
-    tema isimleri  ─► metin kodlayıcı ─► T   (~490 x 512)
-    obje  = argmax softmax(100 · v·Oᵀ)
-    temalar = en yüksek skorlu satırlar softmax(100 · v·Tᵀ) → Türkçe kelimeler
+Görüntü kodlayıcıdan çıkan vektör iki listeyle karşılaştırılır. Obje listesi
+kimlik sorusuna, tema listesi bağlam sorusuna cevap verir.
 
-Neden CLIP: kapalı kümeli detektörler (YOLO, 80 COCO sınıfı) kapsam
-dışındaki objede sessiz kalır ya da yanlış sınıfa zorlar; açık dağarcıklı
-detektörler (YOLO-World) büyük listede skor seyrelmesi yaşar ve konum
-bilgisi bu görevde gerekmez. CLIP ise 400 milyon görüntü-metin çifti ile
-eğitildiğinden binlerce isim arasında da ayrım yapabilir ve aynı öznitelik
-vektörü hem obje adını hem temaları verir. Ölçümde YOLO'nun "makas" dediği
-keman görselini CLIP tam güvenle doğru sınıfladı.
+Kapalı kümeli detektörler kapsam dışındaki objede sessiz kalır ya da yanlış
+sınıfa zorlar. Açık dağarcıklı detektörler büyük listede skor seyrelmesi
+yaşar ve konum bilgisi bu görevde gerekmez. Bu model yüz milyonlarca görüntü
+ve metin çiftiyle eğitildiğinden binlerce isim arasında ayrım yapabilir ve
+aynı öznitelik vektörü hem obje adını hem temaları verir.
 """
 
 import hashlib
@@ -34,7 +29,7 @@ CLIP_URL = ("https://openaipublic.azureedge.net/clip/models/"
 # birden çok kalıbın ortalaması tek kalıba göre daha kararlı skor verir
 OBJECT_PROMPTS = ("a photo of a {}.", "a close-up photo of a {}.")
 THEME_PROMPTS = ("a photo of {}.", "a photo related to {}.")
-LOGIT_SCALE = 100.0  # CLIP'in eğitimde öğrendiği sıcaklık değeri
+LOGIT_SCALE = 100.0  # modelin eğitimde öğrendiği sıcaklık değeri
 
 
 class Prediction:
@@ -42,7 +37,7 @@ class Prediction:
         self.label = label  # İngilizce dağarcık adı
         self.name_tr = name_tr
         self.confidence = confidence
-        self.alternatives = alternatives  # [(name_tr, confidence), ...]
+        self.alternatives = alternatives  # türkçe ad ve güven çiftleri
 
 
 class Keyword:
@@ -64,7 +59,7 @@ class VisionModel:
         self._object_features = None
         self._theme_features = None
 
-    # --- hazırlık ---
+    # hazırlık
 
     @staticmethod
     def _clip_cache_path() -> Path:
@@ -90,7 +85,7 @@ class VisionModel:
         return self._clip_cache_path().exists() and self._text_cache_path().exists()
 
     def load(self, progress=None):
-        """Modeli ve dağarcık özniteliklerini hazırlar, ilerlemeyi progress(stage, label, done, total) ile bildirir."""
+        """Modeli ve dağarcık özniteliklerini hazırlar, ilerlemeyi progress ile bildirir."""
         import clip  # import ağır olduğu için fonksiyon içinde
         import torch
 
@@ -157,12 +152,12 @@ class VisionModel:
                 features.append(mean / mean.norm(dim=-1, keepdim=True))
         return torch.cat(features)
 
-    # --- çıkarım ---
+    # çıkarım
 
     def _encode_image(self, image):
         """Tam görüntü ve merkez kırpımının ortalama özniteliği.
 
-        Merkez kırpım, ön plandaki objenin arka plana karşı ağırlığını artırır.
+        Merkez kırpım ön plandaki objenin ağırlığını artırır.
         """
         import torch
         width, height = image.size
@@ -177,7 +172,7 @@ class VisionModel:
         return mean / mean.norm()
 
     def analyze(self, image):
-        """Görüntü için (Prediction, [Keyword]) döndürür."""
+        """Görüntü için tahmin ve anahtar kelime listesi döndürür."""
         features = self._encode_image(image)
         object_scores = (LOGIT_SCALE * features @ self._object_features.T).softmax(dim=-1).tolist()
         theme_scores = (LOGIT_SCALE * features @ self._theme_features.T).softmax(dim=-1).tolist()
@@ -193,7 +188,7 @@ class VisionModel:
 
     @staticmethod
     def rank(scores: list, names: list, top: int) -> list:
-        """Skorları büyükten küçüğe (ad, skor) olarak sıralar."""
+        """Skorları büyükten küçüğe ad ve skor çiftleri olarak sıralar."""
         order = sorted(range(len(scores)), key=lambda i: -scores[i])
         return [(names[i], scores[i]) for i in order[:top]]
 
@@ -204,12 +199,21 @@ class VisionModel:
         ranked = VisionModel.rank(scores, theme_keys, len(theme_keys))
         floor = max(ranked[0][1] * config.THEME_MIN_RATIO, config.THEME_MIN_SCORE) if ranked else 0.0
         strong = [(theme, score) for theme, score in ranked if score >= floor]
+        keywords = VisionModel._collect_words(strong, themes, object_tr, limit)
+        if len(keywords) < config.MIN_KEYWORDS:
+            # eşik çok az tema bıraktıysa sıradaki temalarla asgari sayıya tamamlanır
+            keywords = VisionModel._collect_words(ranked[:limit * 3], themes, object_tr,
+                                                  max(len(keywords), config.MIN_KEYWORDS))
+        return keywords
+
+    @staticmethod
+    def _collect_words(ranked: list, themes: dict, object_tr: str, limit: int) -> list:
         object_lower = object_tr.lower()
         keywords, seen = [], set()
         # ilk turda her temadan bir kelime alınır ki liste tek temaya kilitlenmesin,
         # yer kalırsa ikinci turda temaların diğer kelimeleri gelir
-        for position in range(max((len(themes.get(t, [])) for t, _ in strong), default=0)):
-            for theme, score in strong:
+        for position in range(max((len(themes.get(t, [])) for t, _ in ranked), default=0)):
+            for theme, score in ranked:
                 words = themes.get(theme, [])
                 if position >= len(words) or len(keywords) >= limit:
                     continue
