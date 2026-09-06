@@ -64,5 +64,7 @@ girdi ─► görüntü yükle ─► CLIP ─► obje adı + anahtar kelimeler 
 - `app/ui.py` — terminal arayüzü (Textual)
 - `data/` — obje adları (Türkçe) ve tema haritası
 - `tests/` — birim testleri: `python3 -m unittest discover -s tests -t .`
+- `ornek_kayit.json` — görev senaryolarıyla üretilmiş örnek kayıt dosyası
+  (`records.json` her çalıştırmada yazılır ve git dışıdır)
 
 Model tercihi gerekçeleri ve teknik ayrıntılar: `RAPOR.md`

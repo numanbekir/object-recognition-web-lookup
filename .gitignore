@@ -1,10 +1,9 @@
 .venv/
-venv/
 __pycache__/
 *.pyc
 .idea/
 .vscode/
-models/*.pt
 *.pt
 *.part
-nltk_data/
+records.json
+records.json.*
