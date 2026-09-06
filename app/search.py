@@ -83,7 +83,10 @@ class WebSearcher:
                 if not extract or "anlamlara gelebilir" in extract or "anlamına gelebilir" in extract:
                     continue
                 first = re.sub(r"\[\d+\]", "", extract.split("\n")[0].strip())  # dipnot kalıntıları
-                if len(first) < 40 or anchor not in (page.get("title", "") + " " + first).lower():
+                title = page.get("title", "").lower()
+                # arama yedeğinde başlık objeyle başlamalı, "Binlik Demlik" gibi albüm
+                # ve eser sayfaları objeden söz etse de tanım vermez
+                if len(first) < 40 or anchor not in first.lower() or not title.startswith(anchor):
                     continue
                 return first[:config.MAX_PASSAGE_CHARS], page.get("fullurl", "")
         return None
