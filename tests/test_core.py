@@ -109,7 +109,7 @@ class MultiSourceTest(unittest.TestCase):
         self.assertEqual(classify_input("https://a.com/bir.jpg https://b.com/iki.png")[0], "multi")
 
     def test_two_quoted_files_rejected(self):
-        # tırnaklı çift yol da çoklu sayılmalı (shlex tırnak-güvenli)
+        # tırnaklı çift yol da çoklu sayılmalı
         with tempfile.NamedTemporaryFile(suffix=".jpg") as f1, \
                 tempfile.NamedTemporaryFile(suffix=".png") as f2:
             self.assertEqual(classify_input(f"'{f1.name}' '{f2.name}'")[0], "multi")
@@ -258,6 +258,42 @@ class PickDominantTest(unittest.TestCase):
         self.assertEqual(picked.label, "person")
 
 
+class UmbrellaRefinementTest(unittest.TestCase):
+    def _detector(self):
+        from app.detector import ObjectDetector
+        return ObjectDetector()
+
+    def _detection(self, label, conf, box=(10, 10, 90, 90)):
+        from app.detector import Detection
+        return Detection(label, conf, box)
+
+    def test_specific_overlapping_label_wins(self):
+        detector = self._detector()
+        dominant = self._detection("sandwich", 0.92)
+        world = [self._detection("hamburger", 0.84, (12, 12, 88, 88)),
+                 self._detection("cup", 0.80, (200, 200, 260, 260))]  # örtüşmüyor
+        refined = detector._pick_refinement(dominant, world)
+        self.assertEqual(refined.label, "hamburger")
+
+    def test_same_label_or_weak_candidate_keeps_umbrella(self):
+        detector = self._detector()
+        dominant = self._detection("sandwich", 0.92)
+        # açık dağarcık da en emin etiket olarak şemsiyeyi veriyor
+        same = [self._detection("sandwich", 0.90, (12, 12, 88, 88)),
+                self._detection("hamburger", 0.80, (12, 12, 88, 88))]
+        self.assertIsNone(detector._pick_refinement(dominant, same))
+        # ölçülen önyargı bandındaki değer inceltmeye yetmez
+        biased = [self._detection("hamburger", 0.67, (12, 12, 88, 88))]
+        self.assertIsNone(detector._pick_refinement(dominant, biased))
+
+    def test_person_and_disjoint_boxes_ignored(self):
+        detector = self._detector()
+        dominant = self._detection("sandwich", 0.92)
+        world = [self._detection("person", 0.90, (10, 10, 90, 90)),
+                 self._detection("hamburger", 0.60, (300, 300, 400, 400))]
+        self.assertIsNone(detector._pick_refinement(dominant, world))
+
+
 class CocoBridgeTest(unittest.TestCase):
     def test_every_mapped_label_has_turkish_name(self):
         # COCO'dan gelen her etiket Türkçe ad haritasında karşılık bulmalı
@@ -271,6 +307,14 @@ class CocoBridgeTest(unittest.TestCase):
 
 
 class WebSearcherQueryTest(unittest.TestCase):
+    def test_support_term_skips_anchor_phrases(self):
+        from app.search import WebSearcher
+        term = WebSearcher().support_term(
+            "sandviç", ["sandviç ekmeği", "aperatif yemek", "atıştırmalık"])
+        self.assertEqual(term, "aperatif yemek")
+        self.assertEqual(WebSearcher().support_term("köpek", []), "")
+
+
     def test_anchor_plus_single_support_term(self):
         # obje adı ve tek destek kelimesi yeterlidir
         from app.search import WebSearcher
@@ -319,6 +363,27 @@ class ExtractorFilterTest(unittest.TestCase):
             "hava durumu yarın parçalı bulutlu olacak deniyor.",
             "sandviç", ["ekmek"])
         self.assertEqual(off_topic, 0)
+
+    def test_context_bonus_ranks_but_cannot_admit(self):
+        # bağlam alaka eşiğini aşamaz, yalnız geçen cümlelerde sayılır
+        class FakeResult:
+            domain = "a.com"
+
+        page_text = (
+            "Sandviç, iki ekmek dilimi arasına konulan malzemelerle hazırlanan "
+            "bir yiyecektir. Sandviç çeşitleri arasında sosisli sandviç de "
+            "sayılmaktadır ve oldukça yaygındır. Sosisli tezgahları festival "
+            "alanlarında sıkça kurulmaktadır her yıl düzenli olarak.")
+        kept = self.extractor.select_sentences(
+            [(FakeResult(), page_text)], "sandviç", ["ekmek"],
+            ["sosisli sandviç", "atıştırmalık"])
+        texts = [s.text for s in kept]
+        self.assertEqual(len(kept), 2)
+        # çapasız cümleyi bağlam kurtaramaz
+        self.assertFalse(any(t.startswith("Sosisli tezgahları") for t in texts))
+        hits = {s.text[:16]: s.context_hits for s in kept}
+        self.assertEqual(hits["Sandviç, iki ekm"], 0)
+        self.assertEqual(hits["Sandviç çeşitler"], 1)
 
     def test_deduplicate_near_copies(self):
         from app.extractor import Sentence
@@ -370,6 +435,22 @@ class ComposerTest(unittest.TestCase):
         # çekirdekle örtüşmeyen cümle temadan elenir
         self.assertNotIn("park etme", text)
 
+    def test_context_hits_reorder_within_group(self):
+        # bağlama değen cümle kendi grubunda öne gelir, tanım yerinde kalır.
+        # bağlamsızken tüm değerler sıfır olduğundan sıralama düzeni değişmez
+        from app.composer import TextComposer
+        from app.extractor import Sentence
+        definition = Sentence("Sandviç, iki ekmek dilimi arasına konulan "
+                              "malzemelerle hazırlanan bir yiyecektir.", "a.com", 2.0)
+        plain = Sentence("Sandviçler pikniklerde ve okul çantalarında sık "
+                         "tercih edilen yiyecekler arasında yer alır.", "b.com", 1.5)
+        contextual = Sentence("Sandviç çeşitleri arasında sosisli sandviç "
+                              "önemli bir yer tutuyor.", "c.com", 1.5, context_hits=1)
+        text, _, _ = TextComposer().compose(
+            [definition, plain, contextual], "sandviç")
+        self.assertTrue(text.startswith("Sandviç, iki ekmek"))
+        self.assertLess(text.find("sosisli"), text.find("piknik"))
+
     def test_too_few_sentences_returns_empty(self):
         from app.composer import TextComposer
         from app.extractor import Sentence
@@ -384,6 +465,146 @@ class ImageLoaderTest(unittest.TestCase):
         with self.assertRaises(ImageLoadError) as ctx:
             ImageLoader().load("/tmp/logo.svg", "path")
         self.assertIn("vektörel", str(ctx.exception))
+
+
+class SessionContextTest(unittest.TestCase):
+    def _session(self):
+        from app.session import SessionContext
+        return SessionContext()
+
+    def test_decay_and_prune(self):
+        # eski ağırlıklar her turda yarılanır, tabanın altı silinir
+        session = self._session()
+        for name in ("aaa", "bbb", "ccc", "ddd", "eee"):
+            session.add_turn(name, [name])
+        weights = {e["obje"]: e["agirlik"] for e in session.entries}
+        self.assertEqual(session.last_object(), "eee")
+        self.assertAlmostEqual(weights["ddd"], 0.5)
+        self.assertAlmostEqual(weights["bbb"], 0.125)
+        self.assertNotIn("aaa", weights)  # 0.0625 < taban, budandı
+
+    def test_repeat_object_refreshes_without_duplicate(self):
+        session = self._session()
+        session.add_turn("köpek", ["hayvan"])
+        session.add_turn("kedi", ["hayvan"])
+        session.add_turn("köpek", ["hayvan"])
+        names = [e["obje"] for e in session.entries]
+        self.assertEqual(names.count("köpek"), 1)
+        self.assertEqual(session.last_object(), "köpek")
+
+    def test_related_entries_sorted_and_gated(self):
+        # kesişenler ağırlık sırasıyla gelir, kesişmeyen hiç gelmez
+        session = self._session()
+        session.add_turn("cep telefonu", ["elektronik", "teknoloji"])
+        session.add_turn("köpek", ["evcil hayvan", "bakım"])
+        related = session.related_entries("kulaklık", ["elektronik", "müzik"])
+        self.assertEqual([e["obje"] for e in related], ["cep telefonu"])
+        self.assertEqual(session.related_entries("sandviç", ["yemek"]), [])
+
+    def test_sibling_names_detected(self):
+        session = self._session()
+        self.assertTrue(session.is_sibling("sosisli sandviç", "sandviç"))
+        self.assertFalse(session.is_sibling("cep telefonu", "kulaklık"))
+
+    def test_topic_needs_two_supporters(self):
+        session = self._session()
+        session.add_turn("cep telefonu", ["elektronik", "teknoloji"])
+        self.assertIsNone(session.topic())  # tek obje konu iddia edemez
+        session.add_turn("kulaklık", ["elektronik", "müzik"])
+        label, weight = session.topic()
+        self.assertEqual(label, "elektronik")
+        self.assertAlmostEqual(weight, 1.5)
+
+    def test_topic_label_uses_shortest_surface_form(self):
+        # aynı kökün en kısa yüzey biçimi etiket olur
+        session = self._session()
+        session.add_turn("sandviç", ["yemek tarifi", "ekmek"])
+        session.add_turn("pizza", ["yemek tarifi", "yemek"])
+        label, _ = session.topic()
+        self.assertEqual(label, "yemek")
+
+    def test_summary_line_distills_state(self):
+        session = self._session()
+        self.assertEqual(session.summary_line(), "")
+        session.add_turn("cep telefonu", ["elektronik", "teknoloji"])
+        self.assertEqual(session.summary_line(), "Son nesne: cep telefonu")
+        session.add_turn("kulaklık", ["elektronik", "müzik"])
+        self.assertEqual(session.summary_line(),
+                         "Konu: elektronik · Son nesne: kulaklık")
+
+
+class StorageTest(unittest.TestCase):
+    def _storage(self, directory):
+        from pathlib import Path
+
+        from app.storage import Storage
+        return Storage(Path(directory) / "records.json")
+
+    def test_append_and_reload(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            storage = self._storage(directory)
+            self.assertIsNone(storage.load())
+            self.assertEqual(storage.next_turn_no(), 1)
+            self.assertTrue(storage.append({"tur_no": 1, "durum": "tamam", "obje": "köpek"}))
+            data = json.loads(storage.path.read_text(encoding="utf-8"))
+            self.assertEqual(data["oturumlar"][0]["turlar"][0]["obje"], "köpek")
+            self.assertIn("basladi", data["oturumlar"][0])
+            # yeni açılış yeni oturum bloğu açar, tur numarası 1'den başlar
+            fresh = self._storage(directory)
+            self.assertIsNone(fresh.load())
+            self.assertEqual(fresh.next_turn_no(), 1)
+            self.assertTrue(fresh.append({"tur_no": 1, "durum": "tamam", "obje": "kedi"}))
+            data = json.loads(fresh.path.read_text(encoding="utf-8"))
+            self.assertEqual(len(data["oturumlar"]), 2)
+            self.assertEqual(data["oturumlar"][0]["turlar"][0]["obje"], "köpek")
+            self.assertEqual(data["oturumlar"][1]["turlar"][0]["obje"], "kedi")
+
+    def test_session_start_precedes_first_turn(self):
+        # basladi açılışta damgalanır, ilk turun zamanından sonra kalamaz
+        from datetime import datetime
+        with tempfile.TemporaryDirectory() as directory:
+            storage = self._storage(directory)
+            turn_time = datetime.now().isoformat(timespec="seconds")
+            storage.append({"tur_no": 1, "zaman": turn_time})
+            block = storage.records["oturumlar"][0]
+            self.assertLessEqual(block["basladi"], turn_time)
+
+    def test_empty_session_leaves_no_block(self):
+        # açılıp hiç tur atılmadan kapanan oturum dosyaya blok yazmaz
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            storage = self._storage(directory)
+            storage.load()
+            storage.append({"tur_no": 1})
+            idle = self._storage(directory)
+            idle.load()  # append yok
+            data = json.loads(storage.path.read_text(encoding="utf-8"))
+            self.assertEqual(len(data["oturumlar"]), 1)
+
+    def test_corrupt_file_is_sidelined(self):
+        with tempfile.TemporaryDirectory() as directory:
+            storage = self._storage(directory)
+            storage.path.write_text("{bozuk json", encoding="utf-8")
+            note = storage.load()
+            self.assertIsNotNone(note)
+            self.assertTrue(storage.path.with_name("records.json.bozuk").exists())
+            self.assertFalse(storage.path.exists())
+            self.assertTrue(storage.append({"tur_no": 1}))
+
+    def test_unexpected_structure_is_sidelined(self):
+        with tempfile.TemporaryDirectory() as directory:
+            storage = self._storage(directory)
+            storage.path.write_text("[1, 2, 3]", encoding="utf-8")
+            self.assertIsNotNone(storage.load())
+            self.assertEqual(storage.next_turn_no(), 1)
+
+    def test_write_failure_returns_false(self):
+        from pathlib import Path
+
+        from app.storage import Storage
+        storage = Storage(Path("/olmayan-dizin/records.json"))
+        self.assertFalse(storage.append({"tur_no": 1}))
 
 
 if __name__ == "__main__":

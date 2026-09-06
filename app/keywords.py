@@ -1,14 +1,12 @@
 # Numan Bekir Özçelik - 04.09.2026
 """Tespit edilen objeden anahtar kelime üretir.
 
-Dört kaynak-tek puan ölçeği:
-    1. theme_map
-    2. WordNet üst kavramları -> theme_map temaları
-       puan = yakınlık (1/seviye) x ayırt edicilik (log(dağarcık/kapsam))
-    3. WordNet parça/malzeme ilişkisi (varsa)
-    4. Arama motoru otomatik tamamlaması (gerçek kullanıcı niyeti)
-İkincil nesnelerin katkısı yarı ağırlıklıdır; tepe puanın beşte birinin
-altında kalan kelimeler elenir. Her kelime kaynağını ve puanını taşır.
+Dört kaynak tek puan ölçeğinde birleşir. Doğrudan tema haritası, WordNet
+üst kavramlarından gelen temalar, WordNet parça ve malzeme ilişkisi ve
+arama motoru otomatik tamamlaması. Üst kavram puanı yakınlık ile ayırt
+edicilik çarpımıdır. İkincil nesnelerin katkısı yarı ağırlıklıdır, tepe
+puanın beşte birinin altında kalan kelimeler elenir. Her kelime kaynağını
+ve puanını taşır.
 """
 
 import json
@@ -28,9 +26,8 @@ STOP_CONCEPTS = {
 }
 MAX_HYPERNYM_DEPTH = 6
 
-# anlam seçimi: dağarcık fiziksel nesnelerden oluşur; önce nesne alanları
-# denenir, madde/iletişim gibi alanlar yedektir, insan/zaman/eylem anlamları
-# hiç kullanılmaz
+# anlam seçiminde önce nesne alanları denenir, madde gibi alanlar yedektir,
+# insan ve zaman ve eylem anlamları hiç kullanılmaz
 SENSE_TIERS = (
     {"noun.artifact", "noun.animal", "noun.food", "noun.plant", "noun.object"},
     {"noun.substance", "noun.body", "noun.communication", "noun.possession"},
@@ -136,18 +133,18 @@ class KeywordExtractor:
         def add(word, source, score):
             found.append(Keyword(word, source, score * factor))
 
-        # 1. doğrudan girdi: nesneye özel yazıldığı için tavan puan
+        # doğrudan girdi nesneye özel yazıldığı için tavan puan alır
         for word in self.theme_map.get(self._key(label), []):
             add(word, "girdi", self._top_score())
 
         sense = self._pick_sense(label)
         if sense is not None:
-            # 2. üst kavram temaları: yakınlık x ayırt edicilik
+            # üst kavram temaları yakınlık ve ayırt edicilik çarpımıyla puanlanır
             for concept, depth in self._concept_depths(sense).items():
                 for word in self.theme_map.get(concept, []):
                     rarity = math.log(self.vocab_size / max(self.breadth.get(concept, 1), 1))
                     add(word, f"kavram:{concept}", (1.0 / depth) * rarity)
-            # 3. parça/malzeme ilişkisi: yalnız baskın nesne için
+            # parça ve malzeme ilişkisi yalnız baskın nesne için
             if factor == 1.0:
                 parts = sense.part_meronyms() + sense.substance_meronyms()
                 for part in parts[:2]:
@@ -155,7 +152,7 @@ class KeywordExtractor:
                     turkish = self.names_tr.get(name.replace("_", " "))
                     if turkish is None or turkish == self.turkish_name(label):
                         continue
-                    # çeviri sözlüğü nesne anlamına göre yazıldı; bileşenin anlamı aynı olmalı
+                    # çeviri sözlüğü nesne anlamına göre yazıldı, bileşenin anlamı aynı olmalı
                     if self._pick_sense(name.replace("_", " ")) != part:
                         continue
                     add(turkish, "bileşen", 0.9 * self._top_score())
@@ -182,7 +179,7 @@ class KeywordExtractor:
 
         found = []
         for phrase in phrases:
-            # kelime sınırı şart: bitişik türevler ek değildir
+            # kelime sınırı şart, bitişik türevler ek değildir
             if not phrase.startswith(turkish + " "):
                 continue
             suffix = phrase[len(turkish):].strip()
@@ -198,7 +195,7 @@ class KeywordExtractor:
                 found.append(phrase_full)
             if len(found) >= config.MAX_SUGGESTION_KEYWORDS:
                 break
-        # dolgu rolü: diğer kaynaklar doluyken öne geçemez
+        # dolgu rolündedir, diğer kaynaklar doluyken öne geçemez
         return [Keyword(word, "arama önerisi", 0.25 * self._top_score()) for word in found]
 
     @staticmethod
@@ -218,14 +215,13 @@ class KeywordExtractor:
 
     def extract_scored(self, label: str, secondary_labels: list,
                        use_suggestions: bool = True) -> list:
-        """Puanlı, kaynak etiketli anahtar kelime listesi (en fazla MAX_KEYWORDS).
+        """Puanlı ve kaynak etiketli anahtar kelime listesi döndürür.
 
-        BASKIN ÖNCE: kelimeler objeyi anlatmalı; sahnedeki yan nesneler ancak
-        baskın nesnenin kelimelerinden slot artarsa listeye girer (aksi halde
-        kitaplıklı bir masada dizüstünün 'bilgisayar' teması listeye giremiyordu).
+        Kelimeler önce objeyi anlatmalıdır. Sahnedeki yan nesneler ancak
+        baskın nesnenin kelimelerinden slot artarsa listeye girer.
         """
         ranked = self._rank(self._collect(label, 1.0))
-        # öneriler puan yarışına girmez: baskın nesne kelime kıtlığı çekiyorsa temaların ARKASINA dolgu olarak eklenir
+        # öneriler puan yarışına girmez, kelime kıtlığında temaların arkasına dolgu olur
         if use_suggestions and len(ranked) < config.SUGGESTION_FILL_THRESHOLD:
             seen = {item.word for item in ranked}
             ranked += [item for item in self._intent_keywords(self.turkish_name(label))
@@ -237,7 +233,10 @@ class KeywordExtractor:
             scene = []
             for secondary in secondary_labels:
                 scene += self._collect(secondary, 0.5)
+            top = result[0].score if result else 0.0
             for item in self._rank(scene):
+                if top and item.score < 0.2 * top:
+                    break  # sahne dolgusu da tepe puanın %20 eşiğine tabidir
                 if item.word in seen:
                     continue
                 result.append(item)

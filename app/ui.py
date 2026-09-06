@@ -17,7 +17,7 @@ INPUT_MAX_LINES = 3  # input alanı en fazla bu değer kadar satır oluşturur
 
 
 def linkify(text: str) -> str:
-    # url'ler terminal köprüsüne dönüşür (ctrl+tık ile açılır)
+    # url'ler ctrl tık ile açılan terminal köprüsüne dönüşür
     parts, last = [], 0
     for match in URL_PATTERN.finditer(text):
         parts.append(escape(text[last:match.start()]))
@@ -88,7 +88,7 @@ class SourceInput(TextArea):
         self.tooltip = None
 
     async def _on_paste(self, event: events.Paste):
-        # yapıştırma alana varmadan tek merkezden (belirteç/ret denetimi) geçer
+        # yapıştırma alana varmadan tek merkezden denetlenir
         event.stop()
         event.prevent_default()
         self.app.handle_paste_text(event.text)
@@ -118,6 +118,7 @@ class ChatApp(App):
     }
     .dim { color: $text-muted; }
     .debug { color: $text-muted; text-style: italic; }
+    .title { text-style: bold; margin-top: 1; }
     #inputrow {
         height: auto;
         border-top: solid #555555;
@@ -131,17 +132,20 @@ class ChatApp(App):
         padding: 0;
         background: transparent;
     }
-    #status { height: 2; margin: 0 2 1 2; }
+    #status { height: 3; margin: 0 2 1 2; }
     #status Static { height: 1; color: $text-muted; }
     #status Static.warn { color: $warning; }
     """
 
-    def __init__(self, loader, detector, keywords, process_turn, classify_input, tools,
-                 debug=False):
+    def __init__(self, loader, detector, keywords, session, storage, process_turn,
+                 classify_input, tools, debug=False, storage_note=None):
         super().__init__()
         self.loader = loader
         self.detector = detector
         self.keywords = keywords
+        self.session = session
+        self.storage = storage
+        self.storage_note = storage_note
         self.process_turn = process_turn
         self.classify_input = classify_input
         self.tools = tools
@@ -167,9 +171,12 @@ class ChatApp(App):
             yield SourceInput(id="inbox")
         with Vertical(id="status"):
             yield Static("", id="status1")
+            yield Static("", id="statusctx")
             yield Static("", id="status2")
 
     def on_mount(self):
+        if self.storage_note:
+            self.add_line(self.storage_note, "dim")
         self.query_one("#inbox", SourceInput).focus()
         self.set_busy(True)  # tek bilgi kaynağı durum satırıdır
         if self.detector.is_ready_on_disk():
@@ -178,7 +185,7 @@ class ChatApp(App):
             self.status_line(0, "Model dosyaları denetleniyor...")
         self.load_model()
 
-    # --- belirteç: kaynak, metnin içinde [Görsel] olarak yaşar ---
+    # --- belirteç, kaynak metnin içinde yaşar ---
 
     def attach_source(self, source: str):
         label = "URL" if source.startswith(("http://", "https://", "www.")) else "Görsel"
@@ -244,7 +251,7 @@ class ChatApp(App):
         lines = max(1, box.wrapped_document.height)
         box.styles.height = min(lines, INPUT_MAX_LINES)
 
-    # --- durum alanı: input altında 2 satır ---
+    # --- input altındaki durum alanı ---
 
     def status_line(self, slot: int, text: str):
         self.query_one(f"#status{slot + 1}", Static).update(text)
@@ -267,7 +274,7 @@ class ChatApp(App):
         self.status_line(0, self._status_base)
 
     def _load_progress(self, key, index, total, label, done, size):
-        # worker thread'inden gelir; adım sırası plandan geldiği için satırlar sabittir
+        # worker thread'inden gelir, adım sırası plandan geldiği için satırlar sabittir
         if key == "embed":
             self.call_from_thread(self._start_embed_status, f"[{index}/{total}] {label}")
             return
@@ -323,12 +330,20 @@ class ChatApp(App):
         else:
             self.add_line(f"[bold cyan]›[/] {escape(raw.strip())}", "user")
 
-    def emit(self, message: str):
-        self.call_from_thread(self.add_line, linkify(message))
+    def emit(self, message: str, style: str = ""):
+        self.call_from_thread(self.add_line, linkify(message), style)
 
     def emit_debug(self, stage: str, message: str):
         if self.debug_mode:
             self.call_from_thread(self.add_line, escape(f"{stage} · {message}"), "debug")
+
+    def emit_context(self, line: str):
+        self.call_from_thread(self._set_context, line)
+
+    def _set_context(self, line: str):
+        # input altındaki kalıcı satır iç durumu değil damıtılmış özeti gösterir
+        text = f"↻ {escape(line)}" if line else ""
+        self.query_one("#statusctx", Static).update(text)
 
     def set_busy(self, busy: bool, note: str = ""):
         box = self.query_one("#inbox", SourceInput)
@@ -397,7 +412,7 @@ class ChatApp(App):
         if self.attached_source and self.attached_token in raw:
             remaining = raw.replace(self.attached_token, "").strip()
             if remaining:
-                # görsel+mesaj birleşimi arama katmanıyla gelecek; sessiz kayıp olmasın
+                # görsel ve mesaj birleşimi ileride gelecek, sessiz kayıp olmasın
                 self.status_flash("Görselle mesajı birlikte işleme özelliği yakında; "
                                   "şimdilik görseli tek başına gönderir misin?")
                 return
@@ -436,7 +451,8 @@ class ChatApp(App):
         start = time.perf_counter()
         try:
             self.process_turn(kind, value, self.loader, self.detector, self.keywords,
-                              self.emit, self.emit_debug)
+                              self.session, self.storage, self.emit, self.emit_debug,
+                              self.emit_context)
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın
             self.emit("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")

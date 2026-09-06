@@ -74,6 +74,10 @@ class TextComposer:
         """Önce tanım, sonra genel, sonra sayılı detay dizilir."""
         general = [s for s in rest if not any(ch.isdigit() for ch in s.text)]
         detail = [s for s in rest if any(ch.isdigit() for ch in s.text)]
+        # bağlama değen cümleler grup içinde öne gelir, sıralama kararlı
+        # olduğu için bağlam yokken arama sırası aynen korunur
+        general.sort(key=lambda s: -s.context_hits)
+        detail.sort(key=lambda s: -s.context_hits)
         ordered, run_source, run_length = [], None, 0
         for sentence in definitions + general + detail:
             if len(ordered) >= config.MAX_SENTENCES:

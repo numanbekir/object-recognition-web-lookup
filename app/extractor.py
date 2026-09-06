@@ -57,10 +57,12 @@ STOPWORDS = {
 
 
 class Sentence:
-    def __init__(self, text: str, source: str, score: float = 0.0):
+    def __init__(self, text: str, source: str, score: float = 0.0,
+                 context_hits: int = 0):
         self.text = text
         self.source = source  # dipnot ve kayıt için domain
         self.score = score
+        self.context_hits = context_hits  # sohbet bağlamına değen kök sayısı
 
 
 class ContentExtractor:
@@ -94,10 +96,13 @@ class ContentExtractor:
 
     # --- cümle seçimi ---
 
-    def select_sentences(self, pages: list, object_tr: str, keywords: list) -> list:
+    def select_sentences(self, pages: list, object_tr: str, keywords: list,
+                         context_words: list = ()) -> list:
         anchor = object_tr.lower()
         # ek toleransı için kök benzeri karşılaştırma yapılır
         keyword_stems = [word.lower()[:5] for word in keywords if len(word) >= 4]
+        # bağlam eşiği aşamaz, yalnız kapıyı geçen cümleler arasında öncelik verir
+        context_stems = [word.lower()[:5] for word in context_words if len(word) >= 4]
 
         selected = []
         for result, text in pages:
@@ -105,12 +110,14 @@ class ContentExtractor:
                 sentence = " ".join(raw.split())
                 if not self._passes_rules(sentence):
                     continue
-                score = self._relevance(sentence.lower(), anchor, keyword_stems)
+                lower = sentence.lower()
+                score = self._relevance(lower, anchor, keyword_stems)
                 if score <= 0:
                     continue
                 if not self._classifier_approves(sentence):
                     continue
-                selected.append(Sentence(sentence, result.domain, score))
+                hits = sum(1 for stem in context_stems if stem in lower)
+                selected.append(Sentence(sentence, result.domain, score, hits))
         return self._deduplicate(selected)
 
     def _passes_rules(self, sentence: str) -> bool:
@@ -136,12 +143,17 @@ class ContentExtractor:
         return True
 
     def _relevance(self, lower: str, anchor: str, keyword_stems: list) -> float:
-        """Obje adı ağır basar, kelimeler destekler."""
-        score = 0.0
+        """Obje adı zorunludur, kelimeler destekler.
+
+        Çapasız cümle kelime kökleriyle içeri giremez. Destek ifadesi
+        alakasız bir kavramın sayfasını getirdiğinde o sayfanın cümleleri
+        bu kapıda ölür.
+        """
         # çok kelimeli adın her parçası ayrı aranır
         anchor_parts = [part[:5] for part in anchor.split() if len(part) >= 3]
-        if anchor_parts and all(part in lower for part in anchor_parts):
-            score += 2.0
+        if anchor_parts and not all(part in lower for part in anchor_parts):
+            return 0.0
+        score = 2.0 if anchor_parts else 0.0
         score += sum(0.5 for stem in keyword_stems if stem in lower)
         return score if score >= 1.0 else 0.0
 

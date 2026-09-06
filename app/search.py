@@ -27,6 +27,14 @@ class SearchResult:
 
 
 class WebSearcher:
+    def support_term(self, object_tr: str, keywords: list) -> str:
+        """Sorguya eşlik edecek tek destek kelimesini seçer, çapayı içerenler atlanır."""
+        for word in keywords:
+            if object_tr in word or word in object_tr:
+                continue
+            return word
+        return ""
+
     def build_query(self, object_tr: str, keywords: list,
                     context_terms: list = (), user_text: str = "") -> str:
         """Objenin adı sorgudan hiç çıkmaz."""

@@ -1,9 +1,10 @@
 # Numan Bekir Özçelik - 04.09.2026
 """nesne tespiti için iki model
 
-    görüntü -> YOLO11n (COCO, 80 yaygın sınıf; isabet yüksek)
+    görüntü -> YOLO11n, 80 yaygın COCO sınıfı
                  baskın kutu yeterince eminse -> sonuç
-               değilse -> YOLO-World + LVIS dağarcığı (açık kapsam)
+                 şemsiye sınıf odaklanmış dağarcıkla inceltilir
+               değilse -> YOLO-World ve LVIS dağarcığı, açık kapsam
     baskın obje skoru = sqrt(alan) x merkeze yakınlık x güven^2
 """
 
@@ -21,7 +22,7 @@ WEIGHTS_URL = ("https://github.com/ultralytics/assets/releases/download/"
 CLIP_URL = ("https://openaipublic.azureedge.net/clip/models/"
             "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt")
 
-# COCO sınıf adlarının dağarcıktaki karşılıkları (farklı yazılanlar);
+# farklı yazılan COCO sınıf adlarının dağarcıktaki karşılıkları
 COCO_TO_VOCAB = {
     "fire hydrant": "fireplug",
     "tie": "necktie",
@@ -51,11 +52,12 @@ class Detection:
 
 class ObjectDetector:
     def __init__(self):
-        self.primary = None  # COCO modeli (yaygın nesneler)
+        self.primary = None  # yaygın nesnelerin COCO modeli
         self.model = None  # açık dağarcık modeli
         self.vocab_size = 0
         self.last_engine = ""
         self.last_uncertain = False
+        self._refiners = {}  # şemsiye sınıf başına odaklanmış model, tembel kurulur
 
     def is_ready_on_disk(self) -> bool:
         return (config.DETECTOR_CUSTOM.exists()
@@ -104,7 +106,7 @@ class ObjectDetector:
                     for future in futures:
                         future.result()
             except Exception:
-                # adresler değişmiş olabilir; kütüphanelerin kendi indiricileri devralsın
+                # adresler değişmiş olabilir, kütüphanelerin kendi indiricileri devralsın
                 pass
 
         # dosya hala yoksa ultralytics adı tanıyıp kendisi indirir
@@ -143,12 +145,12 @@ class ObjectDetector:
         partial.replace(dest)  # yarım inen dosya gerçek adıyla kalmaması için
 
     def detect(self, image) -> list:
-        """Hibrit akış; self.last_uncertain=True ise iki model de uyuşmadı demektir.
+        """Hibrit akış, kararsızlıkta last_uncertain işaretlenir.
 
-        COCO güçlüyse (>=trust) doğrudan kabul. Orta bölgede (0.25-0.55) açık
-        dağarcığa da sorulur: aynı etiketi o da görüyorsa COCO onaylanır,
+        COCO güven eşiğini aşıyorsa doğrudan kabul edilir. Orta bölgede açık
+        dağarcığa da sorulur. Aynı etiketi o da görüyorsa COCO onaylanır,
         görmüyorsa ve güçlü bir alternatifi de yoksa cevap uydurmak yerine
-        kararsızlık işaretlenir
+        kararsızlık işaretlenir.
         """
         self.last_uncertain = False
         primary = self._predict(self.primary, image, COCO_TO_VOCAB)
@@ -157,6 +159,17 @@ class ObjectDetector:
                       and dominant.confidence >= config.PERSON_OVERRIDE_MIN)
 
         if has_object and dominant.confidence >= config.PRIMARY_TRUST_CONFIDENCE:
+            if dominant.label in config.UMBRELLA_CLASSES:
+                # odaklanmış dağarcık aynı kutuda daha özgül bir etiket
+                # veriyorsa o kazanır
+                focused = self._predict(self._refiner(dominant.label), image,
+                                        None, dedup=False)
+                refined = self._pick_refinement(dominant, focused)
+                if refined is not None:
+                    dominant.label = refined.label
+                    dominant.confidence = refined.confidence
+                    self.last_engine = "coco+inceltme"
+                    return primary
             self.last_engine = "coco"
             return primary
 
@@ -179,7 +192,35 @@ class ObjectDetector:
         self.last_uncertain = True
         return primary
 
-    def _predict(self, model, image, label_map) -> list:
+    def _refiner(self, umbrella: str):
+        """Şemsiye sınıfın küçük dağarcıklı modelini ilk kullanımda kurar.
+
+        Tam dağarcıkta özgül etiket skor seyrelmesine yenik düşüyor. Birkaç
+        isimlik odaklanmış liste bu rekabeti ortadan kaldırıyor.
+        """
+        if umbrella not in self._refiners:
+            from ultralytics import YOLOWorld
+            weights = config.MODELS_DIR / config.DETECTOR_WEIGHTS
+            refiner = YOLOWorld(str(weights) if weights.exists()
+                                else config.DETECTOR_WEIGHTS)
+            refiner.set_classes(list(config.UMBRELLA_CLASSES[umbrella]))
+            self._refiners[umbrella] = refiner
+        return self._refiners[umbrella]
+
+    def _pick_refinement(self, dominant, world_detections: list):
+        """Şemsiye kutuyla örtüşen en emin ve daha özgül etiketi seçer."""
+        candidates = [d for d in world_detections
+                      if d.label != "person"
+                      and self._iou(d.box, dominant.box) >= config.UMBRELLA_IOU]
+        if not candidates:
+            return None
+        top = max(candidates, key=lambda d: d.confidence)
+        # açık dağarcık da şemsiye etiketi öne koyuyorsa inceltme yapılmaz
+        if top.label == dominant.label or top.confidence < config.UMBRELLA_REFINE_MIN:
+            return None
+        return top
+
+    def _predict(self, model, image, label_map, dedup: bool = True) -> list:
         result = model.predict(image, conf=config.CONFIDENCE_THRESHOLD, verbose=False)[0]
         detections = []
         for box in result.boxes:
@@ -187,7 +228,8 @@ class ObjectDetector:
             if label_map:
                 label = label_map.get(label, label)
             detections.append(Detection(label, float(box.conf), tuple(box.xyxy[0].tolist())))
-        return self._deduplicate(detections)
+        # inceltme ham listeye bakar, tekilleştirme eş kutudaki özgül etiketi silebilir
+        return self._deduplicate(detections) if dedup else detections
 
     @staticmethod
     def _iou(a: tuple, b: tuple) -> float:
@@ -201,7 +243,7 @@ class ObjectDetector:
         return intersection / (area_a + area_b - intersection)
 
     def _deduplicate(self, detections: list) -> list:
-        # aynı bölgeye düşen eş anlamlı etiketler teklenir;
+        # aynı bölgeye düşen eş anlamlı etiketler teklenir
         detections = sorted(detections, key=lambda d: -d.confidence)
         kept = []
         for detection in detections:

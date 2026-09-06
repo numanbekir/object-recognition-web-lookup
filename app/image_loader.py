@@ -1,5 +1,5 @@
 # Numan Bekir Özçelik - 04.09.2026
-"""URL'den veya yerelden görüntü okur, modele girmeden önce toparlar (exif, rgb, boyut)"""
+"""URL'den veya yerelden görüntü okur, modele girmeden önce toparlar"""
 
 import io
 import ipaddress
@@ -30,7 +30,7 @@ class ImageLoader:
         return self._decode(data)
 
     def _download(self, url: str) -> bytes:
-        # redirect'ler elle izlenir; her durak isteğe çıkmadan ÖNCE iç ağ denetiminden geçer
+        # redirect'ler elle izlenir, her durak isteğe çıkmadan önce iç ağ denetiminden geçer
         for _ in range(MAX_REDIRECTS + 1):
             if urlparse(url).scheme not in ("http", "https"):
                 raise ImageLoadError("Bu adresi desteklemiyorum.")
@@ -71,7 +71,7 @@ class ImageLoader:
         return bytes(data)
 
     def _reject_internal_hosts(self, url: str):
-        # iç ağa (localhost, 192.168.x vb.) istek atılmasın
+        # iç ağ adreslerine istek atılmasın
         host = urlparse(url).hostname
         if not host:
             raise ImageLoadError("Adresi çözümleyemedim. Kontrol eder misin?")
@@ -101,7 +101,7 @@ class ImageLoader:
         try:
             image = Image.open(io.BytesIO(data))
             image = ImageOps.exif_transpose(image)  # telefon fotoğrafların yan gelmemesi için
-            image = image.convert("RGB")  # gif/tiff gibi çok karelilerde ilk kare alınır
+            image = image.convert("RGB")  # çok kareli formatlarda ilk kare alınır
         except Image.DecompressionBombError:
             raise ImageLoadError("Görüntünün çözünürlüğü işleyemeyeceğim kadar yüksek.")
         except (UnidentifiedImageError, OSError):

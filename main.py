@@ -6,6 +6,7 @@ import re
 import shlex
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -16,6 +17,8 @@ from app.extractor import ContentExtractor
 from app.image_loader import ImageLoader, ImageLoadError
 from app.keywords import KeywordExtractor
 from app.search import WebSearcher
+from app.session import SessionContext
+from app.storage import Storage
 
 
 def tr_capitalize(text: str) -> str:
@@ -108,7 +111,7 @@ def normalize_schemeless(text: str):
 
 
 def classify_input(raw: str):
-    """(tür, değer) döndürür; tür: empty/quit/too_long/multi/url/bad_scheme/path/missing_file/text"""
+    """Tür ve değer ikilisi döndürür, dokuz girdi türü vardır."""
     stripped = raw.strip()
     if not stripped:
         return "empty", ""
@@ -117,7 +120,7 @@ def classify_input(raw: str):
     if len(stripped) > config.MAX_INPUT_LENGTH:
         return "too_long", ""
 
-    # çoklu denetim tırnak temizliğinden ÖNCE: shlex tırnaklı yolları doğru böler
+    # çoklu denetim tırnak temizliğinden önce gelir, shlex tırnaklı yolları doğru böler
     if len(find_sources(stripped)) >= 2:
         return "multi", ""
 
@@ -137,7 +140,7 @@ def classify_input(raw: str):
     if _path_exists(path):
         return "path", str(path)
     if "\\" in text:
-        # bazı terminaller sürüklenen yolu ters bölüyle kaçışlar: foto\ 1.jpg
+        # bazı terminaller sürüklenen yoldaki boşlukları ters bölüyle kaçışlar
         unescaped = re.sub(r"\\(.)", r"\1", text)
         unescaped_path = Path(unescaped).expanduser()
         if _path_exists(unescaped_path):
@@ -150,8 +153,113 @@ def classify_input(raw: str):
     return "text", text
 
 
+def _now() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
+def _new_record(storage: Storage, kind: str, value: str) -> dict:
+    return {"zaman": _now(), "tur_no": storage.next_turn_no(),
+            "girdi": {"tip": kind, "deger": value}}
+
+
+def _save_record(storage: Storage, record: dict, status: str, emit):
+    # kanıt satırı varsayılanda görünür, kayıt hatası akışı kesmez
+    record["durum"] = status
+    if storage.append(record):
+        emit(f"✓ Kayıt: records.json · {record['tur_no']}. tur", "dim")
+    else:
+        emit("Kaydı dosyaya yazamadım, sohbete devam ediyorum.", "dim")
+
+
+def _compose_from_web(query: str, fallback_query: str, anchor: str, words: list,
+                      aliases: list, emit_debug, context_words: list = ()) -> tuple:
+    """Arama, indirme, süzgeç ve derleme adımlarını tek yerden yürütür.
+
+    Metin boş ya da tanımsız kalırsa ek sorgu denenir. Arama servisine
+    ulaşılamazsa ilk aramanın hatası yukarı fırlar. İz sözlüğü kayda girer,
+    turun neden böyle sonuçlandığı dosyadan okunabilir.
+    """
+    searcher = WebSearcher()
+    results = searcher.search(query)
+    emit_debug("arama", f"{len(results)} aday: " + ", ".join(r.domain for r in results))
+    trace = {"aday": len(results)}
+
+    extractor = ContentExtractor()
+    pages = extractor.fetch_pages(results[:config.MAX_PAGES])
+    emit_debug("indirme", f"{len(pages)}/{min(len(results), config.MAX_PAGES)} sayfa açıldı")
+    sentences = extractor.select_sentences(pages, anchor, words, context_words)
+    emit_debug("süzgeç", f"{len(sentences)} cümle üç katmanı geçti")
+
+    composer = TextComposer()
+    text, sources, mapping = composer.compose(sentences, anchor, aliases)
+
+    if fallback_query and (not text or not composer.last_has_definition):
+        # metin boş ya da tanımsız kaldıysa ikinci sorguyla genişletilir,
+        # aynı adres atlanır ama aynı sitenin farklı sayfası gelebilir
+        emit_debug("ek sorgu", fallback_query)
+        trace["ek_sorgu"] = fallback_query
+        try:
+            seen = {result.url for result in results}
+            extra = [r for r in searcher.search(fallback_query) if r.url not in seen]
+            if not extra:
+                time.sleep(2)  # art arda sorguda arama servisi kısabiliyor
+                extra = [r for r in searcher.search(fallback_query) if r.url not in seen]
+        except Exception:
+            extra = []
+        emit_debug("ek arama", f"{len(extra)} yeni aday: "
+                   + ", ".join(r.domain for r in extra))
+        trace["ek_aday"] = len(extra)
+        if extra:
+            pages += extractor.fetch_pages(extra[:config.MAX_PAGES])
+            sentences = extractor.select_sentences(pages, anchor, words, context_words)
+            emit_debug("süzgeç", f"yedekle birlikte {len(sentences)} cümle")
+            merged, merged_sources, merged_mapping = composer.compose(sentences, anchor, aliases)
+            if merged:
+                text, sources, mapping = merged, merged_sources, merged_mapping
+    trace["sayfa"] = len(pages)
+    trace["cumle"] = len(sentences)
+    return text, sources, mapping, trace
+
+
+def _refine_turn(value: str, session: SessionContext, storage: Storage, emit, emit_debug):
+    """Düz metin girdisini son objenin çapasıyla rafine aramaya çevirir."""
+    anchor = session.last_object()
+    record = _new_record(storage, "text", value)
+    record["obje"] = {"ad_tr": anchor}
+
+    searcher = WebSearcher()
+    query = searcher.build_query(anchor, [], user_text=value)
+    record["sorgu"] = query
+    emit_debug("sorgu", query)
+    # alaka süzgeci önceki kelimeleri ve kullanıcının kelimelerini birlikte tanır
+    words = session.last_keywords() + value.split()
+    try:
+        text, sources, mapping, trace = _compose_from_web(query, "", anchor, words,
+                                                          [], emit_debug)
+        record["arama_izi"] = trace
+    except Exception as error:
+        emit_debug("arama hatası", repr(error))
+        emit("Şu anda web aramasına ulaşamıyorum. Bağlantını kontrol edip "
+             "biraz sonra tekrar dener misin?")
+        _save_record(storage, record, "arama_hatasi", emit)
+        return
+    if not text:
+        emit(f"{tr_capitalize(anchor)} hakkında bununla ilgili bir metin "
+             "derleyemedim. Farklı bir ifadeyle dener misin?")
+        _save_record(storage, record, "metin_yok", emit)
+        return
+    emit(tr_capitalize(anchor), "title")
+    emit(text)
+    emit("Kaynaklar: " + ", ".join(sources), "dim")
+    record["metin"] = text
+    record["cumle_kaynaklari"] = [{"cumle": m["cümle"], "kaynak": m["kaynak"]} for m in mapping]
+    record["kaynaklar"] = sources
+    _save_record(storage, record, "tamam", emit)
+
+
 def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDetector,
-                 keywords: KeywordExtractor, emit, emit_debug):
+                 keywords: KeywordExtractor, session: SessionContext, storage: Storage,
+                 emit, emit_debug, emit_context):
     """Bir kullanıcı turunu işler; çıktıları emit(mesaj) ile arayüze iletir."""
     if kind == "too_long":
         emit("Girdi biraz uzun görünüyor. Daha kısa bir adres ya da mesaj dener misin?")
@@ -166,13 +274,18 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
         emit("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel ya da URL verir misin?")
         return
     if kind == "text":
-        emit("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
+        if session.last_object() is None:
+            emit("Henüz analiz edilmiş bir görsel yok. Önce bir görsel URL'si ya da dosya yolu verir misin?")
+            return
+        _refine_turn(value, session, storage, emit, emit_debug)
         return
 
+    record = _new_record(storage, kind, value)
     try:
         image = loader.load(value, kind)
     except ImageLoadError as error:
         emit(str(error))
+        _save_record(storage, record, "yukleme_hatasi", emit)
         return
     emit_debug("görüntü", f"{image.width}x{image.height} yüklendi")
 
@@ -182,89 +295,107 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
     dominant = detector.pick_dominant(detections, image.size)
     if dominant is None:
         emit("Bu görselde belirgin bir obje tespit edemedim. Başka bir görsel dener misin?")
+        _save_record(storage, record, "obje_yok", emit)
         return
     if dominant.confidence < config.MIN_DOMINANT_CONFIDENCE or detector.last_uncertain:
         # düşük güven ya da model uyuşmazlığında emin cevap yerine dürüst mesaj
         emit_debug("düşük güven", f"{dominant.label} ({dominant.confidence:.2f})")
         emit("Görseldeki nesneden yeterince emin olamadım. Nesnenin daha net "
              "göründüğü bir görsel dener misin?")
+        record["obje"] = {"ad_tr": keywords.turkish_name(dominant.label),
+                          "etiket": dominant.label,
+                          "guven": round(dominant.confidence, 2)}
+        _save_record(storage, record, "dusuk_guven", emit)
         return
 
     secondary = [d.label for d in detections if d is not dominant and d.label != dominant.label]
     emit_debug("baskın", f"{dominant.label} ({dominant.confidence:.2f})"
                + (f" · ikincil: {', '.join(secondary)}" if secondary else ""))
-    emit(f"Tespit ettiğim obje: {keywords.turkish_name(dominant.label)} "
-         f"(güven %{dominant.confidence * 100:.0f}).")
+    turkish = keywords.turkish_name(dominant.label)
+    emit(f"Tespit ettiğim obje: {turkish} (güven %{dominant.confidence * 100:.0f}).")
+    record["obje"] = {"ad_tr": turkish, "etiket": dominant.label,
+                      "guven": round(dominant.confidence, 2)}
 
     scored = keywords.extract_scored(dominant.label, secondary)
     emit_debug("kelimeler", ", ".join(
         f"{item.word} [{item.source} {item.score:.1f}]" for item in scored) or "tema bulunamadı")
     if scored:
         emit(f"Anahtar kelimeler: {', '.join(item.word for item in scored)}")
-
-    # web araması ve metin sentezi
-    # bileşen kelimesi ekranda kalır ama sorguya girmez, aramayı saptırıyor
-    turkish = keywords.turkish_name(dominant.label)
     words = [item.word for item in scored]
+    record["anahtar_kelimeler"] = words
+
+    # bağlam kıyası yalnız baskın nesnenin kelimeleriyle yapılır, ikincil
+    # sahne kelimeleri iki alakasız görseli akraba gösterebiliyor
+    dominant_words = [item.word for item in keywords.extract_scored(dominant.label, [])]
+    related = session.related_entries(turkish, dominant_words)
+    context, context_words = [], []
+    if related:
+        # bağlam iki katmanda yaşar. cümle seçiminde yumuşak bonus, detay
+        # sorgusunda yalnız taze ve ayrıştırıcı obje. kardeş isim aramayı
+        # eski objeye çektiği için sorguya girmez
+        context_words = [word for entry in related for word in entry["kelimeler"]]
+        inject = next((entry for entry in related
+                       if entry["agirlik"] >= config.CONTEXT_QUERY_MIN
+                       and not session.is_sibling(entry["obje"], turkish)), None)
+        if inject is not None:
+            context = [inject["obje"]]
+            emit_debug("bağlam", f"detay sorgusuna eklendi: {inject['obje']}; "
+                       "cümle seçiminde bonus aktif")
+        else:
+            emit_debug("bağlam", "cümle seçiminde bonus aktif; sorguya uygun aday yok")
+    elif session.entries:
+        emit_debug("bağlam", "önceki turlarla kesişim yok, kullanılmadı")
+    record["baglam"] = ({"obje": related[0]["obje"], "sorguda": bool(context),
+                         "secimde": True} if related else None)
+
+    # ansiklopedik nedir sorgusu önce gelir, metin zayıf kalırsa detay
+    # sorgusu denenir. bileşen kelimesi ekranda kalır ama sorguya girmez,
+    # aramayı saptırıyor
     query_words = [item.word for item in scored if item.source != "bileşen"]
     searcher = WebSearcher()
-    query = searcher.build_query(turkish, query_words)
+    category = searcher.support_term(turkish, query_words)
+    query = f"{turkish} {category} nedir" if category else f"{turkish} nedir"
+    detail_query = searcher.build_query(turkish, query_words, context_terms=context)
+    record["sorgu"] = query
     emit_debug("sorgu", query)
+
+    aliases = category.split() if category else []
     try:
-        results = searcher.search(query)
+        text, sources, mapping, trace = _compose_from_web(query, detail_query, turkish,
+                                                          words, aliases, emit_debug,
+                                                          context_words)
+        record["arama_izi"] = trace
     except Exception as error:
         emit_debug("arama hatası", repr(error))
         emit("Şu anda web aramasına ulaşamıyorum. Bağlantını kontrol edip "
              "biraz sonra tekrar dener misin?")
+        _save_record(storage, record, "arama_hatasi", emit)
         return
-    emit_debug("arama", f"{len(results)} aday: " + ", ".join(r.domain for r in results))
-
-    extractor = ContentExtractor()
-    pages = extractor.fetch_pages(results[:config.MAX_PAGES])
-    emit_debug("indirme", f"{len(pages)}/{min(len(results), config.MAX_PAGES)} sayfa açıldı")
-    sentences = extractor.select_sentences(pages, turkish, words)
-    emit_debug("süzgeç", f"{len(sentences)} cümle üç katmanı geçti")
-
-    aliases = [term for term in query.split() if term not in turkish.split()]
-    composer = TextComposer()
-    text, sources, _mapping = composer.compose(sentences, turkish, aliases)
-
-    if not text or not composer.last_has_definition:
-        # metin yok ya da tanımsız kaldıysa nedir kalıbıyla yeniden aranır
-        # eş sesli sapmaya karşı sorguya kategori ifadesi eklenir
-        category = " ".join(aliases)
-        fallback_query = f"{turkish} {category} nedir" if category else f"{turkish} nedir"
-        emit_debug("yedek sorgu", fallback_query)
-        try:
-            seen = {result.domain for result in results}
-            extra = [r for r in searcher.search(fallback_query) if r.domain not in seen]
-            if not extra:
-                time.sleep(2)  # art arda sorguda arama servisi kısabiliyor
-                extra = [r for r in searcher.search(fallback_query) if r.domain not in seen]
-        except Exception:
-            extra = []
-        emit_debug("yedek arama", f"{len(extra)} yeni aday: "
-                   + ", ".join(r.domain for r in extra))
-        if extra:
-            pages += extractor.fetch_pages(extra[:config.MAX_PAGES])
-            sentences = extractor.select_sentences(pages, turkish, words)
-            emit_debug("süzgeç", f"yedekle birlikte {len(sentences)} cümle")
-            merged, merged_sources, _mapping = composer.compose(sentences, turkish, aliases)
-            if merged:
-                text, sources = merged, merged_sources
 
     if not text:
         emit(f"{tr_capitalize(turkish)} hakkında işine yarayacak bir metin "
              "derleyemedim. Farklı bir görselle ya da ifadeyle dener misin?")
+        _save_record(storage, record, "metin_yok", emit)
         return
-    emit(f"{tr_capitalize(turkish)} hakkında {len(sources)} kaynaktan derlediklerim:")
+    emit(tr_capitalize(turkish), "title")
     emit(text)
-    emit("Kaynaklar: " + ", ".join(sources))
+    emit("Kaynaklar: " + ", ".join(sources), "dim")
+    record["metin"] = text
+    record["cumle_kaynaklari"] = [{"cumle": m["cümle"], "kaynak": m["kaynak"]} for m in mapping]
+    record["kaynaklar"] = sources
+    _save_record(storage, record, "tamam", emit)
+
+    # başarılı tur profile girer, başarısız turlar profili etkilemez
+    session.add_turn(turkish, dominant_words)
+    emit_context(session.summary_line())
+    emit_debug("bağlam profili", session.debug_line())
 
 
-def run_plain(args, loader, detector, keywords):
-    # tty olmayan ortam (pipe/test) için sade satır modu
+def run_plain(args, loader, detector, keywords, session, storage, storage_note):
+    # tty olmayan ortam için sade satır modu
     print("Görüntülü Sohbet")
+    if storage_note:
+        print(storage_note)
     if detector.is_ready_on_disk():
         print("Model yükleniyor...")
     else:
@@ -280,12 +411,15 @@ def run_plain(args, loader, detector, keywords):
         return
     print(f"Model hazır ({detector.vocab_size} kavram).")
 
-    def emit(message):
+    def emit(message, style=""):
         print(message)
 
     def emit_debug(stage, message):
         if args.debug:
             print(f"{stage} · {message}")
+
+    def emit_context(line):
+        print(f"↻ {line}")
 
     while True:
         try:
@@ -300,7 +434,8 @@ def run_plain(args, loader, detector, keywords):
             print("Görüşmek üzere!")
             return
         try:
-            process_turn(kind, value, loader, detector, keywords, emit, emit_debug)
+            process_turn(kind, value, loader, detector, keywords, session, storage,
+                         emit, emit_debug, emit_context)
         except KeyboardInterrupt:
             print("İşlemi iptal ettim.")
         except Exception as error:
@@ -313,9 +448,12 @@ def run(args):
     loader = ImageLoader()
     detector = ObjectDetector()
     keywords = KeywordExtractor()
+    session = SessionContext()
+    storage = Storage(config.RECORDS_PATH)
+    storage_note = storage.load()
 
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
-        run_plain(args, loader, detector, keywords)
+        run_plain(args, loader, detector, keywords, session, storage, storage_note)
         return
 
     from types import SimpleNamespace
@@ -324,8 +462,8 @@ def run(args):
     tools = SimpleNamespace(is_single_source=is_single_source,
                             find_sources=find_sources,
                             is_unsupported_file=is_unsupported_file)
-    app = ChatApp(loader, detector, keywords, process_turn, classify_input, tools,
-                  debug=args.debug)
+    app = ChatApp(loader, detector, keywords, session, storage, process_turn,
+                  classify_input, tools, debug=args.debug, storage_note=storage_note)
     farewell = app.run()
     print(farewell or "Görüşmek üzere!")
 

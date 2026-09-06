@@ -8,7 +8,7 @@ DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
 RECORDS_PATH = BASE_DIR / "records.json"
 
-# Tespit (hibrit: yaygın nesnelerde COCO modeli, gerisinde açık dağarcık)
+# Tespit, yaygın nesnelerde COCO modeli, gerisinde açık dağarcık
 PRIMARY_WEIGHTS = "yolo11n.pt"
 DETECTOR_WEIGHTS = "yolov8s-worldv2.pt"
 DETECTOR_CUSTOM = MODELS_DIR / "detector-lvis.pt"
@@ -19,6 +19,14 @@ MIN_DOMINANT_CONFIDENCE = 0.30  # altındaysa dürüst "seçemedim" mesajı
 PERSON_OVERRIDE_MIN = 0.25  # bu güveni aşan insan-dışı aday baskınlıkta insana tercih edilir
 PRIMARY_TRUST_CONFIDENCE = 0.55  # COCO bu güvenin üstündeyse çapraz kontrolsüz kabul
 DOMINANT_CONF_GAP = 0.20  # bu kadar daha emin bir aday, büyük kutuya yenilmez
+# COCO şemsiye sınıf verdiğinde inceltme sorulur. Tam dağarcıkta skor
+# seyrelmesi özgül etiketi bastırdığı için inceltme odaklanmış küçük
+# dağarcıkla yapılır. Adaylar names_tr kapsamında olmalı.
+UMBRELLA_CLASSES = {"sandwich": ("sandwich", "hamburger", "hot dog")}
+# yedi görsellik kıyasta gerçek burger 0.77 üstü, sandviçe hamburger
+# önyargısı 0.67 altında kaldı, eşik bu ölçümle temkinli tarafa kondu
+UMBRELLA_REFINE_MIN = 0.75
+UMBRELLA_IOU = 0.45  # inceltme adayı şemsiye kutuyla bu kadar örtüşmeli
 
 # Görüntü
 MIN_IMAGE_SIDE = 64
@@ -50,5 +58,7 @@ MIN_SENTENCES = 3
 MAX_SENTENCES = 8
 MAX_PER_SOURCE_RUN = 2
 
-# Bağlam
-CONTEXT_WINDOW = 3
+# Bağlam, sönümlenen konu profili
+CONTEXT_DECAY = 0.5  # her başarılı turda eski ağırlıklar bununla çarpılır
+CONTEXT_FLOOR = 0.1  # bu ağırlığın altına düşen kayıt profilden silinir
+CONTEXT_QUERY_MIN = 0.5  # yalnız bu ağırlığın üstündeki obje sorguya girebilir
