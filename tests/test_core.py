@@ -151,7 +151,7 @@ class KeywordExtractorTest(unittest.TestCase):
         self.assertEqual(self.extractor.turkish_name("bilinmeyen"), "bilinmeyen")
 
     def test_category_and_ingredient_sources(self):
-        # sandviç: üst kavramdan kategori, meronym ilişkisinden bileşen gelir
+        # üst kavramdan kategori, parça ilişkisinden bileşen gelir
         words = self.extract("sandwich")
         self.assertIn("aperatif yemek", words)
         self.assertIn("ekmek", words)
@@ -168,23 +168,21 @@ class KeywordExtractorTest(unittest.TestCase):
         self.assertLessEqual(len(words), config.MAX_KEYWORDS)
 
     def test_sense_selection_skips_nonphysical_meanings(self):
-        # dalmatian: ilk anlam Dalmaçyalı insan; alan filtresi köpeğe düşürmeli
+        # insan ve zaman anlamları atlanır, nesne anlamı seçilir
         self.assertIn("köpek", self.extract("dalmatian"))
-        # date: takvim anlamı atlanır, meyve anlamı seçilir
         self.assertIn("meyve", self.extract("date"))
-        # mouse: hayvan anlamı; aygıt temaları karışmamalı
+        # farklı anlamların temaları birbirine karışmaz
         words = self.extract("mouse")
         self.assertIn("hayvan", words)
         self.assertNotIn("teknoloji", words)
 
     def test_scoring_drops_distant_leaks(self):
-        # wheeled_vehicle -> container kenarından sızan uzak tema elenmeli
+        # uzak ve genel kavramdan sızan tema elenir
         self.assertNotIn("ev eşyası", self.extract("ambulance"))
 
     def test_meronym_requires_sense_match(self):
-        # gaydanın "drone" parçası uçan cihaz çevirisine düşmemeli
+        # bileşen çevirisi farklı anlamdaki karşılığa düşmez
         self.assertNotIn("drone", self.extract("bagpipe"))
-        # balonun "envelope" gövdesi mektup zarfı çevirisine düşmemeli
         self.assertNotIn("zarf", self.extract("balloon"))
 
     def test_suggestion_keywords_filtered_and_labeled(self):
@@ -192,34 +190,33 @@ class KeywordExtractorTest(unittest.TestCase):
         extractor.load()
         extractor._fetch_suggestions = lambda q: [
             f"{q} kadın", f"{q} fiyatları", f"{q} 2024", f"{q}kolik", f"{q} ve tarih"]
-        # suitcase kelime kıtlığı çeker (<3), öneri ancak bu durumda istenir
+        # kelime kıtlığı çeken nesnede öneri istenir
         scored = extractor.extract_scored("suitcase", [])
         by_word = {item.word: item for item in scored}
-        # ek tam ifadeye dönüşür: "kadın" değil "bavul kadın"
-        self.assertIn("bavul kadın", by_word)
+        self.assertIn("bavul kadın", by_word)  # ek tam ifadeye dönüşür
         self.assertEqual(by_word["bavul kadın"].source, "arama önerisi")
         self.assertNotIn("bavul fiyatları", by_word)  # gürültü süzgeci
         self.assertNotIn("bavul 2024", by_word)  # rakamlı ek süzgeci
-        self.assertNotIn("bavulkolik", by_word)  # bitişik türev, kelime sınırı süzgeci
-        self.assertNotIn("bavul ve tarih", by_word)  # bağlaçla başlayan kırık ek
-        # öneriler dolgudur: gerçek temaların önüne geçemez
+        self.assertNotIn("bavulkolik", by_word)  # kelime sınırı süzgeci
+        self.assertNotIn("bavul ve tarih", by_word)  # bağlaçla başlayan ek
+        # öneriler gerçek temaların önüne geçmez
         self.assertLess([k.word for k in scored].index("valiz"),
                         [k.word for k in scored].index("bavul kadın"))
 
     def test_dominant_keywords_come_before_scene(self):
-        # kitaplıklı masadaki dizüstü: kelimeler önce dizüstünü anlatmalı
+        # kelimeler önce baskın nesneyi anlatmalı
         words = self.extract("laptop computer", ["book", "person", "chair"])
         self.assertIn(words[0], ("bilgisayar", "teknoloji"))
         self.assertLess(words.index("bilgisayar"), words.index("insan"))
 
     def test_coco_mouse_is_a_device(self):
-        # COCO köprüsünden gelen mouse aygıttır, kemirgen temaları üretmemeli
+        # köprüden gelen mouse aygıttır, kemirgen temaları üretmemeli
         words = self.extract("computer mouse")
         self.assertIn("bilgisayar", words)
         self.assertNotIn("hayvan", words)
 
     def test_suggestions_only_fill_scarce_lists(self):
-        # diğer kaynaklar yeterliyken öneri ucuna hiç gidilmemeli
+        # diğer kaynaklar yeterliyse öneri ucuna gidilmez
         extractor = KeywordExtractor()
         extractor.load()
         extractor._fetch_suggestions = lambda q: (_ for _ in ()).throw(AssertionError(
@@ -230,7 +227,7 @@ class KeywordExtractorTest(unittest.TestCase):
 
 class PickDominantTest(unittest.TestCase):
     def test_confident_object_beats_large_background(self):
-        # masa/koltuk gibi büyük düşük güvenli kutu, emin nesneyi ezmemeli
+        # büyük ama güvensiz kutu emin nesneyi ezmemeli
         from app.detector import Detection, ObjectDetector
         table = Detection("table", 0.28, (0, 0, 1000, 1000))
         sandwich = Detection("sandwich", 0.52, (350, 350, 650, 650))
@@ -238,7 +235,7 @@ class PickDominantTest(unittest.TestCase):
         self.assertEqual(picked.label, "sandwich")
 
     def test_person_yields_to_carried_object(self):
-        # elinde çantayla poz veren insan: konu insan değil çantadır
+        # insan taşıyıcıysa konu taşıdığı nesnedir
         from app.detector import Detection, ObjectDetector
         person = Detection("person", 0.74, (100, 0, 900, 1000))
         handbag = Detection("handbag", 0.29, (400, 400, 700, 800))
@@ -246,7 +243,7 @@ class PickDominantTest(unittest.TestCase):
         self.assertEqual(picked.label, "handbag")
 
     def test_much_more_confident_small_object_wins(self):
-        # kazağın üstündeki papyon: belirgin daha emin küçük aday büyük kutuyu yener
+        # belirgin daha emin küçük aday büyük kutuyu yener
         from app.detector import Detection, ObjectDetector
         sweater = Detection("sweater", 0.43, (100, 100, 900, 1900))
         bow_tie = Detection("bow-tie", 0.64, (400, 300, 600, 500))
@@ -271,6 +268,114 @@ class CocoBridgeTest(unittest.TestCase):
         for target in COCO_TO_VOCAB.values():
             self.assertIn(target, names, target)
         self.assertIn("hot dog", names)  # köprüden aynen geçen COCO sınıfı
+
+
+class WebSearcherQueryTest(unittest.TestCase):
+    def test_anchor_plus_single_support_term(self):
+        # obje adı ve tek destek kelimesi yeterlidir
+        from app.search import WebSearcher
+        query = WebSearcher().build_query(
+            "sandviç", ["aperatif yemek", "atıştırmalık", "yemek tarifi"])
+        self.assertEqual(query, "sandviç aperatif yemek")
+
+    def test_phrase_containing_anchor_skipped(self):
+        # obje adını içeren ifade sorguya tekrar girmez
+        from app.search import WebSearcher
+        query = WebSearcher().build_query("klavye", ["klavye dili", "elektronik"])
+        self.assertEqual(query, "klavye elektronik")
+
+
+class ExtractorFilterTest(unittest.TestCase):
+    def setUp(self):
+        from app.extractor import ContentExtractor
+        self.extractor = ContentExtractor()
+
+    def test_rule_filter(self):
+        ok = self.extractor._passes_rules
+        self.assertTrue(ok("Sandviç, iki ekmek dilimi arasına konulan "
+                           "malzemelerle hazırlanan pratik bir yiyecektir."))
+        self.assertFalse(ok("Çok kısa."))
+        self.assertFalse(ok("Sandviç sever misin?" + " x" * 30))
+        self.assertFalse(ok("Hemen al butonuna tıkla ve kampanyalı ürünleri "
+                            "kaçırmadan sepetine ekle şimdi hemen bugün."))
+        self.assertFalse(ok("Bu yüzden çoğu kişi tarafından tercih edilen bir "
+                            "yöntem olarak uzun yıllardır bilinmektedir."))
+        # tarif adımı talimattır, açıklama değil
+        self.assertFalse(ok("Sosisleri közlendikten sonra sandviç ekmeklerinin "
+                            "arasına yerleştirip üzerine sos ekleyerek koyun."))
+        # okuyucuya seslenen dil elenir
+        self.assertFalse(ok("Dilerseniz sandviçinizi farklı soslarla çok daha "
+                            "lezzetli hale getirebilirsiniz her zaman kolayca."))
+        # iki nokta başlık kalıntısıdır
+        self.assertFalse(ok("Püf Noktası - Ekmek seçimi: tam buğday ekmekleri "
+                            "sandviçe ekstra lezzet katan seçenekler arasındadır."))
+
+    def test_relevance_needs_anchor(self):
+        score = self.extractor._relevance(
+            "sandviç hazırlarken taze ekmek kullanmak lezzeti artırır.",
+            "sandviç", ["ekmek"])
+        self.assertGreater(score, 0)
+        off_topic = self.extractor._relevance(
+            "hava durumu yarın parçalı bulutlu olacak deniyor.",
+            "sandviç", ["ekmek"])
+        self.assertEqual(off_topic, 0)
+
+    def test_deduplicate_near_copies(self):
+        from app.extractor import Sentence
+        first = Sentence("Sandviç iki ekmek dilimi arasına malzeme konularak "
+                         "hazırlanan bir yiyecektir.", "a.com", 2.0)
+        copy = Sentence("Sandviç, iki ekmek dilimi arasına malzeme konularak "
+                        "hazırlanan yiyecektir.", "b.com", 1.5)
+        different = Sentence("Dünyanın en uzun sandviçi festival sırasında "
+                             "yüzlerce kişiyle paylaşıldı.", "c.com", 1.0)
+        kept = self.extractor._deduplicate([first, copy, different])
+        texts = [s.text for s in kept]
+        self.assertEqual(len(kept), 2)
+        self.assertIn(first.text, texts)
+        self.assertIn(different.text, texts)
+
+
+class ComposerTest(unittest.TestCase):
+    def test_definition_first_detail_last_and_sources(self):
+        from app.composer import TextComposer
+        from app.extractor import Sentence
+        detail = Sentence("Ortalama bir sandviç 250 kalori içerir ve 10 dakikada "
+                          "hazırlanabilir.", "a.com", 1.0)
+        definition = Sentence("Sandviç, iki ekmek dilimi arasına konulan "
+                              "malzemelerle hazırlanan bir yiyecektir.", "b.com", 2.0)
+        general = Sentence("Sandviçler pikniklerde ve okul çantalarında en çok "
+                           "tercih edilen yiyecekler arasında yer alır.", "a.com", 1.5)
+        text, sources, mapping = TextComposer().compose(
+            [detail, definition, general], "sandviç")
+        self.assertTrue(text.startswith("Sandviç, iki ekmek"))
+        self.assertTrue(text.endswith("hazırlanabilir."))
+        self.assertEqual(sources, ["b.com", "a.com"])
+        self.assertEqual(len(mapping), 3)
+
+    def test_alias_definition_recognized(self):
+        # tanım cümlesi objenin eş adıyla kurulabilir
+        from app.composer import TextComposer
+        from app.extractor import Sentence
+        parking = Sentence("Geri park etme sırasında direksiyon mümkün oldukça "
+                           "az hareket ettirilmelidir uzmanlara göre.", "a.com", 1.0)
+        definition = Sentence("Otomobil, yakıtla çalışan bir motor sayesinde "
+                              "kendi kendine hareket edebilen bir taşıttır.", "b.com", 2.0)
+        engine = Sentence("Genel olarak otomobiller içten yanmalı motorlarla "
+                          "ve dört lastiğin dönmesiyle hareket ederek çalışır.", "c.com", 1.5)
+        wheels = Sentence("Otomobillerde motor gücü şanzıman üzerinden "
+                          "tekerleklere aktarılır ve taşıt böyle yol alır.", "a.com", 1.2)
+        text, sources, _ = TextComposer().compose(
+            [parking, engine, definition, wheels], "araba", aliases=["otomobil"])
+        self.assertTrue(text.startswith("Otomobil, yakıtla"))
+        # çekirdekle örtüşmeyen cümle temadan elenir
+        self.assertNotIn("park etme", text)
+
+    def test_too_few_sentences_returns_empty(self):
+        from app.composer import TextComposer
+        from app.extractor import Sentence
+        lone = Sentence("Sandviç pratik bir yiyecektir.", "a.com", 1.0)
+        text, sources, mapping = TextComposer().compose([lone], "sandviç")
+        self.assertEqual(text, "")
 
 
 class ImageLoaderTest(unittest.TestCase):

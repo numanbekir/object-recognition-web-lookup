@@ -5,13 +5,25 @@ import argparse
 import re
 import shlex
 import sys
+import time
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
 from app import config
+from app.composer import TextComposer
 from app.detector import ObjectDetector
+from app.extractor import ContentExtractor
 from app.image_loader import ImageLoader, ImageLoadError
 from app.keywords import KeywordExtractor
+from app.search import WebSearcher
+
+
+def tr_capitalize(text: str) -> str:
+    # python'un capitalize'ı türkçe i'yi I yapar, İ olmalı
+    if not text:
+        return text
+    first = "İ" if text[0] == "i" else text[0].upper()
+    return first + text[1:]
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".svg")
 QUIT_WORDS = ("q", "çık", "cik", "exit", "quit")
@@ -189,6 +201,65 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
         f"{item.word} [{item.source} {item.score:.1f}]" for item in scored) or "tema bulunamadı")
     if scored:
         emit(f"Anahtar kelimeler: {', '.join(item.word for item in scored)}")
+
+    # web araması ve metin sentezi
+    # bileşen kelimesi ekranda kalır ama sorguya girmez, aramayı saptırıyor
+    turkish = keywords.turkish_name(dominant.label)
+    words = [item.word for item in scored]
+    query_words = [item.word for item in scored if item.source != "bileşen"]
+    searcher = WebSearcher()
+    query = searcher.build_query(turkish, query_words)
+    emit_debug("sorgu", query)
+    try:
+        results = searcher.search(query)
+    except Exception as error:
+        emit_debug("arama hatası", repr(error))
+        emit("Şu anda web aramasına ulaşamıyorum. Bağlantını kontrol edip "
+             "biraz sonra tekrar dener misin?")
+        return
+    emit_debug("arama", f"{len(results)} aday: " + ", ".join(r.domain for r in results))
+
+    extractor = ContentExtractor()
+    pages = extractor.fetch_pages(results[:config.MAX_PAGES])
+    emit_debug("indirme", f"{len(pages)}/{min(len(results), config.MAX_PAGES)} sayfa açıldı")
+    sentences = extractor.select_sentences(pages, turkish, words)
+    emit_debug("süzgeç", f"{len(sentences)} cümle üç katmanı geçti")
+
+    aliases = [term for term in query.split() if term not in turkish.split()]
+    composer = TextComposer()
+    text, sources, _mapping = composer.compose(sentences, turkish, aliases)
+
+    if not text or not composer.last_has_definition:
+        # metin yok ya da tanımsız kaldıysa nedir kalıbıyla yeniden aranır
+        # eş sesli sapmaya karşı sorguya kategori ifadesi eklenir
+        category = " ".join(aliases)
+        fallback_query = f"{turkish} {category} nedir" if category else f"{turkish} nedir"
+        emit_debug("yedek sorgu", fallback_query)
+        try:
+            seen = {result.domain for result in results}
+            extra = [r for r in searcher.search(fallback_query) if r.domain not in seen]
+            if not extra:
+                time.sleep(2)  # art arda sorguda arama servisi kısabiliyor
+                extra = [r for r in searcher.search(fallback_query) if r.domain not in seen]
+        except Exception:
+            extra = []
+        emit_debug("yedek arama", f"{len(extra)} yeni aday: "
+                   + ", ".join(r.domain for r in extra))
+        if extra:
+            pages += extractor.fetch_pages(extra[:config.MAX_PAGES])
+            sentences = extractor.select_sentences(pages, turkish, words)
+            emit_debug("süzgeç", f"yedekle birlikte {len(sentences)} cümle")
+            merged, merged_sources, _mapping = composer.compose(sentences, turkish, aliases)
+            if merged:
+                text, sources = merged, merged_sources
+
+    if not text:
+        emit(f"{tr_capitalize(turkish)} hakkında işine yarayacak bir metin "
+             "derleyemedim. Farklı bir görselle ya da ifadeyle dener misin?")
+        return
+    emit(f"{tr_capitalize(turkish)} hakkında {len(sources)} kaynaktan derlediklerim:")
+    emit(text)
+    emit("Kaynaklar: " + ", ".join(sources))
 
 
 def run_plain(args, loader, detector, keywords):
