@@ -33,11 +33,14 @@ LOGIT_SCALE = 100.0  # modelin eğitimde öğrendiği sıcaklık değeri
 
 
 class Prediction:
-    def __init__(self, label: str, name_tr: str, confidence: float, alternatives: list):
+    def __init__(self, label: str, name_tr: str, confidence: float, alternatives: list,
+                 candidates: list = ()):
         self.label = label  # İngilizce dağarcık adı
         self.name_tr = name_tr
         self.confidence = confidence
         self.alternatives = alternatives  # türkçe ad ve güven çiftleri
+        self.candidates = list(candidates)  # sıralı ingilizce aday ve skor çiftleri
+        self.reconciled_from = None  # uzlaşma kuralı objeyi değiştirdiyse eski türkçe ad
 
 
 class Keyword:
@@ -181,10 +184,36 @@ class VisionModel:
         label, confidence = ranked[0]
         name_tr = self.turkish_name(label)
         alternatives = [(self.turkish_name(other), score) for other, score in ranked[1:]]
-        prediction = Prediction(label, name_tr, confidence, alternatives)
+        prediction = Prediction(label, name_tr, confidence, alternatives, ranked)
+
+        themes_ranked = self.rank(theme_scores, self.theme_keys, len(self.theme_keys))
+        chosen = self.reconcile(ranked, themes_ranked, self.names_tr)
+        if chosen and chosen != label:
+            # obje ve tema görüşleri çelişiyor, temalarla uyumlu aday öne alınır
+            score = dict(ranked)[chosen]
+            others = [(self.turkish_name(o), s) for o, s in ranked if o != chosen]
+            prediction = Prediction(chosen, self.turkish_name(chosen), score, others, ranked)
+            prediction.reconciled_from = name_tr
         keywords = self.keywords_from_themes(theme_scores, self.theme_keys, self.themes,
-                                             name_tr, config.MAX_KEYWORDS)
+                                             prediction.name_tr, config.MAX_KEYWORDS)
         return prediction, keywords
+
+    @staticmethod
+    def reconcile(candidates: list, themes_ranked: list, names_tr: dict, top_themes: int = 5):
+        """Obje güveni düşükken, en güçlü temalardan biri obje adayları arasında da varsa o adayı döndürür.
+
+        Obje ve tema listeleri aynı görüntüye iki ayrı bakıştır. Ürün fotoğraflarında
+        obje listesi ince ayrımlarda yanılırken tema listesi kaba kavramda doğru kalır.
+        Tema adı obje listesinde de bulunuyorsa iki görüş birleştirilebilir.
+        """
+        if not candidates or candidates[0][1] >= config.RECONCILE_MAX_CONFIDENCE:
+            return None
+        candidate_labels = [label for label, _ in candidates]
+        for theme, _ in themes_ranked[:top_themes]:
+            label = theme.replace("_", " ")
+            if label in names_tr and label in candidate_labels:
+                return label
+        return None
 
     @staticmethod
     def rank(scores: list, names: list, top: int) -> list:

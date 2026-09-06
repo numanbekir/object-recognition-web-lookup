@@ -17,6 +17,7 @@ INFO_BLOCKS_PATH = DATA_DIR / "info_blocks.json"  # obje ailesine göre bilgi bl
 CENTER_CROP_RATIO = 0.7  # ön plandaki objeye odaklanmak için ikinci bakış
 MIN_CONFIDENCE = 0.25  # altındaysa tahmin emin değilim notuyla verilir
 ALTERNATIVES = 2  # düşük güvende gösterilen diğer adaylar
+RECONCILE_MAX_CONFIDENCE = 0.5  # obje güveni bunun altındaysa temalarla uzlaşma kuralı çalışır
 MAX_KEYWORDS = 5
 MIN_KEYWORDS = 3  # eşik altında kalsa da en güçlü temalardan bu sayıya tamamlanır
 THEME_MIN_RATIO = 0.15  # en iyi temanın bu oranının altındaki temalar kelime vermez

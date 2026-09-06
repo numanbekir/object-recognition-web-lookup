@@ -468,6 +468,9 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
     object_tr = prediction.name_tr
     emit_debug("adaylar", f"{object_tr} {prediction.confidence:.2f}; " + "; ".join(
         f"{name} {score:.2f}" for name, score in prediction.alternatives))
+    if prediction.reconciled_from:
+        emit_debug("uzlaşma", f"{prediction.reconciled_from} yerine temalarla uyumlu aday: {object_tr}")
+        record["uzlasma"] = {"onceki_obje": prediction.reconciled_from}
     if prediction.confidence >= config.MIN_CONFIDENCE:
         emit(f"Tespit ettiğim obje: {object_tr} (güven %{prediction.confidence * 100:.0f}).")
     else:

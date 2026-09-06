@@ -19,6 +19,7 @@ VOWELS = BACK_VOWELS | FRONT_VOWELS
 SOFTENING = {"k": "ğ", "p": "b", "t": "d", "ç": "c"}  # ünsüz yumuşaması
 POSSESSIVE_ENDINGS = ("sı", "si", "su", "sü", "ı", "i", "u", "ü")
 MAX_PER_ROLE = 2
+OPPOSITES = (("kadın", "erkek"), ("yaz", "kış"))  # birlikte gelirse ikisi de anlamsızdır
 FOOD_FAMILIES = {"yemek", "fast food", "atıştırmalık", "aperatif yemek", "yemek tarifi",
                  "hamurlu yemek", "sokak lezzeti", "ev yemeği", "tarif", "tatlı", "fırın ürünü",
                  "et ürünü", "süt ürünü", "sebze", "meyve", "içecek", "şekerleme", "deniz ürünü"}
@@ -110,10 +111,14 @@ class IntentBuilder:
         if previous_object:
             subject = merge_names(object_tr, previous_object) or object_tr
 
+        lowered = {word.lower() for word in keywords}
+        excluded = {word for pair in OPPOSITES if set(pair) <= lowered for word in pair}
         by_role = {}
         for word in keywords:
             role = self.roles.get(word, "aile")
-            if word.lower() in subject.lower() or len(by_role.get(role, [])) >= MAX_PER_ROLE:
+            if word.lower() in subject.lower() or word.lower() in excluded:
+                continue
+            if len(by_role.get(role, [])) >= MAX_PER_ROLE:
                 continue
             by_role.setdefault(role, []).append(word)
 

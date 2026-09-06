@@ -39,6 +39,13 @@ listede bulamadı. Ayrıca bu görev konum bilgisi istemez, görselde ön plana
 aynı öznitelik vektörü hem obje adını hem temaları verir ve işlemci üzerinde
 görüntü başına elli milisaniyede çalışır.
 
+Obje ve tema sınıflandırmaları aynı görüntüye iki ayrı bakıştır. Beyaz fonlu
+ürün fotoğraflarında obje listesi ince ayrımlarda yanılırken tema listesi
+kaba kavramda doğru kalabilir. Bu yüzden bir uzlaşma kuralı vardır. Obje
+güveni 0.5 altındaysa ve en güçlü temalardan birinin adı obje listesinde de
+bulunuyorsa ve bu ad obje adayları arasındaysa, o aday obje olarak seçilir.
+Güven yüksekken kural çalışmaz.
+
 Ölçüm on iki görsellik bir test setiyle yapıldı. Sette görev senaryolarındaki
 yedi obje ile keman, fotoğraf makinesi, demlik, karışık bir sahne ve alakasız
 bir görsel vardır. Ön planda tek obje olan on görselin dokuzu doğru bulundu,
@@ -67,7 +74,8 @@ Türkçe bir arama cümlesi kurulur. Her anahtar kelimenin kelime rolleri
 dosyasında bir rolü vardır. Nitelik ve malzeme kelimeleri başa sıfat olarak
 girer. Bileşen kelimeleri ünlü uyumuna göre lı, li, lu ya da lü ekini alır.
 Kullanım kelimeleri ve bağlacıyla listelenir. Aile ve alan kelimeleri sorguya
-girmez çünkü obje adı o bilgiyi zaten taşır.
+girmez çünkü obje adı o bilgiyi zaten taşır. Kadın ve erkek gibi karşıt
+nitelikler birlikte gelirse ikisi de sorguya girmez.
 
 Obje adı çoğullanır, tamlamalarda çoğul eki kökle iyelik eki arasına girer.
 Tek kelimeli objede kullanım kelimesi tamlama kurar. Bağlamdaki önceki obje

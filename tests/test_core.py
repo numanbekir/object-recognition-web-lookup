@@ -56,6 +56,15 @@ class VisionRankingTest(unittest.TestCase):
         self.assertEqual(VisionModel.rank([0.1, 0.7, 0.2], ["a", "b", "c"], 2),
                          [("b", 0.7), ("c", 0.2)])
 
+    def test_reconcile_picks_theme_backed_candidate_when_unsure(self):
+        names = {"sweatshirt": "spor giyim", "shoe": "ayakkabı", "trousers": "pantolon"}
+        candidates = [("sweatshirt", 0.47), ("shoe", 0.30), ("trousers", 0.05)]
+        themes = [("sneaker", 0.51), ("shoe", 0.08), ("travel", 0.02)]
+        self.assertEqual(VisionModel.reconcile(candidates, themes, names), "shoe")
+        confident = [("sweatshirt", 0.80), ("shoe", 0.10)]
+        self.assertIsNone(VisionModel.reconcile(confident, themes, names))  # güven yüksek, dokunulmaz
+        self.assertIsNone(VisionModel.reconcile(candidates, [("travel", 0.9)], names))  # tema objede yok
+
     def test_keywords_skip_object_name_and_duplicates(self):
         themes = {"bag": ["çanta", "aksesuar"], "travel": ["seyahat"],
                   "fashion_accessory": ["aksesuar", "moda"], "toy": ["oyuncak"]}

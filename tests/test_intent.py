@@ -55,6 +55,11 @@ class IntentTest(unittest.TestCase):
         self.assertEqual(self.builder.build("demlik", ["sofra", "çay", "demleme"]),
                          "sofra ve çay demlikleri")
 
+    def test_opposite_qualities_cancel_out(self):
+        self.assertEqual(self.builder.build("pantolon", ["erkek", "moda", "kadın", "giyim"]),
+                         "pantolon")
+        self.assertEqual(self.builder.build("pantolon", ["erkek", "moda"]), "erkek pantolonlar")
+
     def test_no_query_words_returns_object(self):
         self.assertEqual(self.builder.build("fotoğraf makinesi", ["fotoğrafçılık", "lens"]),
                          "fotoğraf makinesi")
