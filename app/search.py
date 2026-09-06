@@ -105,7 +105,7 @@ class WebSearcher:
         for params in (by_title, by_search):
             for page in self._wiki_pages(params):
                 extract = (page.get("extract") or "").strip()
-                if not extract or "anlamlara gelebilir" in extract or "anlamına gelebilir" in extract:
+                if not extract or any(marker in extract for marker in DISAMBIGUATION_MARKERS):
                     continue
                 paragraphs = [re.sub(r"\[\d+\]", "", p).strip()  # dipnot kalıntıları
                               for p in extract.split("\n") if p.strip()]
@@ -157,6 +157,10 @@ class WebSearcher:
         return [page for page in sorted(pages.values(), key=lambda p: p.get("index", 99))
                 if "missing" not in page]
 
+
+# anlam ayrımı sayfalarının giriş kalıpları, tanım değil liste verirler
+DISAMBIGUATION_MARKERS = ("anlamlara gelebilir", "anlamına gelebilir", "kastedilmiş olabilir",
+                          "şu anlamlara", "aşağıdakilerden biri")
 
 WIKI_SKIP_SECTIONS = ("kaynakça", "ayrıca bakınız", "dış bağlantılar", "galeri", "dipnot",
                       "notlar", "kaynaklar", "bibliyografya", "konuyla ilgili")

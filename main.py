@@ -509,7 +509,8 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
              "farklı kaynaklardan devam ediyorum.", "dim")
 
     # bilgi blokları, tanım ve ilgili niyet ve objenin ailesine özgü açılar
-    blocks = planner.plan(object_tr, words, query)
+    confident = prediction.confidence >= config.MIN_CONFIDENCE
+    blocks = planner.plan(object_tr, words, query, confident=confident)
     emit_debug("bloklar", f"aile {planner.family(words)}: " + ", ".join(b.title for b in blocks))
     found, trace = _gather_blocks(object_tr, blocks, words, context_words, emit_debug,
                                   session=session)

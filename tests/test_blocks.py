@@ -27,6 +27,10 @@ class BlockPlannerTest(unittest.TestCase):
         titles = [b.title for b in self.planner.plan("keman", ["yaylı çalgı"], "keman")]
         self.assertEqual(titles, ["Tanım", "Tarihçe", "Nasıl çalınır"])
 
+    def test_low_confidence_keeps_only_definition(self):
+        blocks = self.planner.plan("bot", ["ayakkabı"], "bot", confident=False)
+        self.assertEqual([b.title for b in blocks], ["Tanım"])
+
     def test_family_blocks_require_hints(self):
         blocks = self.planner.plan("sırt çantası", ["aksesuar"], "sırt çantası")
         self.assertFalse(blocks[0].required_hints)  # tanım serbest

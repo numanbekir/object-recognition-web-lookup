@@ -75,7 +75,8 @@ son kelimeyi paylaşıyorsa iki ad tek tamlamada birleşir. Yemek ailesinde
 cümle tarifleri kelimesiyle biter. Ünlü uyumu, ünsüz yumuşaması, iyelik ve
 çoğul ekleri küçük bir Türkçe morfoloji üreteciyle hesaplanır. Bu cümle hem
 ekranda gösterilir hem de arama sorgusudur. Obje güveni eşiğin altındaysa
-anahtar kelimeler de güvenilmez sayılır ve sorgu yalnız obje adı olur.
+anahtar kelimeler de güvenilmez sayılır, sorgu yalnız obje adı olur ve
+yalnız tanım bloğu gösterilir.
 Kullanıcı düz metin yazdığında sorgu obje adı ile metnin birleşimidir.
 
 ## 5. Web araması ve paragraf seçimi

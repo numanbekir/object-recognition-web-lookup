@@ -19,6 +19,7 @@ NOISE_HEADINGS = ("yorum", "ilgili", "benzer", "paylaş", "etiket", "kategori", 
 MIN_ITEMS, MAX_ITEMS = 3, 12
 MIN_HEADINGS, MAX_HEADINGS = 3, 6
 SENTENCE_END = re.compile(r"(?<=[.!?])\s")
+HEADING_PREFIX = re.compile(r"^\s*(#\s*)?\d+[.)\-]?\s*")  # numara ve diyez önekleri
 
 
 def _clean(text: str) -> str:
@@ -95,8 +96,10 @@ def extract_sections(html: str) -> list:
         return []
     sections = []
     for heading in root.iter("h2", "h3"):
-        title = _clean(heading.text_content()).rstrip(":")
+        title = HEADING_PREFIX.sub("", _clean(heading.text_content())).rstrip(":")
         if not 3 <= len(title) <= 70 or any(noise in title.lower() for noise in NOISE_HEADINGS):
+            continue
+        if title.endswith("?") or "(" in title:  # soru ve açıklamalı başlıklar çeşit değildir
             continue
         body = ""
         sibling = heading.getnext()
@@ -109,7 +112,7 @@ def extract_sections(html: str) -> list:
                 body = _first_sentence(text)
             sibling = sibling.getnext()
             hops += 1
-        if body:
+        if body and not body.endswith(":"):  # iki noktayla biten cümle yarımdır
             sections.append({"baslik": title, "metin": body})
     return sections
 

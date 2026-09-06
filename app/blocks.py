@@ -40,8 +40,11 @@ class BlockPlanner:
                 return self.family_of_word[word]
         return self.default_family
 
-    def plan(self, object_tr: str, keywords: list, intent_query: str) -> list:
+    def plan(self, object_tr: str, keywords: list, intent_query: str,
+             confident: bool = True) -> list:
         blocks = [InfoBlock("Tanım", f"{object_tr} nedir", ["nedir", "tanım", "adı verilen"])]
+        if not confident:
+            return blocks  # objeden emin değilken çeşitlerini listelemek anlamsız
         if intent_query and intent_query.lower() != object_tr.lower():
             blocks.append(InfoBlock("İlgili", intent_query, intent_query.split(), limit=2))
         for spec in self.schema[self.family(keywords)]["bloklar"]:

@@ -27,6 +27,8 @@ TYPES_HTML = """
 <h2>DSLR Fotoğraf Makineleri</h2><p>DSLR makineler profesyonel çekimlerde tercih edilen aynalı sistemlerdir. Lens değiştirilebilir.</p>
 <h2>Aynasız Fotoğraf Makineleri</h2><p>Aynasız makineler DSLR kalitesini daha hafif bir gövdede sunar ve sessiz çalışır.</p>
 <h2>En İyi Fotoğraf Makinesi Fiyatları</h2><p>Fiyatlar modele göre değişir ve kampanya dönemlerinde düşer, indirimleri takip edin.</p>
+<h2>#4. Köprü Fotoğraf Makineleri</h2><p>Köprü makineler kompakt ile DSLR arasında bir köprü görevi görür ve sabit lensleri vardır.</p>
+<h2>Fotoğraf Makinesi Nedir?</h2><p>Bu bölüm soru başlıklı olduğu için çeşit listesine girmemelidir ve elenmelidir.</p>
 </main></body></html>
 """
 
@@ -61,6 +63,9 @@ class SectionTest(unittest.TestCase):
                          ["Kompakt Fotoğraf Makineleri", "DSLR Fotoğraf Makineleri",
                           "Aynasız Fotoğraf Makineleri"])
         self.assertTrue(sections[0]["metin"].endswith("seçenektir."))  # yalnız ilk cümle
+        titles = [s["baslik"] for s in sections]
+        self.assertIn("Köprü Fotoğraf Makineleri", titles)  # numara öneki kırpıldı
+        self.assertNotIn("Fotoğraf Makinesi Nedir?", titles)  # soru başlığı elendi
         anchor = stems("fotoğraf makinesi")
         best = best_sections([("x.com", "https://x.com", sections)], anchor, 5)
         self.assertIsNotNone(best)
