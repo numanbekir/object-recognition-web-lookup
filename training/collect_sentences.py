@@ -36,7 +36,7 @@ OBJECTS = (
 
 def collect_for_object(label, keywords, searcher, extractor):
     turkish = keywords.turkish_name(label)
-    scored = keywords.extract_scored(label, [], use_suggestions=False)
+    scored = keywords.extract_scored(label, use_suggestions=False)
     words = [item.word for item in scored]
     query_words = [item.word for item in scored if item.source != "bileşen"]
     category = searcher.support_term(turkish, query_words)

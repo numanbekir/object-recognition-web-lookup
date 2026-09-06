@@ -126,12 +126,12 @@ class KeywordExtractor:
                 break
         return depths
 
-    def _collect(self, label: str, factor: float) -> list:
+    def _collect(self, label: str) -> list:
         """Bir nesnenin tüm kaynaklardan puanlı kelimelerini toplar."""
         found = []
 
         def add(word, source, score):
-            found.append(Keyword(word, source, score * factor))
+            found.append(Keyword(word, source, score))
 
         # doğrudan girdi nesneye özel yazıldığı için tavan puan alır
         for word in self.theme_map.get(self._key(label), []):
@@ -144,18 +144,17 @@ class KeywordExtractor:
                 for word in self.theme_map.get(concept, []):
                     rarity = math.log(self.vocab_size / max(self.breadth.get(concept, 1), 1))
                     add(word, f"kavram:{concept}", (1.0 / depth) * rarity)
-            # parça ve malzeme ilişkisi yalnız baskın nesne için
-            if factor == 1.0:
-                parts = sense.part_meronyms() + sense.substance_meronyms()
-                for part in parts[:2]:
-                    name = part.lemmas()[0].name().replace(" ", "_").lower()
-                    turkish = self.names_tr.get(name.replace("_", " "))
-                    if turkish is None or turkish == self.turkish_name(label):
-                        continue
-                    # çeviri sözlüğü nesne anlamına göre yazıldı, bileşenin anlamı aynı olmalı
-                    if self._pick_sense(name.replace("_", " ")) != part:
-                        continue
-                    add(turkish, "bileşen", 0.9 * self._top_score())
+            # parça ve malzeme ilişkisi
+            parts = sense.part_meronyms() + sense.substance_meronyms()
+            for part in parts[:2]:
+                name = part.lemmas()[0].name().replace(" ", "_").lower()
+                turkish = self.names_tr.get(name.replace("_", " "))
+                if turkish is None or turkish == self.turkish_name(label):
+                    continue
+                # çeviri sözlüğü nesne anlamına göre yazıldı, bileşenin anlamı aynı olmalı
+                if self._pick_sense(name.replace("_", " ")) != part:
+                    continue
+                add(turkish, "bileşen", 0.9 * self._top_score())
         return found
 
     def _fetch_suggestions(self, query: str) -> list:
@@ -213,43 +212,23 @@ class KeywordExtractor:
         kept.sort(key=lambda item: -item.score)
         return kept
 
-    def extract_scored(self, label: str, secondary_labels: list,
-                       use_suggestions: bool = True) -> list:
+    def extract_scored(self, label: str, use_suggestions: bool = True) -> list:
         """Puanlı ve kaynak etiketli anahtar kelime listesi döndürür.
 
-        Kelimeler önce objeyi anlatmalıdır. Sahnedeki yan nesneler ancak
-        baskın nesnenin kelimelerinden slot artarsa listeye girer.
+        Kelimeler yalnız baskın objeyi anlatır. Sahnedeki yan nesnelerin
+        temaları bilinçli olarak katılmaz, listeyi bulandırıyordu.
         """
-        ranked = self._rank(self._collect(label, 1.0))
+        ranked = self._rank(self._collect(label))
         # öneriler puan yarışına girmez, kelime kıtlığında temaların arkasına dolgu olur
         if use_suggestions and len(ranked) < config.SUGGESTION_FILL_THRESHOLD:
             seen = {item.word for item in ranked}
             ranked += [item for item in self._intent_keywords(self.turkish_name(label))
                        if item.word not in seen]
-        result = ranked[:config.MAX_KEYWORDS]
+        return ranked[:config.MAX_KEYWORDS]
 
-        if len(result) < config.MAX_KEYWORDS and secondary_labels:
-            seen = {item.word for item in result}
-            scene = []
-            for secondary in secondary_labels:
-                scene += self._collect(secondary, 0.5)
-            top = result[0].score if result else 0.0
-            for item in self._rank(scene):
-                if top and item.score < 0.2 * top:
-                    break  # sahne dolgusu da tepe puanın %20 eşiğine tabidir
-                if item.word in seen:
-                    continue
-                result.append(item)
-                seen.add(item.word)
-                if len(result) >= config.MAX_KEYWORDS:
-                    break
-        return result
-
-    def extract(self, label: str, secondary_labels: list,
-                use_suggestions: bool = True) -> list:
+    def extract(self, label: str, use_suggestions: bool = True) -> list:
         """Türkçe anahtar kelime listesi döndürür."""
-        return [item.word for item in
-                self.extract_scored(label, secondary_labels, use_suggestions)]
+        return [item.word for item in self.extract_scored(label, use_suggestions)]
 
     def turkish_name(self, label: str) -> str:
         return self.names_tr.get(label, label)

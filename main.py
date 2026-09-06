@@ -318,7 +318,7 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
     record["obje"] = {"ad_tr": turkish, "etiket": dominant.label,
                       "guven": round(dominant.confidence, 2)}
 
-    scored = keywords.extract_scored(dominant.label, secondary)
+    scored = keywords.extract_scored(dominant.label)
     emit_debug("kelimeler", ", ".join(
         f"{item.word} [{item.source} {item.score:.1f}]" for item in scored) or "tema bulunamadı")
     if scored:
@@ -326,9 +326,9 @@ def process_turn(kind: str, value: str, loader: ImageLoader, detector: ObjectDet
     words = [item.word for item in scored]
     record["anahtar_kelimeler"] = words
 
-    # bağlam kıyası yalnız baskın nesnenin kelimeleriyle yapılır, ikincil
-    # sahne kelimeleri iki alakasız görseli akraba gösterebiliyor
-    dominant_words = [item.word for item in keywords.extract_scored(dominant.label, [])]
+    # kelimeler artık yalnız baskın nesneden geldiği için bağlam kıyası da
+    # aynı listeyle yapılır
+    dominant_words = words
     related = session.related_entries(turkish, dominant_words)
     context, context_words = [], []
     if related:

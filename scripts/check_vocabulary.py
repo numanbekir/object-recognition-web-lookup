@@ -37,7 +37,7 @@ def main():
     for name in vocabulary:
         if not extractor._wordnet.synsets(name.replace(" ", "_"), pos="n"):
             no_wordnet.append(name)
-        if not extractor.extract(name, [], use_suggestions=False):
+        if not extractor.extract(name, use_suggestions=False):
             no_theme.append(name)
         if name not in extractor.names_tr:
             no_turkish.append(name)

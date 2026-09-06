@@ -26,6 +26,9 @@ UMBRELLA_CLASSES = {"sandwich": ("sandwich", "hamburger", "hot dog")}
 # yedi görsellik kıyasta gerçek burger 0.77 üstü, sandviçe hamburger
 # önyargısı 0.67 altında kaldı, eşik bu ölçümle temkinli tarafa kondu
 UMBRELLA_REFINE_MIN = 0.75
+# COCO yeterince emin değilse tam görüntü CLIP ile sınıflandırılır.
+# Ölçümde doğru cevaplar 0.79 üstü, kararsızlar 0.10 altı kaldı
+CLIP_TRUST = 0.50
 UMBRELLA_IOU = 0.45  # inceltme adayı şemsiye kutuyla bu kadar örtüşmeli
 
 # Görüntü

@@ -34,7 +34,9 @@ PERSONAL_PATTERNS = (
     "düşünüyorum", "bence", "kanımca",
     "sınız", "siniz", "sunuz", "sünüz", "sanız", "seniz",
     "ınız", "iniz", "unuz", "ünüz",
+    "yoruz",  # birinci çoğul anlatı, blog ve tarif dili
 )
+MOJIBAKE_CHARS = "ÃÄÅ"  # bozuk kodlanmış sayfalardan sızan işaretler
 # emir kipiyle biten tarif adımları
 IMPERATIVE_ENDINGS = re.compile(
     r"\b\w+(ın|in|un|ün|ınız|iniz|unuz|ünüz|alım|elim)\.$")
@@ -136,6 +138,12 @@ class ContentExtractor:
         if not TURKISH_CHARS.intersection(lower):
             return False
         if not STOPWORDS.intersection(re.findall(r"[a-zçğıöşü]+", lower)):
+            return False
+        # kısmen bozuk kodlanmış cümle dil denetimini geçebiliyor
+        if any(ch in sentence for ch in MOJIBAKE_CHARS):
+            return False
+        # arama kalıbını yankılayan seo giriş cümleleri
+        if " nedir" in lower:
             return False
         if ":" in sentence or "|" in sentence:  # başlık ve menü kalıntıları
             return False

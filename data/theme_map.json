@@ -1,344 +1,1655 @@
 {
-  "clothing": ["giyim", "moda"],
-  "garment": ["giyim", "moda"],
-  "overgarment": ["dış giyim"],
-  "undergarment": ["iç giyim"],
-  "headdress": ["giyim aksesuarı"],
-  "footwear": ["ayakkabı"],
-  "handwear": ["giyim aksesuarı"],
-  "food": ["yemek", "beslenme"],
-  "nutriment": ["yemek", "beslenme"],
-  "dish": ["yemek tarifi"],
-  "baked_goods": ["fırın ürünü", "pastane"],
-  "bread": ["fırın ürünü"],
-  "cake": ["pastane", "tatlı"],
-  "snack_food": ["aperatif yemek", "atıştırmalık"],
-  "sweet": ["tatlı", "şekerleme"],
-  "frozen_dessert": ["tatlı"],
-  "candy": ["şekerleme"],
-  "edible_fruit": ["meyve"],
-  "fruit": ["meyve"],
-  "vegetable": ["sebze"],
-  "herb": ["bitki"],
-  "legume": ["sebze", "baklagil"],
-  "beverage": ["içecek"],
-  "dairy_product": ["süt ürünü"],
-  "meat": ["et ürünü"],
-  "flavorer": ["baharat"],
-  "condiment": ["sos", "lezzet"],
-  "furniture": ["mobilya", "dekorasyon"],
-  "furnishing": ["ev tekstili", "dekorasyon"],
-  "seat": ["mobilya", "oturma grubu"],
-  "table": ["mobilya"],
-  "bed": ["mobilya", "uyku"],
-  "vehicle": ["taşıt", "ulaşım"],
-  "wheeled_vehicle": ["taşıt", "ulaşım"],
-  "self-propelled_vehicle": ["taşıt", "ulaşım"],
-  "motor_vehicle": ["motorlu taşıt", "trafik"],
-  "car": ["otomobil", "trafik"],
-  "truck": ["ticari araç", "trafik"],
-  "craft": ["ulaşım"],
-  "aircraft": ["havacılık"],
-  "boat": ["denizcilik"],
-  "ship": ["denizcilik"],
-  "train": ["demiryolu"],
-  "placental": ["hayvan", "doğa"],
-  "mammal": ["hayvan", "doğa"],
-  "vertebrate": ["hayvan", "doğa"],
-  "carnivore": ["hayvan", "doğa"],
-  "rodent": ["hayvan", "doğa"],
-  "primate": ["hayvan", "doğa"],
-  "ruminant": ["hayvan", "doğa"],
-  "insect": ["böcek", "doğa"],
-  "arthropod": ["doğa"],
-  "reptile": ["sürüngen", "doğa"],
-  "amphibian": ["doğa"],
-  "bird": ["kuş", "doğa"],
-  "aquatic_bird": ["kuş", "doğa"],
-  "aquatic_vertebrate": ["balık", "deniz"],
-  "invertebrate": ["deniz canlısı", "doğa"],
-  "mollusk": ["deniz canlısı"],
-  "crustacean": ["deniz ürünü"],
-  "dog": ["köpek", "evcil hayvan"],
-  "cat": ["kedi", "evcil hayvan"],
-  "horse": ["binicilik", "hayvan"],
-  "person": ["insan", "yaşam"],
-  "plant": ["bitki", "bahçe"],
-  "vascular_plant": ["bitki", "bahçe"],
-  "flower": ["çiçek", "bahçe"],
-  "angiosperm": ["çiçek", "bahçe"],
-  "woody_plant": ["ağaç", "bahçe"],
-  "kitchen_utensil": ["mutfak gereci"],
-  "cooking_utensil": ["mutfak gereci"],
-  "utensil": ["mutfak gereci"],
-  "kitchen_appliance": ["mutfak", "ev aleti"],
-  "tableware": ["sofra", "mutfak"],
-  "crockery": ["sofra", "mutfak"],
-  "cutlery": ["sofra", "mutfak"],
-  "home_appliance": ["ev aleti"],
-  "white_goods": ["beyaz eşya"],
-  "appliance": ["ev aleti"],
-  "electronic_equipment": ["elektronik", "teknoloji"],
-  "computer": ["bilgisayar", "teknoloji"],
-  "machine": ["makine"],
-  "mechanism": ["mekanizma"],
-  "tool": ["el aleti", "tamirat"],
-  "hand_tool": ["el aleti", "tamirat"],
-  "power_tool": ["elektrikli alet", "tamirat"],
-  "sports_equipment": ["spor"],
-  "game_equipment": ["oyun", "eğlence"],
-  "toy": ["oyuncak", "çocuk"],
-  "plaything": ["oyuncak", "çocuk"],
-  "musical_instrument": ["müzik", "enstrüman"],
-  "wind_instrument": ["müzik", "enstrüman"],
-  "percussion_instrument": ["müzik", "enstrüman"],
-  "stringed_instrument": ["müzik", "enstrüman"],
-  "measuring_instrument": ["ölçüm"],
-  "optical_instrument": ["optik"],
-  "scientific_instrument": ["bilim"],
-  "medical_instrument": ["sağlık"],
-  "drug": ["sağlık", "eczane"],
-  "weapon": ["savunma"],
-  "structure": ["yapı", "mimari"],
-  "building": ["yapı", "mimari"],
-  "decoration": ["dekorasyon", "süs"],
-  "adornment": ["süs", "aksesuar"],
-  "jewelry": ["takı", "aksesuar"],
-  "bag": ["çanta", "aksesuar"],
-  "baggage": ["valiz", "seyahat"],
-  "container": ["ev eşyası"],
-  "box": ["saklama"],
-  "source_of_illumination": ["aydınlatma"],
-  "lamp": ["aydınlatma", "dekorasyon"],
-  "timepiece": ["saat", "aksesuar"],
-  "publication": ["okuma", "yayın"],
-  "book": ["okuma", "kitap"],
-  "writing_implement": ["kırtasiye"],
-  "paper": ["kırtasiye"],
-  "signboard": ["tabela"],
-  "sign": ["trafik işareti"],
-  "protective_garment": ["koruyucu giyim"],
-  "armor_plate": ["koruyucu"],
-  "cleaning_implement": ["temizlik"],
-  "cleansing_agent": ["temizlik"],
-  "toiletry": ["kişisel bakım"],
-  "cosmetics": ["kişisel bakım", "kozmetik"],
-  "baby_bed": ["bebek", "çocuk"],
-  "fabric": ["kumaş", "tekstil"],
-  "piece_of_cloth": ["tekstil"],
-  "floor_cover": ["ev tekstili"],
-  "curtain": ["ev tekstili", "dekorasyon"],
-  "fastener": ["hırdavat"],
-  "electric_lamp": ["aydınlatma"],
-  "fish": ["balık", "deniz"],
-  "animal": ["hayvan", "doğa"],
-  "young_mammal": ["yavru hayvan"],
-  "sports_implement": ["spor"],
-  "electrical_device": ["elektronik"],
-  "money": ["para", "finans"],
-  "currency": ["para"],
-  "art": ["sanat"],
-  "conveyance": ["ulaşım"],
-  "public_transport": ["toplu taşıma", "ulaşım"],
-
-  "band_aid": ["sağlık", "ilk yardım"],
-  "lego": ["oyuncak", "çocuk"],
-  "armband": ["aksesuar"],
-  "armor": ["zırh", "tarih"],
-  "award": ["ödül", "başarı"],
-  "awning": ["gölgelik", "dış mekan"],
-  "bait": ["balıkçılık"],
-  "bandage": ["sağlık", "ilk yardım"],
-  "baseball_base": ["beyzbol", "spor"],
-  "beachball": ["plaj", "oyun"],
-  "bedspread": ["ev tekstili"],
-  "beeper": ["elektronik"],
-  "birdfeeder": ["kuş", "bahçe"],
-  "birdhouse": ["kuş", "bahçe"],
-  "birthday_card": ["kutlama"],
-  "blackboard": ["eğitim", "okul"],
-  "blanket": ["ev tekstili", "uyku"],
-  "blinder": ["binicilik"],
-  "bookmark": ["okuma", "kırtasiye"],
-  "boom_microphone": ["ses kaydı", "stüdyo"],
-  "bottle_cap": ["ambalaj"],
-  "brake_light": ["otomobil", "trafik"],
-  "brass_plaque": ["anı", "dekorasyon"],
-  "buoy": ["denizcilik"],
-  "business_card": ["iş dünyası"],
-  "camera_lens": ["fotoğrafçılık"],
-  "calendar": ["zaman planlama", "ofis"],
-  "candle_holder": ["dekorasyon", "aydınlatma"],
-  "coaster": ["sofra", "ev eşyası"],
-  "crumb": ["mutfak"],
-  "fan": ["serinleme", "ev aleti"],
-  "knocker": ["kapı", "dekorasyon"],
-  "lightning_rod": ["elektrik", "güvenlik"],
-  "pacifier": ["bebek", "çocuk"],
-  "peeler": ["mutfak gereci"],
-  "stirrer": ["mutfak gereci"],
-  "chain_mail": ["zırh", "tarih"],
-  "chandelier": ["aydınlatma", "dekorasyon"],
-  "checkbook": ["banka", "finans"],
-  "checkerboard": ["oyun", "strateji"],
-  "chessboard": ["satranç", "oyun"],
-  "chopping_board": ["mutfak gereci"],
-  "cincture": ["giyim aksesuarı"],
-  "clipboard": ["ofis", "kırtasiye"],
-  "coat_hanger": ["ev düzeni"],
-  "colander": ["mutfak gereci"],
-  "coloring_material": ["boya", "sanat"],
-  "compass": ["yön bulma", "doğa sporu"],
-  "computer_mouse": ["bilgisayar", "teknoloji"],
-  "cone": ["trafik", "uyarı"],
-  "corkboard": ["pano", "ofis"],
-  "cover": ["koruma"],
-  "cowbell": ["hayvancılık"],
-  "crowbar": ["el aleti", "tamirat"],
-  "crutch": ["sağlık", "yürüme desteği"],
-  "cushion": ["ev tekstili", "dekorasyon"],
-  "dartboard": ["dart", "oyun"],
-  "deadbolt": ["kilit", "güvenlik"],
-  "dental_floss": ["diş bakımı"],
-  "diving_board": ["yüzme", "havuz"],
-  "doorknob": ["kapı", "hırdavat"],
-  "drumstick": ["müzik", "davul"],
-  "duct_tape": ["tamirat"],
-  "easel": ["resim", "sanat"],
-  "electric_chair": ["tarih"],
-  "eraser": ["kırtasiye", "okul"],
-  "eyepatch": ["sağlık"],
-  "fighter_jet": ["havacılık", "savunma"],
-  "figurine": ["dekorasyon", "koleksiyon"],
-  "fire_alarm": ["yangın güvenliği"],
-  "fire_extinguisher": ["yangın güvenliği"],
-  "fire_hose": ["yangın güvenliği"],
-  "fireplug": ["yangın güvenliği"],
-  "first-aid_kit": ["ilk yardım", "sağlık"],
-  "flap": ["kapak"],
-  "gag": ["aksesuar"],
-  "fishing_rod": ["balıkçılık", "olta"],
-  "flagpole": ["bayrak"],
-  "freshener": ["ev kokusu", "temizlik"],
-  "fume_hood": ["laboratuvar"],
-  "futon": ["uyku", "mobilya"],
-  "gameboard": ["oyun", "eğlence"],
-  "garden_hose": ["bahçe", "sulama"],
-  "gargle": ["ağız bakımı"],
-  "gasmask": ["koruyucu ekipman"],
-  "gemstone": ["mücevher", "takı"],
-  "globe": ["coğrafya", "eğitim"],
-  "hairbrush": ["saç bakımı"],
-  "halter_top": ["giyim", "moda"],
-  "handcuff": ["güvenlik"],
-  "handle": ["hırdavat"],
-  "hardback_book": ["okuma", "kitap"],
-  "headband": ["saç aksesuarı"],
-  "headboard": ["yatak", "mobilya"],
-  "headstall": ["binicilik"],
-  "heater": ["ısıtma", "ev aleti"],
-  "hinge": ["hırdavat"],
-  "hookah": ["tütün ürünü"],
-  "horse_buggy": ["binicilik", "tarih"],
-  "horse_carriage": ["binicilik", "tarih"],
-  "identity_card": ["belge"],
-  "igniter": ["ateşleme"],
-  "inkpad": ["kırtasiye", "ofis"],
-  "ironing_board": ["ütü", "ev işi"],
-  "keycard": ["güvenlik", "erişim"],
-  "kitchen_sink": ["mutfak"],
-  "knitting_needle": ["örgü", "el işi"],
-  "ladder": ["tamirat", "inşaat"],
-  "lamppost": ["aydınlatma", "şehir"],
-  "lampshade": ["aydınlatma", "dekorasyon"],
-  "lanyard": ["aksesuar"],
-  "leather": ["deri", "malzeme"],
-  "license_plate": ["otomobil", "trafik"],
-  "life_buoy": ["deniz güvenliği"],
-  "life_jacket": ["deniz güvenliği"],
-  "magnet": ["bilim"],
-  "mail_slot": ["posta"],
-  "manhole": ["altyapı", "şehir"],
-  "map": ["harita", "seyahat"],
-  "mascot": ["takım", "eğlence"],
-  "mattress": ["uyku", "yatak"],
-  "milestone": ["yol", "tarih"],
-  "milkshake": ["içecek", "tatlı"],
-  "mirror": ["dekorasyon", "ev eşyası"],
-  "monitor": ["bilgisayar", "teknoloji"],
-  "mousepad": ["bilgisayar", "ofis"],
-  "needle": ["dikiş", "el işi"],
-  "newsstand": ["basın", "şehir"],
-  "noseband": ["binicilik"],
-  "oar": ["kürek", "denizcilik"],
-  "olive_oil": ["mutfak", "sağlıklı beslenme"],
-  "paintbrush": ["boya", "sanat"],
-  "paperweight": ["ofis", "masa düzeni"],
-  "parachute": ["hava sporu"],
-  "parasail": ["hava sporu", "deniz eğlencesi"],
-  "parasol": ["güneş koruması", "plaj"],
-  "passport": ["seyahat", "belge"],
-  "pegboard": ["düzenleme", "atölye"],
-  "pencil_sharpener": ["kırtasiye", "okul"],
-  "pendulum": ["saat", "fizik"],
-  "phonograph_record": ["müzik", "koleksiyon"],
-  "pillow": ["uyku", "ev tekstili"],
-  "pinecone": ["doğa", "sonbahar"],
-  "poker": ["şömine"],
-  "postbox": ["posta"],
-  "postcard": ["seyahat", "posta"],
-  "potholder": ["mutfak"],
-  "quilt": ["ev tekstili", "uyku"],
-  "raft": ["rafting", "su sporu"],
-  "rag_doll": ["oyuncak", "çocuk"],
-  "rearview_mirror": ["otomobil"],
-  "receipt": ["alışveriş", "belge"],
-  "remote_control": ["elektronik", "televizyon"],
-  "road_map": ["harita", "seyahat"],
-  "rubber_band": ["kırtasiye"],
-  "saddle_blanket": ["binicilik"],
-  "scarecrow": ["tarım", "bahçe"],
-  "scrubbing_brush": ["temizlik"],
-  "seashell": ["deniz", "koleksiyon"],
-  "sharpener": ["kırtasiye"],
-  "shield": ["kalkan", "tarih"],
-  "shower_head": ["banyo"],
-  "shredder": ["ofis", "evrak"],
-  "ski": ["kayak", "kış sporu"],
-  "ski_pole": ["kayak", "kış sporu"],
-  "slide": ["oyun parkı", "çocuk"],
-  "snowboard": ["kış sporu"],
-  "snowman": ["kış", "çocuk"],
-  "spice_rack": ["mutfak", "baharat"],
-  "stepladder": ["tamirat"],
-  "stirrup": ["binicilik"],
-  "stop_sign": ["trafik", "güvenlik"],
-  "strainer": ["mutfak gereci"],
-  "strap": ["aksesuar"],
-  "straw": ["içecek"],
-  "surfboard": ["sörf", "su sporu"],
-  "sweatband": ["spor"],
-  "teddy_bear": ["oyuncak", "çocuk"],
-  "telephone_pole": ["altyapı"],
-  "telephoto_lens": ["fotoğrafçılık"],
-  "thread": ["dikiş", "el işi"],
-  "tinfoil": ["mutfak"],
-  "tobacco_pipe": ["tütün ürünü"],
-  "tongs": ["mutfak gereci"],
-  "traffic_light": ["trafik", "şehir"],
-  "tripod": ["fotoğrafçılık"],
-  "trophy_cup": ["ödül", "başarı"],
-  "umbrella": ["yağmur", "aksesuar"],
-  "urinal": ["banyo", "tesisat"],
-  "videotape": ["nostalji", "kayıt"],
-  "walking_cane": ["yürüme desteği"],
-  "wall_socket": ["elektrik", "tesisat"],
-  "water_cooler": ["ofis", "içecek"],
-  "water_gun": ["oyuncak", "yaz eğlencesi"],
-  "water_ski": ["su sporu"],
-  "webcam": ["bilgisayar", "görüntülü görüşme"],
-  "windsock": ["havacılık", "rüzgar"],
-  "wooden_leg": ["tarih"],
-  "wristband": ["aksesuar", "spor"],
-  "wristlet": ["aksesuar"]
+ "adornment": [
+  "süs",
+  "aksesuar"
+ ],
+ "aircraft": [
+  "havacılık"
+ ],
+ "amphibian": [
+  "doğa"
+ ],
+ "angiosperm": [
+  "çiçek",
+  "bahçe"
+ ],
+ "animal": [
+  "hayvan",
+  "doğa"
+ ],
+ "appliance": [
+  "ev aleti"
+ ],
+ "aquatic_bird": [
+  "kuş",
+  "doğa"
+ ],
+ "aquatic_vertebrate": [
+  "balık",
+  "deniz"
+ ],
+ "armband": [
+  "aksesuar"
+ ],
+ "armor": [
+  "zırh",
+  "tarih"
+ ],
+ "armor_plate": [
+  "koruyucu"
+ ],
+ "art": [
+  "sanat"
+ ],
+ "arthropod": [
+  "doğa"
+ ],
+ "avocado": [
+  "meyve",
+  "sağlıklı beslenme"
+ ],
+ "award": [
+  "ödül",
+  "başarı"
+ ],
+ "awning": [
+  "gölgelik",
+  "dış mekan"
+ ],
+ "baby_bed": [
+  "bebek",
+  "çocuk"
+ ],
+ "bag": [
+  "çanta",
+  "aksesuar"
+ ],
+ "baggage": [
+  "valiz",
+  "seyahat"
+ ],
+ "bait": [
+  "balıkçılık"
+ ],
+ "baked_goods": [
+  "fırın ürünü",
+  "pastane"
+ ],
+ "balloon": [
+  "parti",
+  "kutlama"
+ ],
+ "band_aid": [
+  "sağlık",
+  "ilk yardım"
+ ],
+ "bandage": [
+  "sağlık",
+  "ilk yardım"
+ ],
+ "baseball_base": [
+  "beyzbol",
+  "spor"
+ ],
+ "basket": [
+  "ev gereci",
+  "düzenleme"
+ ],
+ "beachball": [
+  "plaj",
+  "oyun"
+ ],
+ "bed": [
+  "mobilya",
+  "uyku"
+ ],
+ "bedspread": [
+  "ev tekstili"
+ ],
+ "beeper": [
+  "elektronik"
+ ],
+ "belt": [
+  "aksesuar",
+  "moda"
+ ],
+ "beverage": [
+  "içecek"
+ ],
+ "binoculars": [
+  "doğa gözlemi",
+  "optik"
+ ],
+ "bird": [
+  "kuş",
+  "doğa"
+ ],
+ "birdfeeder": [
+  "kuş",
+  "bahçe"
+ ],
+ "birdhouse": [
+  "kuş",
+  "bahçe"
+ ],
+ "birthday_card": [
+  "kutlama"
+ ],
+ "blackboard": [
+  "eğitim",
+  "okul"
+ ],
+ "blanket": [
+  "ev tekstili",
+  "uyku"
+ ],
+ "blinder": [
+  "binicilik"
+ ],
+ "boat": [
+  "denizcilik"
+ ],
+ "book": [
+  "okuma",
+  "kitap"
+ ],
+ "bookmark": [
+  "okuma",
+  "kırtasiye"
+ ],
+ "boom_microphone": [
+  "ses kaydı",
+  "stüdyo"
+ ],
+ "boot": [
+  "moda",
+  "giyim",
+  "kış"
+ ],
+ "bottle_cap": [
+  "ambalaj"
+ ],
+ "box": [
+  "saklama"
+ ],
+ "bracelet": [
+  "takı",
+  "aksesuar"
+ ],
+ "brake_light": [
+  "otomobil",
+  "trafik"
+ ],
+ "brass_plaque": [
+  "anı",
+  "dekorasyon"
+ ],
+ "bread": [
+  "fırın ürünü",
+  "fırın",
+  "kahvaltı"
+ ],
+ "broom": [
+  "temizlik",
+  "ev gereci"
+ ],
+ "bucket": [
+  "ev gereci",
+  "temizlik"
+ ],
+ "building": [
+  "yapı",
+  "mimari"
+ ],
+ "buoy": [
+  "denizcilik"
+ ],
+ "burrito": [
+  "meksika mutfağı",
+  "fast food"
+ ],
+ "business_card": [
+  "iş dünyası"
+ ],
+ "butter": [
+  "süt ürünü",
+  "kahvaltı"
+ ],
+ "cake": [
+  "pastane",
+  "tatlı"
+ ],
+ "calculator": [
+  "ofis",
+  "matematik"
+ ],
+ "calendar": [
+  "zaman planlama",
+  "ofis",
+  "planlama"
+ ],
+ "camera": [
+  "fotoğrafçılık",
+  "lens",
+  "çekim"
+ ],
+ "camera_lens": [
+  "fotoğrafçılık"
+ ],
+ "candle": [
+  "dekorasyon",
+  "koku"
+ ],
+ "candle_holder": [
+  "dekorasyon",
+  "aydınlatma"
+ ],
+ "candy": [
+  "şekerleme"
+ ],
+ "canoe": [
+  "su sporu",
+  "doğa"
+ ],
+ "car": [
+  "otomobil",
+  "trafik"
+ ],
+ "carnivore": [
+  "hayvan",
+  "doğa"
+ ],
+ "cat": [
+  "kedi",
+  "evcil hayvan"
+ ],
+ "chain_mail": [
+  "zırh",
+  "tarih"
+ ],
+ "chandelier": [
+  "aydınlatma",
+  "dekorasyon"
+ ],
+ "checkbook": [
+  "banka",
+  "finans"
+ ],
+ "checkerboard": [
+  "oyun",
+  "strateji"
+ ],
+ "cherry": [
+  "meyve",
+  "vitamin"
+ ],
+ "chessboard": [
+  "satranç",
+  "oyun"
+ ],
+ "chocolate_bar": [
+  "tatlı",
+  "kakao",
+  "şekerleme"
+ ],
+ "chopping_board": [
+  "mutfak gereci"
+ ],
+ "cincture": [
+  "giyim aksesuarı"
+ ],
+ "cleaning_implement": [
+  "temizlik"
+ ],
+ "cleansing_agent": [
+  "temizlik"
+ ],
+ "clipboard": [
+  "ofis",
+  "kırtasiye"
+ ],
+ "clothing": [
+  "giyim",
+  "moda"
+ ],
+ "coaster": [
+  "sofra",
+  "ev eşyası"
+ ],
+ "coat": [
+  "giyim",
+  "kış",
+  "moda"
+ ],
+ "coat_hanger": [
+  "ev düzeni"
+ ],
+ "coconut": [
+  "tropikal meyve",
+  "hindistan cevizi yağı"
+ ],
+ "coin": [
+  "para",
+  "koleksiyon"
+ ],
+ "colander": [
+  "mutfak gereci"
+ ],
+ "coloring_material": [
+  "boya",
+  "sanat"
+ ],
+ "compass": [
+  "yön bulma",
+  "doğa sporu",
+  "kamp"
+ ],
+ "computer": [
+  "bilgisayar",
+  "teknoloji"
+ ],
+ "computer_mouse": [
+  "bilgisayar",
+  "teknoloji"
+ ],
+ "condiment": [
+  "sos",
+  "lezzet"
+ ],
+ "cone": [
+  "trafik",
+  "uyarı"
+ ],
+ "container": [
+  "ev eşyası"
+ ],
+ "conveyance": [
+  "ulaşım"
+ ],
+ "cookie": [
+  "tatlı",
+  "fırın"
+ ],
+ "cooking_utensil": [
+  "mutfak gereci"
+ ],
+ "corkboard": [
+  "pano",
+  "ofis"
+ ],
+ "cosmetics": [
+  "kişisel bakım",
+  "kozmetik"
+ ],
+ "cover": [
+  "koruma"
+ ],
+ "cowbell": [
+  "hayvancılık"
+ ],
+ "craft": [
+  "ulaşım"
+ ],
+ "crockery": [
+  "sofra",
+  "mutfak"
+ ],
+ "crowbar": [
+  "el aleti",
+  "tamirat"
+ ],
+ "crumb": [
+  "mutfak"
+ ],
+ "crustacean": [
+  "deniz ürünü"
+ ],
+ "crutch": [
+  "sağlık",
+  "yürüme desteği",
+  "medikal"
+ ],
+ "cucumber": [
+  "sebze",
+  "salata"
+ ],
+ "cupcake": [
+  "tatlı",
+  "pasta"
+ ],
+ "currency": [
+  "para"
+ ],
+ "curtain": [
+  "ev tekstili",
+  "dekorasyon"
+ ],
+ "cushion": [
+  "ev tekstili",
+  "dekorasyon"
+ ],
+ "cutlery": [
+  "sofra",
+  "mutfak"
+ ],
+ "dairy_product": [
+  "süt ürünü"
+ ],
+ "dartboard": [
+  "dart",
+  "oyun"
+ ],
+ "deadbolt": [
+  "kilit",
+  "güvenlik"
+ ],
+ "decoration": [
+  "dekorasyon",
+  "süs"
+ ],
+ "dental_floss": [
+  "diş bakımı"
+ ],
+ "dish": [
+  "yemek tarifi"
+ ],
+ "diving_board": [
+  "yüzme",
+  "havuz"
+ ],
+ "dog": [
+  "köpek",
+  "evcil hayvan"
+ ],
+ "doll": [
+  "oyuncak",
+  "çocuk"
+ ],
+ "doorknob": [
+  "kapı",
+  "hırdavat"
+ ],
+ "dress": [
+  "giyim",
+  "moda",
+  "davet"
+ ],
+ "drug": [
+  "sağlık",
+  "eczane"
+ ],
+ "drum": [
+  "ritim",
+  "müzik aleti"
+ ],
+ "drumstick": [
+  "müzik",
+  "davul"
+ ],
+ "duct_tape": [
+  "tamirat"
+ ],
+ "earphone": [
+  "ses",
+  "müzik"
+ ],
+ "earring": [
+  "takı",
+  "aksesuar"
+ ],
+ "easel": [
+  "resim",
+  "sanat"
+ ],
+ "edible_corn": [
+  "sebze",
+  "atıştırmalık"
+ ],
+ "edible_fruit": [
+  "meyve"
+ ],
+ "egg": [
+  "kahvaltı",
+  "protein"
+ ],
+ "electric_chair": [
+  "tarih"
+ ],
+ "electric_lamp": [
+  "aydınlatma"
+ ],
+ "electrical_device": [
+  "elektronik"
+ ],
+ "electronic_equipment": [
+  "elektronik",
+  "teknoloji"
+ ],
+ "envelope": [
+  "posta",
+  "kırtasiye"
+ ],
+ "eraser": [
+  "kırtasiye",
+  "okul"
+ ],
+ "eyepatch": [
+  "sağlık"
+ ],
+ "fabric": [
+  "kumaş",
+  "tekstil"
+ ],
+ "fan": [
+  "serinleme",
+  "ev aleti"
+ ],
+ "fastener": [
+  "hırdavat"
+ ],
+ "fig": [
+  "meyve",
+  "kurutulmuş"
+ ],
+ "fighter_jet": [
+  "havacılık",
+  "savunma"
+ ],
+ "figurine": [
+  "dekorasyon",
+  "koleksiyon"
+ ],
+ "fire_alarm": [
+  "yangın güvenliği"
+ ],
+ "fire_extinguisher": [
+  "yangın güvenliği"
+ ],
+ "fire_hose": [
+  "yangın güvenliği"
+ ],
+ "fireplace": [
+  "ısınma",
+  "dekorasyon"
+ ],
+ "fireplug": [
+  "yangın güvenliği"
+ ],
+ "first-aid_kit": [
+  "ilk yardım",
+  "sağlık"
+ ],
+ "fish": [
+  "balık",
+  "deniz"
+ ],
+ "fishing_rod": [
+  "balıkçılık",
+  "olta"
+ ],
+ "flagpole": [
+  "bayrak"
+ ],
+ "flap": [
+  "kapak"
+ ],
+ "flashlight": [
+  "aydınlatma",
+  "kamp"
+ ],
+ "flavorer": [
+  "baharat"
+ ],
+ "floor_cover": [
+  "ev tekstili"
+ ],
+ "flower": [
+  "çiçek",
+  "bahçe"
+ ],
+ "food": [
+  "yemek",
+  "beslenme"
+ ],
+ "footwear": [
+  "ayakkabı"
+ ],
+ "freshener": [
+  "ev kokusu",
+  "temizlik"
+ ],
+ "frozen_dessert": [
+  "tatlı"
+ ],
+ "fruit": [
+  "meyve"
+ ],
+ "fume_hood": [
+  "laboratuvar"
+ ],
+ "furnishing": [
+  "ev tekstili",
+  "dekorasyon"
+ ],
+ "furniture": [
+  "mobilya",
+  "dekorasyon"
+ ],
+ "futon": [
+  "uyku",
+  "mobilya"
+ ],
+ "gag": [
+  "aksesuar"
+ ],
+ "game_equipment": [
+  "oyun",
+  "eğlence"
+ ],
+ "gameboard": [
+  "oyun",
+  "eğlence"
+ ],
+ "garden_hose": [
+  "bahçe",
+  "sulama"
+ ],
+ "gargle": [
+  "ağız bakımı"
+ ],
+ "garlic": [
+  "sebze",
+  "şifa"
+ ],
+ "garment": [
+  "giyim",
+  "moda"
+ ],
+ "gasmask": [
+  "koruyucu ekipman"
+ ],
+ "gemstone": [
+  "mücevher",
+  "takı"
+ ],
+ "globe": [
+  "coğrafya",
+  "eğitim"
+ ],
+ "glove": [
+  "kış",
+  "aksesuar"
+ ],
+ "grape": [
+  "meyve",
+  "bağ"
+ ],
+ "guitar": [
+  "müzik aleti",
+  "akor",
+  "konser"
+ ],
+ "hairbrush": [
+  "saç bakımı",
+  "kişisel bakım",
+  "saç"
+ ],
+ "halter_top": [
+  "giyim",
+  "moda"
+ ],
+ "hamburger": [
+  "fast food",
+  "et"
+ ],
+ "hammer": [
+  "alet",
+  "tamirat"
+ ],
+ "hand_tool": [
+  "el aleti",
+  "tamirat"
+ ],
+ "handcuff": [
+  "güvenlik"
+ ],
+ "handle": [
+  "hırdavat"
+ ],
+ "handwear": [
+  "giyim aksesuarı"
+ ],
+ "hardback_book": [
+  "okuma",
+  "kitap"
+ ],
+ "hat": [
+  "moda",
+  "aksesuar"
+ ],
+ "headband": [
+  "saç aksesuarı"
+ ],
+ "headboard": [
+  "yatak",
+  "mobilya"
+ ],
+ "headdress": [
+  "giyim aksesuarı"
+ ],
+ "headset": [
+  "ses",
+  "oyun"
+ ],
+ "headstall": [
+  "binicilik"
+ ],
+ "heater": [
+  "ısıtma",
+  "ev aleti",
+  "ısınma"
+ ],
+ "helmet": [
+  "güvenlik",
+  "motosiklet"
+ ],
+ "herb": [
+  "bitki"
+ ],
+ "hinge": [
+  "hırdavat"
+ ],
+ "home_appliance": [
+  "ev aleti"
+ ],
+ "honey": [
+  "kahvaltı",
+  "doğal"
+ ],
+ "hookah": [
+  "tütün ürünü"
+ ],
+ "horse": [
+  "binicilik",
+  "hayvan"
+ ],
+ "horse_buggy": [
+  "binicilik",
+  "tarih"
+ ],
+ "horse_carriage": [
+  "binicilik",
+  "tarih"
+ ],
+ "identity_card": [
+  "belge"
+ ],
+ "igniter": [
+  "ateşleme"
+ ],
+ "inkpad": [
+  "kırtasiye",
+  "ofis"
+ ],
+ "insect": [
+  "böcek",
+  "doğa"
+ ],
+ "invertebrate": [
+  "deniz canlısı",
+  "doğa"
+ ],
+ "ironing_board": [
+  "ütü",
+  "ev işi"
+ ],
+ "jacket": [
+  "giyim",
+  "moda"
+ ],
+ "jean": [
+  "giyim",
+  "moda"
+ ],
+ "jewelry": [
+  "takı",
+  "aksesuar"
+ ],
+ "kettle": [
+  "çay",
+  "su ısıtıcı"
+ ],
+ "key": [
+  "kilit",
+  "güvenlik"
+ ],
+ "keycard": [
+  "güvenlik",
+  "erişim"
+ ],
+ "kitchen_appliance": [
+  "mutfak",
+  "ev aleti"
+ ],
+ "kitchen_sink": [
+  "mutfak"
+ ],
+ "kitchen_utensil": [
+  "mutfak gereci"
+ ],
+ "knitting_needle": [
+  "örgü",
+  "el işi"
+ ],
+ "knocker": [
+  "kapı",
+  "dekorasyon"
+ ],
+ "ladder": [
+  "tamirat",
+  "inşaat",
+  "hırdavat"
+ ],
+ "lamp": [
+  "aydınlatma",
+  "dekorasyon"
+ ],
+ "lamppost": [
+  "aydınlatma",
+  "şehir"
+ ],
+ "lampshade": [
+  "aydınlatma",
+  "dekorasyon"
+ ],
+ "lantern": [
+  "aydınlatma",
+  "kamp"
+ ],
+ "lanyard": [
+  "aksesuar"
+ ],
+ "leather": [
+  "deri",
+  "malzeme"
+ ],
+ "lego": [
+  "oyuncak",
+  "çocuk"
+ ],
+ "legume": [
+  "sebze",
+  "baklagil"
+ ],
+ "lemon": [
+  "meyve",
+  "vitamin"
+ ],
+ "lettuce": [
+  "sebze",
+  "salata"
+ ],
+ "license_plate": [
+  "otomobil",
+  "trafik"
+ ],
+ "life_buoy": [
+  "deniz güvenliği"
+ ],
+ "life_jacket": [
+  "deniz güvenliği"
+ ],
+ "lightning_rod": [
+  "elektrik",
+  "güvenlik"
+ ],
+ "machine": [
+  "makine"
+ ],
+ "magnet": [
+  "bilim"
+ ],
+ "mail_slot": [
+  "posta"
+ ],
+ "mammal": [
+  "hayvan",
+  "doğa"
+ ],
+ "manhole": [
+  "altyapı",
+  "şehir"
+ ],
+ "map": [
+  "harita",
+  "seyahat",
+  "coğrafya"
+ ],
+ "mascot": [
+  "takım",
+  "eğlence"
+ ],
+ "matchbox": [
+  "ateş",
+  "kamp"
+ ],
+ "mattress": [
+  "uyku",
+  "yatak"
+ ],
+ "measuring_instrument": [
+  "ölçüm"
+ ],
+ "meat": [
+  "et ürünü"
+ ],
+ "mechanism": [
+  "mekanizma"
+ ],
+ "medical_instrument": [
+  "sağlık"
+ ],
+ "microphone": [
+  "ses kaydı",
+  "yayın"
+ ],
+ "milestone": [
+  "yol",
+  "tarih"
+ ],
+ "milk": [
+  "süt ürünü",
+  "kahvaltı"
+ ],
+ "milkshake": [
+  "içecek",
+  "tatlı"
+ ],
+ "mirror": [
+  "dekorasyon",
+  "ev eşyası",
+  "ev"
+ ],
+ "mollusk": [
+  "deniz canlısı"
+ ],
+ "money": [
+  "para",
+  "finans"
+ ],
+ "monitor": [
+  "bilgisayar",
+  "teknoloji",
+  "ofis"
+ ],
+ "motor_vehicle": [
+  "motorlu taşıt",
+  "trafik"
+ ],
+ "mousepad": [
+  "bilgisayar",
+  "ofis"
+ ],
+ "muffin": [
+  "tatlı",
+  "fırın"
+ ],
+ "mug": [
+  "mutfak",
+  "kahve"
+ ],
+ "mushroom": [
+  "sebze",
+  "yemek"
+ ],
+ "musical_instrument": [
+  "müzik",
+  "enstrüman"
+ ],
+ "napkin": [
+  "sofra",
+  "mutfak"
+ ],
+ "necklace": [
+  "takı",
+  "aksesuar"
+ ],
+ "needle": [
+  "dikiş",
+  "el işi"
+ ],
+ "newsstand": [
+  "basın",
+  "şehir"
+ ],
+ "noseband": [
+  "binicilik"
+ ],
+ "nutriment": [
+  "yemek",
+  "beslenme"
+ ],
+ "oar": [
+  "kürek",
+  "denizcilik"
+ ],
+ "olive_oil": [
+  "mutfak",
+  "sağlıklı beslenme"
+ ],
+ "onion": [
+  "sebze",
+  "yemek"
+ ],
+ "optical_instrument": [
+  "optik"
+ ],
+ "overgarment": [
+  "dış giyim"
+ ],
+ "pacifier": [
+  "bebek",
+  "çocuk"
+ ],
+ "paintbrush": [
+  "boya",
+  "sanat"
+ ],
+ "paper": [
+  "kırtasiye"
+ ],
+ "paperweight": [
+  "ofis",
+  "masa düzeni"
+ ],
+ "parachute": [
+  "hava sporu"
+ ],
+ "parasail": [
+  "hava sporu",
+  "deniz eğlencesi"
+ ],
+ "parasol": [
+  "güneş koruması",
+  "plaj"
+ ],
+ "passport": [
+  "seyahat",
+  "belge"
+ ],
+ "peach": [
+  "meyve",
+  "vitamin"
+ ],
+ "pear": [
+  "meyve",
+  "vitamin"
+ ],
+ "peeler": [
+  "mutfak gereci"
+ ],
+ "pegboard": [
+  "düzenleme",
+  "atölye"
+ ],
+ "pen": [
+  "kırtasiye",
+  "yazı"
+ ],
+ "pencil": [
+  "kırtasiye",
+  "çizim"
+ ],
+ "pencil_sharpener": [
+  "kırtasiye",
+  "okul"
+ ],
+ "pendulum": [
+  "saat",
+  "fizik"
+ ],
+ "percussion_instrument": [
+  "müzik",
+  "enstrüman"
+ ],
+ "perfume": [
+  "koku",
+  "kişisel bakım"
+ ],
+ "person": [
+  "insan",
+  "yaşam"
+ ],
+ "phonograph_record": [
+  "müzik",
+  "koleksiyon"
+ ],
+ "piano": [
+  "klasik müzik",
+  "tuşlu çalgı"
+ ],
+ "piece_of_cloth": [
+  "tekstil"
+ ],
+ "pillow": [
+  "uyku",
+  "ev tekstili"
+ ],
+ "pineapple": [
+  "tropikal meyve",
+  "vitamin"
+ ],
+ "pinecone": [
+  "doğa",
+  "sonbahar"
+ ],
+ "placental": [
+  "hayvan",
+  "doğa"
+ ],
+ "plant": [
+  "bitki",
+  "bahçe"
+ ],
+ "plate": [
+  "mutfak",
+  "sofra"
+ ],
+ "plaything": [
+  "oyuncak",
+  "çocuk"
+ ],
+ "poker": [
+  "şömine"
+ ],
+ "postbox": [
+  "posta"
+ ],
+ "postcard": [
+  "seyahat",
+  "posta"
+ ],
+ "potato": [
+  "sebze",
+  "yemek"
+ ],
+ "potholder": [
+  "mutfak"
+ ],
+ "power_tool": [
+  "elektrikli alet",
+  "tamirat"
+ ],
+ "pretzel": [
+  "atıştırmalık",
+  "fırın"
+ ],
+ "primate": [
+  "hayvan",
+  "doğa"
+ ],
+ "printer": [
+  "ofis",
+  "elektronik"
+ ],
+ "protective_garment": [
+  "koruyucu giyim"
+ ],
+ "public_transport": [
+  "toplu taşıma",
+  "ulaşım"
+ ],
+ "publication": [
+  "okuma",
+  "yayın"
+ ],
+ "pumpkin": [
+  "sebze",
+  "tatlı"
+ ],
+ "quilt": [
+  "ev tekstili",
+  "uyku"
+ ],
+ "radiator": [
+  "ısınma",
+  "ev aleti"
+ ],
+ "radio_receiver": [
+  "yayın",
+  "elektronik"
+ ],
+ "raft": [
+  "rafting",
+  "su sporu"
+ ],
+ "rag_doll": [
+  "oyuncak",
+  "çocuk"
+ ],
+ "rearview_mirror": [
+  "otomobil"
+ ],
+ "receipt": [
+  "alışveriş",
+  "belge"
+ ],
+ "remote_control": [
+  "elektronik",
+  "televizyon"
+ ],
+ "reptile": [
+  "sürüngen",
+  "doğa"
+ ],
+ "ring": [
+  "takı",
+  "aksesuar"
+ ],
+ "road_map": [
+  "harita",
+  "seyahat"
+ ],
+ "rodent": [
+  "hayvan",
+  "doğa"
+ ],
+ "rubber_band": [
+  "kırtasiye"
+ ],
+ "ruminant": [
+  "hayvan",
+  "doğa"
+ ],
+ "saddle_blanket": [
+  "binicilik"
+ ],
+ "saxophone": [
+  "caz",
+  "müzik aleti"
+ ],
+ "scarecrow": [
+  "tarım",
+  "bahçe"
+ ],
+ "scarf": [
+  "giyim",
+  "kış",
+  "aksesuar"
+ ],
+ "scientific_instrument": [
+  "bilim"
+ ],
+ "screwdriver": [
+  "alet",
+  "tamirat"
+ ],
+ "scrubbing_brush": [
+  "temizlik"
+ ],
+ "seashell": [
+  "deniz",
+  "koleksiyon"
+ ],
+ "seat": [
+  "mobilya",
+  "oturma grubu"
+ ],
+ "self-propelled_vehicle": [
+  "taşıt",
+  "ulaşım"
+ ],
+ "shampoo": [
+  "kişisel bakım",
+  "saç"
+ ],
+ "sharpener": [
+  "kırtasiye"
+ ],
+ "shield": [
+  "kalkan",
+  "tarih"
+ ],
+ "ship": [
+  "denizcilik"
+ ],
+ "shirt": [
+  "giyim",
+  "moda"
+ ],
+ "shoe": [
+  "moda",
+  "giyim",
+  "spor"
+ ],
+ "shower_head": [
+  "banyo"
+ ],
+ "shredder": [
+  "ofis",
+  "evrak"
+ ],
+ "sign": [
+  "trafik işareti"
+ ],
+ "signboard": [
+  "tabela"
+ ],
+ "ski": [
+  "kayak",
+  "kış sporu"
+ ],
+ "ski_pole": [
+  "kayak",
+  "kış sporu"
+ ],
+ "slide": [
+  "oyun parkı",
+  "çocuk"
+ ],
+ "snack_food": [
+  "aperatif yemek",
+  "atıştırmalık"
+ ],
+ "snowboard": [
+  "kış sporu"
+ ],
+ "snowman": [
+  "kış",
+  "çocuk"
+ ],
+ "soap": [
+  "kişisel bakım",
+  "hijyen"
+ ],
+ "source_of_illumination": [
+  "aydınlatma"
+ ],
+ "speaker": [
+  "ses sistemi",
+  "müzik"
+ ],
+ "spice_rack": [
+  "mutfak",
+  "baharat"
+ ],
+ "sports_equipment": [
+  "spor"
+ ],
+ "sports_implement": [
+  "spor"
+ ],
+ "stapler": [
+  "ofis",
+  "kırtasiye"
+ ],
+ "stepladder": [
+  "tamirat"
+ ],
+ "stirrer": [
+  "mutfak gereci"
+ ],
+ "stirrup": [
+  "binicilik"
+ ],
+ "stop_sign": [
+  "trafik",
+  "güvenlik"
+ ],
+ "strainer": [
+  "mutfak gereci"
+ ],
+ "strap": [
+  "aksesuar"
+ ],
+ "straw": [
+  "içecek"
+ ],
+ "strawberry": [
+  "meyve",
+  "vitamin"
+ ],
+ "stringed_instrument": [
+  "müzik",
+  "enstrüman"
+ ],
+ "structure": [
+  "yapı",
+  "mimari"
+ ],
+ "sunglasses": [
+  "güneş",
+  "aksesuar",
+  "moda"
+ ],
+ "surfboard": [
+  "sörf",
+  "su sporu"
+ ],
+ "sushi": [
+  "japon mutfağı",
+  "deniz ürünü"
+ ],
+ "sweatband": [
+  "spor"
+ ],
+ "sweater": [
+  "giyim",
+  "kış"
+ ],
+ "sweet": [
+  "tatlı",
+  "şekerleme"
+ ],
+ "table": [
+  "mobilya"
+ ],
+ "tableware": [
+  "sofra",
+  "mutfak"
+ ],
+ "taco": [
+  "meksika mutfağı",
+  "fast food"
+ ],
+ "teapot": [
+  "çay",
+  "demleme"
+ ],
+ "teddy_bear": [
+  "oyuncak",
+  "çocuk"
+ ],
+ "telephone_pole": [
+  "altyapı"
+ ],
+ "telephoto_lens": [
+  "fotoğrafçılık"
+ ],
+ "thermometer": [
+  "sağlık",
+  "ölçüm"
+ ],
+ "thread": [
+  "dikiş",
+  "el işi"
+ ],
+ "timepiece": [
+  "saat",
+  "aksesuar"
+ ],
+ "tinfoil": [
+  "mutfak"
+ ],
+ "tobacco_pipe": [
+  "tütün ürünü"
+ ],
+ "toiletry": [
+  "kişisel bakım"
+ ],
+ "tomato": [
+  "sebze",
+  "salata"
+ ],
+ "tongs": [
+  "mutfak gereci"
+ ],
+ "tool": [
+  "el aleti",
+  "tamirat"
+ ],
+ "toothpaste": [
+  "kişisel bakım",
+  "diş sağlığı"
+ ],
+ "towel": [
+  "banyo",
+  "ev tekstili"
+ ],
+ "toy": [
+  "oyuncak",
+  "çocuk"
+ ],
+ "traffic_light": [
+  "trafik",
+  "şehir"
+ ],
+ "train": [
+  "demiryolu"
+ ],
+ "tray": [
+  "mutfak",
+  "sunum"
+ ],
+ "tricycle": [
+  "çocuk",
+  "oyuncak"
+ ],
+ "tripod": [
+  "fotoğrafçılık"
+ ],
+ "trophy_cup": [
+  "ödül",
+  "başarı",
+  "spor"
+ ],
+ "truck": [
+  "ticari araç",
+  "trafik"
+ ],
+ "umbrella": [
+  "yağmur",
+  "aksesuar"
+ ],
+ "undergarment": [
+  "iç giyim"
+ ],
+ "urinal": [
+  "banyo",
+  "tesisat"
+ ],
+ "utensil": [
+  "mutfak gereci"
+ ],
+ "vascular_plant": [
+  "bitki",
+  "bahçe"
+ ],
+ "vegetable": [
+  "sebze"
+ ],
+ "vehicle": [
+  "taşıt",
+  "ulaşım"
+ ],
+ "vertebrate": [
+  "hayvan",
+  "doğa"
+ ],
+ "videotape": [
+  "nostalji",
+  "kayıt"
+ ],
+ "violin": [
+  "yaylı çalgı",
+  "klasik müzik",
+  "konser"
+ ],
+ "walking_cane": [
+  "yürüme desteği"
+ ],
+ "wall_socket": [
+  "elektrik",
+  "tesisat"
+ ],
+ "wallet": [
+  "deri",
+  "aksesuar",
+  "para"
+ ],
+ "water_cooler": [
+  "ofis",
+  "içecek"
+ ],
+ "water_gun": [
+  "oyuncak",
+  "yaz eğlencesi"
+ ],
+ "water_ski": [
+  "su sporu"
+ ],
+ "watermelon": [
+  "meyve",
+  "yaz"
+ ],
+ "weapon": [
+  "savunma"
+ ],
+ "webcam": [
+  "bilgisayar",
+  "görüntülü görüşme"
+ ],
+ "wheelchair": [
+  "sağlık",
+  "medikal"
+ ],
+ "wheeled_vehicle": [
+  "taşıt",
+  "ulaşım"
+ ],
+ "white_goods": [
+  "beyaz eşya"
+ ],
+ "wind_instrument": [
+  "müzik",
+  "enstrüman"
+ ],
+ "windsock": [
+  "havacılık",
+  "rüzgar"
+ ],
+ "wooden_leg": [
+  "tarih"
+ ],
+ "woody_plant": [
+  "ağaç",
+  "bahçe"
+ ],
+ "wristband": [
+  "aksesuar",
+  "spor"
+ ],
+ "wristlet": [
+  "aksesuar"
+ ],
+ "writing_implement": [
+  "kırtasiye"
+ ],
+ "yogurt": [
+  "süt ürünü",
+  "sağlıklı beslenme"
+ ],
+ "young_mammal": [
+  "yavru hayvan"
+ ]
 }

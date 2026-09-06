@@ -142,8 +142,8 @@ class KeywordExtractorTest(unittest.TestCase):
         cls.extractor = KeywordExtractor()
         cls.extractor.load()
 
-    def extract(self, label, secondary=()):
-        return self.extractor.extract(label, list(secondary), use_suggestions=False)
+    def extract(self, label):
+        return self.extractor.extract(label, use_suggestions=False)
 
     def test_turkish_name_with_fallback(self):
         self.assertEqual(self.extractor.turkish_name("bus"), "otobüs")
@@ -157,13 +157,14 @@ class KeywordExtractorTest(unittest.TestCase):
         self.assertIn("ekmek", words)
         self.assertLessEqual(len(words), config.MAX_KEYWORDS)
 
-    def test_secondary_object_adds_scene_theme(self):
-        words = self.extract("bus", ["person"])
+    def test_secondary_objects_do_not_pollute(self):
+        # kelimeler yalnız baskın nesneyi anlatır, sahne teması sızmaz
+        words = self.extract("bus")
         self.assertIn("toplu taşıma", words)
-        self.assertIn("insan", words)
+        self.assertNotIn("insan", words)
 
     def test_no_duplicates_and_cap(self):
-        words = self.extract("apple", ["banana", "orange", "guitar", "dog"])
+        words = self.extract("apple")
         self.assertEqual(len(words), len(set(words)))
         self.assertLessEqual(len(words), config.MAX_KEYWORDS)
 
@@ -191,7 +192,7 @@ class KeywordExtractorTest(unittest.TestCase):
         extractor._fetch_suggestions = lambda q: [
             f"{q} kadın", f"{q} fiyatları", f"{q} 2024", f"{q}kolik", f"{q} ve tarih"]
         # kelime kıtlığı çeken nesnede öneri istenir
-        scored = extractor.extract_scored("suitcase", [])
+        scored = extractor.extract_scored("suitcase")
         by_word = {item.word: item for item in scored}
         self.assertIn("bavul kadın", by_word)  # ek tam ifadeye dönüşür
         self.assertEqual(by_word["bavul kadın"].source, "arama önerisi")
@@ -202,12 +203,6 @@ class KeywordExtractorTest(unittest.TestCase):
         # öneriler gerçek temaların önüne geçmez
         self.assertLess([k.word for k in scored].index("valiz"),
                         [k.word for k in scored].index("bavul kadın"))
-
-    def test_dominant_keywords_come_before_scene(self):
-        # kelimeler önce baskın nesneyi anlatmalı
-        words = self.extract("laptop computer", ["book", "person", "chair"])
-        self.assertIn(words[0], ("bilgisayar", "teknoloji"))
-        self.assertLess(words.index("bilgisayar"), words.index("insan"))
 
     def test_coco_mouse_is_a_device(self):
         # köprüden gelen mouse aygıttır, kemirgen temaları üretmemeli
@@ -221,7 +216,7 @@ class KeywordExtractorTest(unittest.TestCase):
         extractor.load()
         extractor._fetch_suggestions = lambda q: (_ for _ in ()).throw(AssertionError(
             "kelime kıtlığı yokken öneri istendi"))
-        words = extractor.extract("sandwich", [])
+        words = extractor.extract("sandwich")
         self.assertGreaterEqual(len(words), config.SUGGESTION_FILL_THRESHOLD)
 
 
@@ -365,6 +360,18 @@ class ExtractorFilterTest(unittest.TestCase):
         # bozuk kodlanmış cümlede işlev kelimeleri sağlam ama gerçek türkçe harf yok
         self.assertFalse(ok("Genel olarak Ã§iÃ§ekli bir bitki olarak "
                             "sÄ±nÄ±flandÄ±rÄ±lan muz bitkisi buna Ã¶rnektir."))
+        # kısmen bozuk cümlede gerçek türkçe harfler var, işaret yine de ele verir
+        self.assertFalse(ok("Motorun aÅÄ±rÄ± yük altında çalışmamasını sağlayan "
+                            "bu parça aracın ömrünü uzatan bir sistemdir."))
+
+    def test_first_plural_and_seo_patterns_rejected(self):
+        ok = self.extractor._passes_rules
+        # birinci çoğul anlatı dili bilgi cümlesi değildir
+        self.assertFalse(ok("Bugün sizler için çok pratik ve lezzetli bir sandviç "
+                            "tarifini adım adım birlikte hazırlıyoruz."))
+        # arama kalıbını yankılayan seo girişleri elenir
+        self.assertFalse(ok("Araba nedir ve otomobil teknolojileri hakkında merak "
+                            "edilen tüm detayları bu yazıda bulabilirsin."))
 
     def test_relevance_needs_anchor(self):
         score = self.extractor._relevance(

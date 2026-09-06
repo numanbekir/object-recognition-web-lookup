@@ -58,6 +58,7 @@ class ObjectDetector:
         self.last_engine = ""
         self.last_uncertain = False
         self._refiners = {}  # şemsiye sınıf başına odaklanmış model, tembel kurulur
+        self._clip = None  # hakem model, ilk ihtiyaçta kurulur
 
     def is_ready_on_disk(self) -> bool:
         return (config.DETECTOR_CUSTOM.exists()
@@ -173,6 +174,17 @@ class ObjectDetector:
             self.last_engine = "coco"
             return primary
 
+        # coco yeterince emin değil, hakem model tam görüntüye bakar.
+        # insan cevabı hakemden kabul edilmez, insan kuralı coco'da çözülür
+        try:
+            label, prob = self._clip_verdict(image)
+        except Exception:
+            label, prob = "", 0.0
+        if prob >= config.CLIP_TRUST and label != "person":
+            self.last_engine = "clip hakemliği"
+            width, height = image.size
+            return [Detection(label, prob, (0.0, 0.0, float(width), float(height)))]
+
         world = self._predict(self.model, image, None)
         if not has_object:
             self.last_engine = "açık dağarcık"
@@ -191,6 +203,34 @@ class ObjectDetector:
         self.last_engine = "uyuşmazlık"
         self.last_uncertain = True
         return primary
+
+    def _clip_verdict(self, image):
+        """Tam görüntüyü dağarcık üzerinde sınıflandırır, ad ve olasılık döner.
+
+        Tespit modeli bazı nesnelere kör kalıyor, ölçümde keman yüksek
+        güvenle makas sanılırken CLIP aynı görüntüye tam güven verdi.
+        COCO'nun emin olamadığı her durumda hakem olarak buraya sorulur.
+        """
+        import clip
+        import torch
+        if self._clip is None:
+            vocabulary = [line.strip() for line in
+                          config.VOCABULARY_PATH.read_text(encoding="utf-8").splitlines()
+                          if line.strip()]
+            model, preprocess = clip.load("ViT-B/32", device="cpu")
+            tokens = clip.tokenize([f"a photo of a {name}" for name in vocabulary])
+            with torch.no_grad():
+                features = model.encode_text(tokens)
+                features /= features.norm(dim=-1, keepdim=True)
+            self._clip = (model, preprocess, features, vocabulary)
+        model, preprocess, text_features, vocabulary = self._clip
+        tensor = preprocess(image).unsqueeze(0)
+        with torch.no_grad():
+            image_features = model.encode_image(tensor)
+            image_features /= image_features.norm(dim=-1, keepdim=True)
+            probs = (100 * image_features @ text_features.T).softmax(dim=-1)[0]
+        best = int(probs.argmax())
+        return vocabulary[best], float(probs[best])
 
     def _refiner(self, umbrella: str):
         """Şemsiye sınıfın küçük dağarcıklı modelini ilk kullanımda kurar.
