@@ -598,10 +598,24 @@ def run_plain(args, loader, vision, session, storage, storage_note):
     print("Görüntülü Sohbet")
     if storage_note:
         print(storage_note)
-    print("Model yükleniyor..." if vision.is_ready_on_disk()
-          else "Model hazırlanıyor, ilk çalıştırmada indirme ve kodlama yapılır...")
+    if not vision.is_ready_on_disk():
+        print("İlk çalıştırma, model hazırlanıyor. İndirme ve kodlama birkaç dakika sürebilir.")
+
+    last = {"label": ""}
+
+    def progress(stage, label, done=None, total=None):
+        # düz modda her adım bir kez yazılır, indirme yüzde adımlarıyla
+        text = label
+        if total:
+            text += f" %{done * 100 // total}"
+            if text == last["label"] or (done * 100 // total) % 25:
+                return
+        if text != last["label"]:
+            print(f"… {text}")
+            last["label"] = text
+
     try:
-        vision.load()
+        vision.load(progress=progress)
     except Exception as error:
         print("Modeli hazırlayamadım. İlk çalıştırma için internet bağlantısı gerekiyor, "
               "bağlantını kontrol edip tekrar dener misin?")
@@ -635,7 +649,20 @@ def run_plain(args, loader, vision, session, storage, storage_note):
             view.detail("hata", repr(error))
 
 
+def quiet_libraries(debug: bool):
+    """Kütüphane uyarılarını ve ağ günlüklerini ekrandan uzak tutar.
+
+    Arama ve model kütüphaneleri hata akışına uyarı yazar, bunlar arayüzü
+    kirletir. Debug kapalıyken hata akışı günlük dosyasına yönlendirilir.
+    """
+    import warnings
+    warnings.filterwarnings("ignore")
+    if not debug:
+        sys.stderr = open(config.LOG_PATH, "a", encoding="utf-8")
+
+
 def run(args):
+    quiet_libraries(args.debug)
     loader = ImageLoader()
     vision = VisionModel()
     session = SessionContext()

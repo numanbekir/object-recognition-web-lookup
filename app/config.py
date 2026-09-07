@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
 RECORDS_PATH = BASE_DIR / "records.json"
+LOG_PATH = BASE_DIR / "app.log"  # kütüphane uyarıları ekran yerine buraya yazılır
 
 # görüş modeli, sıfır atış sınıflandırma
 CLIP_MODEL = "ViT-B/32"

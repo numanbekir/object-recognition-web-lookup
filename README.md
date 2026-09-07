@@ -16,9 +16,18 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
+İlk komut "ensurepip is not available" hatası verirse sistemde sanal ortam
+paketi eksiktir. Ya python3-venv paketi kurulur ya da virtualenv kullanılır.
+
+```bash
+pip install --user virtualenv
+virtualenv .venv
+```
+
 Görüş modelinin ağırlığı ilk çalıştırmada bir kereye mahsus indirilir, ardından
-dağarcık kodlanıp models klasörüne önbelleklenir. Sonraki açılışlar birkaç
-saniye sürer.
+dağarcık kodlanıp models klasörüne önbelleklenir. İlk açılış bağlantı hızına
+göre birkaç dakika sürer, sonraki açılışlar birkaç saniyedir. Kütüphane
+uyarıları app.log dosyasına yazılır.
 
 ## Kullanım
 

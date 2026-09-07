@@ -9,3 +9,4 @@ records.json
 records.json.*
 training/data/
 !models/probe.pt
+app.log
