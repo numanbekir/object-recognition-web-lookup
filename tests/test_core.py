@@ -4,6 +4,7 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from app.extractor import ContentExtractor, cosine, stems
@@ -33,6 +34,14 @@ class InputTest(unittest.TestCase):
         self.assertEqual(split_source_text("https://x.com/a.jpg"), ("", "https://x.com/a.jpg"))
         self.assertEqual(split_source_text("kalorisi ne kadar"), ("", "kalorisi ne kadar"))
         self.assertEqual(split_source_text("a.jpg b.png"), ("", "a.jpg b.png"))  # iki kaynak, ayrılmaz
+
+    def test_windows_yolu_bolunurken_bozulmaz(self):
+        with patch("os.name", "nt"):
+            self.assertEqual(split_source_text(r"C:\Users\numan\keman.jpg nasıl çalınır"),
+                             (r"C:\Users\numan\keman.jpg", "nasıl çalınır"))
+            self.assertEqual(split_source_text(r'"C:\Users\numan\a b.jpg" kaç kalori'),
+                             (r"C:\Users\numan\a b.jpg", "kaç kalori"))
+            self.assertEqual(find_sources(r"C:\Users\numan\keman.jpg"), [r"C:\Users\numan\keman.jpg"])
 
     def test_text_and_multi(self):
         self.assertEqual(classify_input("fiyatları ne kadar"), ("text", "fiyatları ne kadar"))

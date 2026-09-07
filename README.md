@@ -109,4 +109,10 @@ Testler şu komutla çalışır.
 python3 -m unittest discover -s tests -t .
 ```
 
+Uygulama Linux, macOS ve Windows üzerinde çalışır. Windows'ta python3 yerine
+python komutu kullanılır ve sanal ortam etkinleştirme komutu
+.venv\Scripts\activate biçimindedir. Windows'ta arayüzün düzgün görünmesi
+için eski komut istemi yerine Windows Terminal uygulaması kullanılmalıdır,
+düz mod her ikisinde çalışır.
+
 Model tercihi gerekçeleri ve teknik ayrıntılar teknik-rapor.md dosyasındadır.

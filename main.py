@@ -2,6 +2,7 @@
 """Ana uygulama. Girdiyi ayrıştırır ve bir turun tüm adımlarını yürütür."""
 
 import argparse
+import os
 from concurrent.futures import ThreadPoolExecutor
 from itertools import zip_longest
 import re
@@ -58,6 +59,15 @@ def clean_input(raw: str) -> str:
     return text
 
 
+def split_tokens(text: str) -> list:
+    """Girdiyi kelimelere böler. Windows yollarında ters bölü ayraçtır, kaçış değildir."""
+    if os.name != "nt":
+        return shlex.split(text)
+    tokens = shlex.split(text, posix=False)
+    return [token[1:-1] if len(token) >= 2 and token[0] == token[-1] and token[0] in ("'", '"') else token
+            for token in tokens]
+
+
 def _looks_like_source(token: str) -> bool:
     # yalnız adresler ve desteklenen dosya türleri kaynak sayılır
     if token.startswith(("http://", "https://", "file://", "www.")):
@@ -68,7 +78,7 @@ def _looks_like_source(token: str) -> bool:
 def find_sources(text: str) -> list:
     """Girdideki görsel ve adres adaylarını listeler."""
     try:
-        tokens = shlex.split(text)
+        tokens = split_tokens(text)
     except ValueError:
         return []
     return [token for token in tokens if _looks_like_source(token)]
@@ -77,7 +87,7 @@ def find_sources(text: str) -> list:
 def is_unsupported_file(text: str) -> bool:
     """Sürüklenen dosya var ama görsel değilse girişte kabul edilmez."""
     try:
-        tokens = shlex.split(text)
+        tokens = split_tokens(text)
     except ValueError:
         return False
     for token in tokens:
@@ -91,7 +101,7 @@ def is_unsupported_file(text: str) -> bool:
 def is_single_source(text: str) -> bool:
     """Metnin tamamı tek bir kaynak mı diye bakar."""
     try:
-        tokens = shlex.split(text)
+        tokens = split_tokens(text)
     except ValueError:
         return False
     return len(tokens) == 1 and _looks_like_source(tokens[0])
@@ -100,7 +110,7 @@ def is_single_source(text: str) -> bool:
 def split_source_text(raw: str):
     """Girdi bir kaynak ve ardından metinse ikisini ayırır, değilse kaynak boş döner."""
     try:
-        tokens = shlex.split(raw.strip())
+        tokens = split_tokens(raw.strip())
     except ValueError:
         return "", raw
     if len(tokens) > 1 and _looks_like_source(tokens[0]) and not find_sources(" ".join(tokens[1:])):
@@ -141,6 +151,8 @@ def classify_input(raw: str):
     # sürükle bırak bazı terminallerde file önekiyle gelir
     if text.startswith("file://"):
         text = unquote(urlparse(text).path)
+        if os.name == "nt" and re.match(r"/[A-Za-z]:", text):
+            text = text[1:]  # sürücü harfi öncesindeki bölü windows yolunda fazladır
 
     if "://" in text or text.startswith("data:"):
         scheme = urlparse(text).scheme
