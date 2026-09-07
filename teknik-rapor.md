@@ -11,7 +11,7 @@ etkiler.
 
 Görev üç alt probleme ayrılır. Görüntüden obje adı çıkarmak, objeden anahtar
 kelime üretmek ve obje ile kelimelerden anlamlı metin derlemek. İlk ikisi tek
-bir görüş modeliyle, üçüncüsü kendi yazdığımız bilgi erişim ve doğal dil
+bir görüş modeliyle, üçüncüsü kendi yazdığım bilgi erişim ve doğal dil
 üretim kurallarıyla çözülür.
 
 ## 2. Obje tespiti
@@ -24,7 +24,7 @@ Sınıf listesi modelin dışında, veri klasöründeki obje adları dosyasında
 Bu liste LVIS veri setinin 1200 kategori adı ve Türkçe karşılıklarından oluşur.
 Listeye satır eklemek yeni objeyi tanınır kılar, kod değişmez.
 
-Çıkarım hattı tarafımızdan yazılmıştır. Birden çok kalıpla metin kodlama ve
+Çıkarım hattını kendim yazdım. Birden çok kalıpla metin kodlama ve
 ortalama alma, tam görüntü ile merkez kırpımının öznitelik ortalaması, kosinüs
 ve softmax hesabı, tema skorlarından kelime seçimi bu hatta yer alır.
 Kütüphaneden yalnızca model ağırlıkları ve görüntü ön işleme alınır.
@@ -46,16 +46,15 @@ güveni 0.5 altındaysa ve en güçlü temalardan birinin adı obje listesinde d
 bulunuyorsa ve bu ad obje adayları arasındaysa, o aday obje olarak seçilir.
 Güven yüksekken kural çalışmaz.
 
-Ölçüm on iki görsellik bir test setiyle yapıldı. Sette görev senaryolarındaki
-yedi obje ile keman, fotoğraf makinesi, demlik, karışık bir sahne ve alakasız
-bir görsel vardır. Ön planda tek obje olan on görselin dokuzu doğru bulundu,
-ortalama güven 0.62 oldu. Karışık sahne ve alakasız görsel düşük güven
-eşiğinin altında kalarak emin olamadım mesajı aldı. Alışılmadık bir sosisli
-görseli pide olarak sınıflandı, klasik sosisli görsellerinde güven 0.90 oldu.
+Ölçüm on dört görsellik bir test setiyle yapıldı. Sette görev
+senaryolarındaki yedi obje ile keman, fotoğraf makinesi, demlik, karışık bir
+sahne ve alakasız bir görsel vardır. Ön planda tek obje olan on iki görselin
+on biri doğru bulundu. Karışık sahne ve alakasız görsel düşük güven eşiğinin
+altında kalarak emin olamadım mesajı aldı.
 
-## 3. Kendi eğittiğimiz sınıflandırıcı
+## 3. Kendi eğittiğim sınıflandırıcı
 
-Sıfır atış sınıflandırmanın yanına kendi eğittiğimiz küçük bir model eklendi.
+Sıfır atış sınıflandırmanın yanına kendi eğittiğim küçük bir model eklendi.
 Model, CLIP görüntü kodlayıcısının ürettiği 512 boyutlu birim vektörü girdi
 alan tek katmanlı doğrusal bir sınıflandırıcıdır. Görüntü kodlayıcı donmuş
 tutulur, yalnız bu katman eğitilir. İşlemci üzerinde dakikalar içinde
@@ -70,7 +69,7 @@ kümesine ayrıldı.
 
 Eğitim kodu training klasöründedir. Öznitelik çıkarma scripti görselleri
 kodlayıp tek dosyaya yazar, eğitim scripti sınıflandırıcıyı eğitir. Eğitim
-döngüsü tarafımızdan yazılmıştır. Çapraz entropi kaybı, Adam eniyileyici,
+döngüsünü kendim yazdım. Çapraz entropi kaybı, Adam eniyileyici,
 yığın boyutu 128, en fazla üç yüz epoch ve doğrulama kaybı on epoch
 iyileşmezse erken durdurma.
 
@@ -117,8 +116,8 @@ aday değilse tek başına 0.8 güven gerekir. Ölçümde bu iki eşik, telefon
 görselinde doğru cevabı seçerken demlik görselinde yanlış sürahi cevabını
 geçirmedi. Sıfır atış eminse dokunulmaz, böylece 1200 isimlik kapsam
 korunur. İki görüş aynı cevabı veriyorsa bu bir onaydır, güven
-sınıflandırıcının güvenine yükselir ve tema uzlaşma kuralı çalışmaz. Hangi görüşün seçildiği
-kayda ve ayrıntılara yazılır.
+sınıflandırıcının güvenine yükselir ve tema uzlaşma kuralı çalışmaz. Hangi
+görüşün seçildiği kayda ve ayrıntılara yazılır.
 
 Sınırlılık. Caltech sınıfları görev senaryolarındaki objelerin bir kısmını
 kapsar, gerisinde sınıflandırıcının görüşü olmaz. Model dosyası küçüktür ve
@@ -128,7 +127,7 @@ teslimle birlikte gelir, veri seti gelmez, eğitim scripti yeniden indirir.
 
 Görev tanımındaki görüntüden öznitelik çıkarıp önceden belirlenmiş
 özniteliklerle karşılaştırma yaklaşımı uygulanır. Tema haritası dosyasında
-480 tema kavramı bulunur. Her kavramın İngilizce bir adı ve Türkçe anahtar
+484 tema kavramı bulunur. Her kavramın İngilizce bir adı ve Türkçe anahtar
 kelimeleri vardır. Görüntü vektörü bu temalarla karşılaştırılır. En iyi
 temanın yüzde on beşinin ve mutlak eşiğin üstündeki temalardan kelime alınır.
 Her temadan önce bir kelime alınır ki liste tek temaya kilitlenmesin. Objenin
@@ -155,7 +154,9 @@ cümle tarifleri kelimesiyle biter. Ünlü uyumu, ünsüz yumuşaması, iyelik v
 çoğul ekleri küçük bir Türkçe morfoloji üreteciyle hesaplanır. Bu cümle hem
 ekranda gösterilir hem de arama sorgusudur. Obje güveni eşiğin altındaysa
 anahtar kelimeler de güvenilmez sayılır, sorgu yalnız obje adı olur ve
-yalnız tanım bloğu gösterilir.
+yalnız tanım bloğu gösterilir. Taşıtlarda kullanım kelimesi niyete girmez,
+çünkü seyahat uçakları gibi tamlamalar doğal değildir.
+
 Kullanıcı düz metin yazdığında sorgu obje adı ile metnin birleşimidir.
 Görselle birlikte metin yazıldığında da niyet o metinden kurulur, bloklar
 yalnız tanım ve cevap olur, çünkü kullanıcı ne istediğini söylemiştir.
@@ -193,10 +194,8 @@ ilgili bloğu gelir. Ardından aileye özgü bloklar gelir. Yemekte tarif ve
 tarihçe, enstrümanda tarihçe ve nasıl çalınır, canlıda özellikleri ve yaşam
 alanı, taşıtta tarihçe ve türleri, diğer ürünlerde çeşitleri ve kullanım
 alanları. Aile, anahtar kelimelerin aile ve alan rolündeki kelimelerinden
-bulunur; havacılık ya da denizcilik gibi alan kelimeleri taşıt ailesini
-işaret eder. Taşıtlarda kullanım kelimesi niyete girmez, çünkü seyahat
-uçakları gibi tamlamalar doğal değildir.
-Şema veri klasöründeki blok dosyasında durur.
+bulunur. Havacılık ya da denizcilik gibi alan kelimeleri taşıt ailesini
+işaret eder. Şema veri klasöründeki blok dosyasında durur.
 
 Her blok kendi sorgusunu atar, sorgular ikişer paralel gönderilir ve tüm
 sonuçlar tek havuzda indirilir. Her sayfa hangi blok sorgusundan geldiğini
@@ -224,20 +223,36 @@ beş makine türünü kısa açıklamalarıyla listeledi.
 
 ## 8. Sohbet bağlamı ve hafıza
 
-Son üç turun objesi, kelimeleri ve ailesi tutulur. Yeni tur önceki bir turla
-anahtar kelime paylaşıyorsa, obje adları ortak kelime içeriyorsa ya da ikisi
-aynı aileye giriyorsa iki tur aynı konudadır. Varsayılan ürün ailesinde aile
-tek başına yetmez, ortak kelime de gerekir, aksi halde çanta ile telefon
-aynı konu sayılırdı. Bağ kurulunca önceki objenin adı arama niyetine
-katılabilir ve ortak kelime paragraf sıralamasında öncelik verir. Ekranda
-kartın başında önceki turla kurulan bağ, giriş alanının altında ise sohbet
-satırı görünür ve aynı ailede kalan ardışık objeleri sıralar. Bağ yoksa
-konu değişmiş sayılır ve eski tur aramaya karışmaz.
+Oturum son üç turun objesini, anahtar kelimelerini ve ailesini tutar. Yeni
+tur geldiğinde bu turlara en yeniden eskiye bakılır ve şu üç koşuldan birini
+sağlayan ilk tur aynı konu sayılır. Ortak anahtar kelime, obje adlarında
+ortak kelime ya da aynı aile. Varsayılan ürün ailesinde aile tek başına
+yetmez, ortak kelime de gerekir, aksi halde çanta ile telefon aynı konu
+sayılırdı. Hiçbir tur uymazsa konu değişmiş sayılır ve eski turlar aramaya
+karışmaz.
 
-Oturum gösterilen kaynak adreslerini hatırlar. Aynı obje ikinci kez geldiğinde
-tanım tekrarlanmaz, daha önce gösterilen sayfalar seçilmez ve bloklar yeni
+Bağ kurulunca iki etki olur. Önceki objenin adı arama niyetine yalnız iki ad
+son kelimeyi paylaşıyorsa girer ve adlar tek tamlamada birleşir, el çantası
+ile sırt çantası gibi. Adlar ilişkisizse niyet değişmez, çünkü ilişkisiz iki
+adı tek sorguda birleştirmek anlamlı sonuç vermez. Ortak anahtar kelime
+varsa paragraf sıralamasında öncelik verir.
+
+Bağ ekranda üç yerde görünür. Niyet cümlesine önceki turdan giren kelimeler
+işaretlenir. Kartın başında önceki turla kurulan bağ ve aile, sorguya bir
+şey girdiyse o da yazılır. Giriş alanının altındaki sohbet satırı tur
+sayısını ve aynı ailede kalan ardışık objeleri sıralar, bağ yoksa yeni konu
+der. Tur sayacı hafıza penceresinden bağımsızdır.
+
+Düz metin girdisi son objeye bağlanır, sorgu obje adı ile metnin
+birleşimidir. Böylece kullanıcı görsel vermeden aynı obje hakkında soru
+sorabilir.
+
+Oturum ayrıca gösterilen kaynak adreslerini ve her objenin kaç kez
+konuşulduğunu tutar. Aynı obje yeniden geldiğinde bu kullanıcıya söylenir,
+tanım tekrarlanmaz, daha önce gösterilen sayfalar indirilmez ve bloklar yeni
 kaynaklarla dolar. Hiç yeni kaynak kalmazsa önceki kaynaklara dönülür ve bu
-kullanıcıya söylenir.
+da söylenir. Ölçümde aynı sosisli görseli üst üste üç turda üç ayrı kaynak
+kümesi getirdi, üçüncü turda tarihçe içerikleri geldi.
 
 ## 9. Arayüz
 
@@ -249,16 +264,17 @@ satırlık ilerleme durur ve adımı söyler. Kart gövdesi markdown olarak
 üretilir ve aynı metin düz modda basılır ve kayıt dosyasına yazılır. Debug
 açıkken kartın altında katlanır bir ayrıntılar bölümü bulunur, adaylar,
 sorgular ve blok kararları orada listelenir. Kaynaklar ile süre ve kayıt
-numarası kartın alt satırındadır. Bağlam ekranda görünür. Niyet cümlesine
-önceki turdan giren kelimeler işaretlenir, kartın başında önceki turla
-kurulan bağ ve ortak kelime yazılır, giriş alanının altındaki sohbet
-satırı tur sayısını, konuyu ve bağı özetler.
+numarası kartın alt satırındadır. Niyet cümlesine önceki turdan giren
+kelimeler işaretlenir, kartın başında önceki turla kurulan bağ ve aile
+yazılır, giriş alanının altındaki sohbet satırı tur sayısını ve aynı ailede
+kalan ardışık objeleri özetler.
 
 ## 10. Kayıt
 
 Her tur kayıt dosyasında oturum bloğu altına yazılır. Girdi, obje ve güven,
-anahtar kelimeler, bağlam, arama niyeti, arama izi, başlıklı bilgi blokları
-ve her paragrafın kaynağı ile turun durumu kaydedilir. Dosya önce geçici
+sınıflandırıcının görüşü, uzlaşma kararı, anahtar kelimeler, bağlam, arama
+niyeti, arama izi, başlıklı bilgi blokları ve her paragrafın kaynağı ile
+turun durumu kaydedilir. Dosya önce geçici
 dosyaya yazılıp atomik taşınır.
 
 ## 11. Sınırlılıklar
@@ -268,3 +284,8 @@ mesajı verilir. Tema dağarcığı elle derlenmiştir, kapsam dışı bir aland
 kelimeler genel kalabilir. Arama servisi yoğun kullanımda istek sınırlar, bu
 durumda kalan sorgular ve Vikipedi ile devam edilir. Yapılandırılmış çıkarım
 sayfa yapısına bağlıdır, standart dışı sayfalarda düz paragrafa düşülür.
+Beyaz fonlu ürün fotoğraflarında obje listesi ince ayrımlarda yanılabilir,
+uzlaşma kuralı ve sınıflandırıcı bunu yalnız aday listesinde doğru cevap
+varsa düzeltir. Sınıflandırıcı 57 objeyi bilir, gerisinde görüşü yoktur.
+Metin üretimi yoktur, paragraflar kaynaktan olduğu gibi alınır, bu yüzden
+bloklar arasında akıcı geçiş bulunmaz.

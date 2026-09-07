@@ -1,0 +1,753 @@
+{
+  "uygulama": "gorsel-sohbet",
+  "oturumlar": [
+    {
+      "basladi": "2026-09-07T05:16:09",
+      "turlar": [
+        {
+          "zaman": "2026-09-07T05:16:29",
+          "tur_no": 1,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/sirt-cantasi.jpg"
+          },
+          "siniflandirici": {
+            "ad_tr": "dizüstü bilgisayar",
+            "guven": 0.09,
+            "onay": false
+          },
+          "obje": {
+            "ad_tr": "sırt çantası",
+            "etiket": "backpack",
+            "guven": 0.75
+          },
+          "anahtar_kelimeler": [
+            "yön bulma",
+            "giyim",
+            "koruyucu giyim"
+          ],
+          "baglam": null,
+          "arama_niyeti": "sırt çantası",
+          "arama_izi": {
+            "sorgular": [
+              "sırt çantası nedir",
+              "sırt çantası türleri nelerdir",
+              "sırt çantası nerelerde kullanılır"
+            ],
+            "vikipedi": true,
+            "aday": 17,
+            "sayfa": 6,
+            "blok": 3
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "sırt çantası nedir",
+              "paragraflar": [
+                {
+                  "metin": "Sırt çantası sırtüstü giyilen bir tür çantadır. Okul, turizm, seyahat, yürüyüş veya kamp vb. için kullanılabilir. Sırt çantalarının hafif olanları tek omuzda da taşınabilmektedir. Çantalarda çoğunlukla yük ve eşya taşınır. Üretim amacı insanların sırtlarında eşya taşımaları elleriyle taşımaktan daha kolay olduğu için böyle bir yüklük yapılmıştır. Çantaların birçok türü de vardır. Sırt çantası ile son zamanlarda sırt çantasıyla yürüyüş ve sırt çantasıyla seyahat aktiviteleri ortaya çıkmıştır.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/S%C4%B1rt_%C3%A7antas%C4%B1"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Çeşitleri",
+              "sorgu": "sırt çantası türleri nelerdir",
+              "paragraflar": [
+                {
+                  "metin": "Dağcılık sırt çantası ve kamp sırt çantası gibi farklı türlerdeki çantalar, çeşitli doğa aktivitelerinde eşyalarınızı korumak için büyük önem taşır. Su geçirmez sırt çantaları, özellikle yağmurlu havalarda, suya yakın alanlarda ya da ekstrem koşullarda güvenli ve kuru kalmanızı sağlar. Dağcılık sırt çantası seçerken dikkat edilmesi gereken noktalar ve kamp sırt çantası ile su geçirmez sırt çantası arasındaki farklar da yazımızda detaylı bir şekilde ele alındı.",
+                  "kaynak": "everestoutdoors.com",
+                  "url": "https://www.everestoutdoors.com/blog/icerik/su-gecirmez-sirt-cantasi-nerelerde-kullanilir"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Kullanım alanları",
+              "sorgu": "sırt çantası nerelerde kullanılır",
+              "paragraflar": [
+                {
+                  "metin": "Kamp sırt çantası ve su geçirmez sırt çantası arasında belirgin farklar vardır. İki çanta türü de doğa ile iç içe yapılan aktivitelerde önemli bir rol oynar, ancak kullanım alanları ve tasarımları birbirinden farklıdır. Kamp sırt çantası, genellikle uzun süreli doğa yürüyüşleri ya da kamp gezileri için tercih edilirken, su geçirmez sırt çantası daha çok yağışlı hava koşullarında ya da suya yakın bölgelerde kullanılır.",
+                  "kaynak": "everestoutdoors.com",
+                  "url": "https://www.everestoutdoors.com/blog/icerik/su-gecirmez-sirt-cantasi-nerelerde-kullanilir"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nSırt çantası sırtüstü giyilen bir tür çantadır. Okul, turizm, seyahat, yürüyüş veya kamp vb. için kullanılabilir. Sırt çantalarının hafif olanları tek omuzda da taşınabilmektedir. Çantalarda çoğunlukla yük ve eşya taşınır. Üretim amacı insanların sırtlarında eşya taşımaları elleriyle taşımaktan daha kolay olduğu için böyle bir yüklük yapılmıştır. Çantaların birçok türü de vardır. Sırt çantası ile son zamanlarda sırt çantasıyla yürüyüş ve sırt çantasıyla seyahat aktiviteleri ortaya çıkmıştır. [1]\n\n### ▸ Çeşitleri\n\nDağcılık sırt çantası ve kamp sırt çantası gibi farklı türlerdeki çantalar, çeşitli doğa aktivitelerinde eşyalarınızı korumak için büyük önem taşır. Su geçirmez sırt çantaları, özellikle yağmurlu havalarda, suya yakın alanlarda ya da ekstrem koşullarda güvenli ve kuru kalmanızı sağlar. Dağcılık sırt çantası seçerken dikkat edilmesi gereken noktalar ve kamp sırt çantası ile su geçirmez sırt çantası arasındaki farklar da yazımızda detaylı bir şekilde ele alındı. [2]\n\n### ▸ Kullanım alanları\n\nKamp sırt çantası ve su geçirmez sırt çantası arasında belirgin farklar vardır. İki çanta türü de doğa ile iç içe yapılan aktivitelerde önemli bir rol oynar, ancak kullanım alanları ve tasarımları birbirinden farklıdır. Kamp sırt çantası, genellikle uzun süreli doğa yürüyüşleri ya da kamp gezileri için tercih edilirken, su geçirmez sırt çantası daha çok yağışlı hava koşullarında ya da suya yakın bölgelerde kullanılır. [2]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "everestoutdoors.com"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:17:09",
+          "tur_no": 2,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/el-cantasi.jpg"
+          },
+          "siniflandirici": {
+            "ad_tr": "kol saati",
+            "guven": 0.17,
+            "onay": false
+          },
+          "obje": {
+            "ad_tr": "el çantası",
+            "etiket": "handbag",
+            "guven": 0.61
+          },
+          "anahtar_kelimeler": [
+            "aksesuar",
+            "deri",
+            "valiz"
+          ],
+          "baglam": {
+            "onceki_obje": "sırt çantası",
+            "ortak_kelime": "çantası",
+            "aile": "ürün"
+          },
+          "arama_niyeti": "deri el ve sırt çantaları",
+          "arama_izi": {
+            "sorgular": [
+              "el çantası nedir",
+              "deri el ve sırt çantaları",
+              "el çantası türleri nelerdir",
+              "el çantası nerelerde kullanılır"
+            ],
+            "vikipedi": true,
+            "aday": 17,
+            "sayfa": 7,
+            "blok": 4
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "el çantası nedir",
+              "paragraflar": [
+                {
+                  "metin": "El çantası, kişisel eşyaları taşımak için kullanılan orta-büyük boyutlu bir çantadır. Ellerde veya omuzda nesneleri taşımak için kumaş veya deriden yapılır. Çanta tamamen yumuşak olabilir, ancak aynı zamanda sert bir tabana sahip olabilir. Ayrıca, farklı çanta aksesuarları uygulanabilir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/El_%C3%A7antas%C4%B1"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "İlgili",
+              "sorgu": "deri el ve sırt çantaları",
+              "paragraflar": [
+                {
+                  "metin": "Deri el çantası, hem günlük kombinlerde hem de özel davetlerde tercih edilebilir. Kaliteli deri malzemesi sayesinde uzun ömürlüdür ve kombinlerinize zarafet katar.",
+                  "kaynak": "buenoshoes.com.tr",
+                  "url": "https://www.buenoshoes.com.tr/el-cantasi-gunluk-kombinlerde-nasil-kullanilir-2647-11-2676"
+                },
+                {
+                  "metin": "Her biri kendine özgü stil ve işlevselliğe sahip çok çeşitli çantaları inceledik. Zarif clutch çanta gibi elde taşınan çantalardan pratik tote çanta gibi omuz çantalarına, çok yönlü eyer çantası gibi çapraz askılı çantalara ve kamera çantası gibi özel çantalara kadar her durum ve ihtiyaç için mükemmel bir çanta var.",
+                  "kaynak": "fulfillbot.com",
+                  "url": "https://fulfillbot.com/tr/blog/different-types-of-bag/"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Çeşitleri",
+              "sorgu": "el çantası türleri nelerdir",
+              "paragraflar": [],
+              "yapi": {
+                "tip": "basliklar",
+                "ogeler": [
+                  {
+                    "baslik": "El Çantaları",
+                    "metin": "El çantaları, şıklık katarken kişisel eşyaları ve günlük ihtiyaçları taşımak için tasarlanmış şık aksesuarlardır."
+                  },
+                  {
+                    "baslik": "Clutch Çanta",
+                    "metin": "Clutch çantalar elde taşınmak üzere tasarlanmış mini boyutlu, askısız el çantalarıdır."
+                  },
+                  {
+                    "baslik": "Kutu Çanta",
+                    "metin": "Kutu çantalar, sağlam tasarımlarıyla bilinen yapılandırılmış, sert el çantalarıdır."
+                  },
+                  {
+                    "baslik": "Doktor Çantası",
+                    "metin": "Modern doktor çantaları, geleneksel doktor çantalarından ilham alır ve günlük kullanım için ideal olan geniş bir iç mekana sahiptir."
+                  },
+                  {
+                    "baslik": "Omuz Çantaları",
+                    "metin": "Konfor ve pratiklik için tasarlanan omuz çantaları, kullanıcıların telefon ve cüzdan gibi temel eşyalarını kolayca taşımalarına olanak tanır."
+                  }
+                ],
+                "kaynak": "fulfillbot.com",
+                "url": "https://fulfillbot.com/tr/blog/different-types-of-bag/"
+              }
+            },
+            {
+              "baslik": "Kullanım alanları",
+              "sorgu": "el çantası nerelerde kullanılır",
+              "paragraflar": [
+                {
+                  "metin": "El çantaları, şıklık katarken kişisel eşyaları ve günlük ihtiyaçları taşımak için tasarlanmış şık aksesuarlardır. Hem stil hem de pratiklik sunmaları, onları günlük kullanım ve özel günler için uygun hale getirir. Sofistike debriyaj çantalardan yapılandırılmış kutu çantalara ve geniş doktor çantalarına kadar, bir el çantası farklı durumlara ve stillere uyacak şekilde çeşitli tasarımlarda gelir. Bu tasarımlardan biri olan boston çanta, fıçı şeklinde, üstten fermuarlı ve tipik olarak iki adet el tipi üst sapa sahip bir çantadır ve bazı varyasyonlarında omuz askısı da bulunur.",
+                  "kaynak": "fulfillbot.com",
+                  "url": "https://fulfillbot.com/tr/blog/different-types-of-bag/"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nEl çantası, kişisel eşyaları taşımak için kullanılan orta-büyük boyutlu bir çantadır. Ellerde veya omuzda nesneleri taşımak için kumaş veya deriden yapılır. Çanta tamamen yumuşak olabilir, ancak aynı zamanda sert bir tabana sahip olabilir. Ayrıca, farklı çanta aksesuarları uygulanabilir. [1]\n\n### ▸ İlgili\n\nDeri el çantası, hem günlük kombinlerde hem de özel davetlerde tercih edilebilir. Kaliteli deri malzemesi sayesinde uzun ömürlüdür ve kombinlerinize zarafet katar. [2]\n\nHer biri kendine özgü stil ve işlevselliğe sahip çok çeşitli çantaları inceledik. Zarif clutch çanta gibi elde taşınan çantalardan pratik tote çanta gibi omuz çantalarına, çok yönlü eyer çantası gibi çapraz askılı çantalara ve kamera çantası gibi özel çantalara kadar her durum ve ihtiyaç için mükemmel bir çanta var. [3]\n\n### ▸ Çeşitleri\n\n- **El Çantaları** El çantaları, şıklık katarken kişisel eşyaları ve günlük ihtiyaçları taşımak için tasarlanmış şık aksesuarlardır.\n- **Clutch Çanta** Clutch çantalar elde taşınmak üzere tasarlanmış mini boyutlu, askısız el çantalarıdır.\n- **Kutu Çanta** Kutu çantalar, sağlam tasarımlarıyla bilinen yapılandırılmış, sert el çantalarıdır.\n- **Doktor Çantası** Modern doktor çantaları, geleneksel doktor çantalarından ilham alır ve günlük kullanım için ideal olan geniş bir iç mekana sahiptir.\n- **Omuz Çantaları** Konfor ve pratiklik için tasarlanan omuz çantaları, kullanıcıların telefon ve cüzdan gibi temel eşyalarını kolayca taşımalarına olanak tanır.\n\n[3]\n\n### ▸ Kullanım alanları\n\nEl çantaları, şıklık katarken kişisel eşyaları ve günlük ihtiyaçları taşımak için tasarlanmış şık aksesuarlardır. Hem stil hem de pratiklik sunmaları, onları günlük kullanım ve özel günler için uygun hale getirir. Sofistike debriyaj çantalardan yapılandırılmış kutu çantalara ve geniş doktor çantalarına kadar, bir el çantası farklı durumlara ve stillere uyacak şekilde çeşitli tasarımlarda gelir. Bu tasarımlardan biri olan boston çanta, fıçı şeklinde, üstten fermuarlı ve tipik olarak iki adet el tipi üst sapa sahip bir çantadır ve bazı varyasyonlarında omuz askısı da bulunur. [3]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "buenoshoes.com.tr",
+            "fulfillbot.com"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:17:49",
+          "tur_no": 3,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/sandvic.jpg"
+          },
+          "siniflandirici": {
+            "ad_tr": "pizza",
+            "guven": 0.37,
+            "onay": false
+          },
+          "obje": {
+            "ad_tr": "sandviç",
+            "etiket": "sandwich",
+            "guven": 0.9
+          },
+          "anahtar_kelimeler": [
+            "yemek",
+            "sağlıklı",
+            "İtalyan mutfağı"
+          ],
+          "baglam": null,
+          "arama_niyeti": "sağlıklı sandviç tarifleri",
+          "arama_izi": {
+            "sorgular": [
+              "sandviç nedir",
+              "sağlıklı sandviç tarifleri",
+              "sandviç tarifi",
+              "sandviç tarihçesi"
+            ],
+            "vikipedi": true,
+            "arama_hatasi": [
+              "sandviç nedir: DDGSException('No results found.')",
+              "sandviç tarifi: DDGSException('No results found.')"
+            ],
+            "aday": 11,
+            "sayfa": 5,
+            "blok": 3
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "sandviç nedir",
+              "paragraflar": [
+                {
+                  "metin": "Sandviç, sandviç ekmeği dilimleri veya benzeri bir hamurun arasına et, sosis, peynir, sebze ya da çeşitli malzemelerin konulmasıyla hazırlanan, pratik ve taşınabilir bir yiyecek türüdür. Modern anlamda sandviçin ortaya çıkışı 18. yüzyıl İngiltere'sine dayanır. Ancak, ekmek arası yiyecek geleneğinin kökleri antik çağlara kadar uzanır. İlk olarak, ellerle kolayca tüketilebilen bu tip yiyecekler, özellikle yolculuklarda ya da çalışırken ihtiyaç duyulan pratik bir yemek olarak tercih edilmiştir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Sandvi%C3%A7"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "İlgili",
+              "sorgu": "sağlıklı sandviç tarifleri",
+              "paragraflar": [
+                {
+                  "metin": "Sağlık açısından oldukça faydalı bir besin olan avokado, özellikle salata ve sandviçlerde kullanılır. Avokadolu sandviçi, roka, fesleğen ve nane yaprakları ile lezzetlendirebilirsiniz.",
+                  "kaynak": "lezzet.com.tr",
+                  "url": "https://www.lezzet.com.tr/lezzetten-haberler/soguk-sandvic-tarifleri"
+                },
+                {
+                  "metin": "Zamanla sandviç, İngiltere sınırlarını aşarak dünya mutfağının bir parçası haline geldi. Sanayi Devrimi’nden sonra şehir hayatı hızlandı, insanlar daha pratik yemeklere ihtiyaç duymaya başladı. Sandviç, tam da bu ihtiyaca cevap veriyordu. İngiliz denizciler, kolonilere gittiklerinde sandviç fikrini yanlarında götürdüler. Böylece bu basit ama yaratıcı yemek, farklı kültürlerde farklı malzemelerle yeniden şekillendi.",
+                  "kaynak": "milliyet.com.tr",
+                  "url": "https://www.milliyet.com.tr/galeri/en-pratik-yiyecek-sandvic-ilk-kim-tarafindan-ve-nasil-bulundu-7465331"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Tarihçe",
+              "sorgu": "sandviç tarihçesi",
+              "paragraflar": [
+                {
+                  "metin": "Sandviçin modern anlamda popülerleşmesinin ardında, 4. Sandwich Kontu John Montagu'nun adı öne çıkar. Montagu, İngiltere aristokrasisinin tanınan bir üyesiydi ve 1762 yılında kumar masasında yemek yemeyi kolaylaştırmak amacıyla iki ekmek dilimi arasına soğuk et koyarak kumara devam etmek istemiştir. Bu hikâyeye göre, Montagu'nun ellerini kirletmeden oyun oynamaya devam edebilmesi amacıyla uydurduğu bu pratik yöntem, çevresindekiler tarafından kısa sürede benimsenmiş ve “sandwich” adıyla anılmaya başlanmıştır. İngiltere'nin zengin kesimleri arasında hızla yayılan bu yeni yemek alışkanlığı, kısa sürede tüm Avrupa'ya yayılmış ve ardından Amerika'ya da ulaşarak dünya genelinde yaygın bir yiyecek haline gelmiştir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Sandvi%C3%A7#Tarih_ve_etimoloji"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nSandviç, sandviç ekmeği dilimleri veya benzeri bir hamurun arasına et, sosis, peynir, sebze ya da çeşitli malzemelerin konulmasıyla hazırlanan, pratik ve taşınabilir bir yiyecek türüdür. Modern anlamda sandviçin ortaya çıkışı 18. yüzyıl İngiltere'sine dayanır. Ancak, ekmek arası yiyecek geleneğinin kökleri antik çağlara kadar uzanır. İlk olarak, ellerle kolayca tüketilebilen bu tip yiyecekler, özellikle yolculuklarda ya da çalışırken ihtiyaç duyulan pratik bir yemek olarak tercih edilmiştir. [1]\n\n### ▸ İlgili\n\nSağlık açısından oldukça faydalı bir besin olan avokado, özellikle salata ve sandviçlerde kullanılır. Avokadolu sandviçi, roka, fesleğen ve nane yaprakları ile lezzetlendirebilirsiniz. [2]\n\nZamanla sandviç, İngiltere sınırlarını aşarak dünya mutfağının bir parçası haline geldi. Sanayi Devrimi’nden sonra şehir hayatı hızlandı, insanlar daha pratik yemeklere ihtiyaç duymaya başladı. Sandviç, tam da bu ihtiyaca cevap veriyordu. İngiliz denizciler, kolonilere gittiklerinde sandviç fikrini yanlarında götürdüler. Böylece bu basit ama yaratıcı yemek, farklı kültürlerde farklı malzemelerle yeniden şekillendi. [3]\n\n### ▸ Tarihçe\n\nSandviçin modern anlamda popülerleşmesinin ardında, 4. Sandwich Kontu John Montagu'nun adı öne çıkar. Montagu, İngiltere aristokrasisinin tanınan bir üyesiydi ve 1762 yılında kumar masasında yemek yemeyi kolaylaştırmak amacıyla iki ekmek dilimi arasına soğuk et koyarak kumara devam etmek istemiştir. Bu hikâyeye göre, Montagu'nun ellerini kirletmeden oyun oynamaya devam edebilmesi amacıyla uydurduğu bu pratik yöntem, çevresindekiler tarafından kısa sürede benimsenmiş ve “sandwich” adıyla anılmaya başlanmıştır. İngiltere'nin zengin kesimleri arasında hızla yayılan bu yeni yemek alışkanlığı, kısa sürede tüm Avrupa'ya yayılmış ve ardından Amerika'ya da ulaşarak dünya genelinde yaygın bir yiyecek haline gelmiştir. [1]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "lezzet.com.tr",
+            "milliyet.com.tr"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:18:29",
+          "tur_no": 4,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/sosisli.jpg"
+          },
+          "siniflandirici": {
+            "ad_tr": "pizza",
+            "guven": 0.18,
+            "onay": false
+          },
+          "obje": {
+            "ad_tr": "sosisli sandviç",
+            "etiket": "hot dog",
+            "guven": 0.9
+          },
+          "anahtar_kelimeler": [
+            "ketçap",
+            "fast food",
+            "aperatif yemek"
+          ],
+          "baglam": {
+            "onceki_obje": "sandviç",
+            "ortak_kelime": "sandviç",
+            "aile": "yemek"
+          },
+          "arama_niyeti": "ketçaplı sosisli sandviç tarifleri",
+          "arama_izi": {
+            "sorgular": [
+              "sosisli sandviç nedir",
+              "ketçaplı sosisli sandviç tarifleri",
+              "sosisli sandviç tarifi",
+              "sosisli sandviç tarihçesi"
+            ],
+            "vikipedi": true,
+            "arama_hatasi": [
+              "ketçaplı sosisli sandviç tarifleri: DDGSException('No results found.')",
+              "sosisli sandviç nedir: DDGSException('No results found.')"
+            ],
+            "aday": 15,
+            "sayfa": 8,
+            "blok": 3
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "sosisli sandviç nedir",
+              "paragraflar": [
+                {
+                  "metin": "Sosisli sandviç, pişmiş sosis içeren bir sandviçtir. Genellikle sıcak ve yumuşak olarak hazırlanmış sosisler, sosis uzunluğunda -ya da daha kısa- sandviç ekmeklerinin içine konulur. Sosis tat verici garnitürler ve soslar ile zenginleştirilerek yenecek duruma gelir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Sosisli_sandvi%C3%A7"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "İlgili",
+              "sorgu": "ketçaplı sosisli sandviç tarifleri",
+              "paragraflar": [
+                {
+                  "metin": "Sosisler piştikten sonra sandviç ekmeğinin içerisine marul, patates kızartması, sosis, doğranmış turşu, ketçap, mayonez, hardal ekleyerek servis edelim. Dilerseniz pişen sosislerinizin suyundan 1-2 yemek kaşığı kadar sandviç ekmeklerinizin içine gezdirerek de sandviçinizi hazırlayabilirsiniz.",
+                  "kaynak": "nefisyemektarifleri.com",
+                  "url": "https://www.nefisyemektarifleri.com/sosisli-sandvic-tarifi/"
+                },
+                {
+                  "metin": "Pratik ve doyurucu atıştırmalıklar arasında en sevilenlerden biri olan sosisli sandviç, hızlı hazırlanışı ve zengin içeriğiyle özellikle çocuklar ve gençler için vazgeçilmez bir lezzet haline geliyor. Evde kolayca hazırlayabileceğiniz bu sosisli sandviç tarifi, taze ekmek, sosis ve sevdiğiniz soslarla kişiselleştirilebilir; böylece damak tadınıza göre özgün kombinasyonlar yaratabilirsiniz. Eğer pratik ve lezzetli bir yemek arıyorsanız, bu sosisli sandviç tarifi sayesinde sofralarınız renklenirken, misafirlerinize ya da sevdiklerinize nefis bir sunum yapabilirsiniz.",
+                  "kaynak": "lezzet.com.tr",
+                  "url": "https://www.lezzet.com.tr/yemek-tarifleri/pratik-yemekler/sandvic-tarifleri/sosisli-sandvic-tarifi"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Tarif",
+              "sorgu": "sosisli sandviç tarifi",
+              "paragraflar": [],
+              "yapi": {
+                "tip": "tarif",
+                "malzemeler": [
+                  "5 adet baget sandviç ekmeği",
+                  "5 adet uzun sosis",
+                  "2 yemek kaşığı ayçiçek yağı",
+                  "1,5 yemek kaşığı domates salçası",
+                  "1 litre sıcak su",
+                  "2 çay kaşığı tuz",
+                  "1/2 çay kaşığı karabiber",
+                  "6-7 adet salatalık turşusu (minik kesilmiş)",
+                  "1/2 adet mor soğan (dilimlenmiş)",
+                  "2 yemek kaşığı mayonez"
+                ],
+                "adimlar": [
+                  "Sosisli sandviç için genişçe bir tencereye salçayı ve yağı ekleyin. Salçanın kokusu çıkana kadar biraz kavurun.",
+                  "Üzerine sıcak suyu, tuzu ve karabiberi ekleyip karıştırın ve 5 dakika kadar kaynatın.",
+                  "Sosislere çapraz şekillerde minik kesikler atın ve yağ eklediğiniz tavada, dış kısımları hafif kızarana kadar pişirin.",
+                  "Kaynayan salçalı suyun içerisine sosisleri atın ve yaklaşık 15 dakika kısık ateşte, sosisler şişip tamamen haşlanana kadar pişirin.",
+                  "Kullanacağınız ekmekleri boydan, tamamen ayrılmayacak şekilde kesin ve bir tavada iç kısımlarını kızartın.",
+                  "Ekmeklerinizin içerisine turşu dilimleri, mor soğan dilimleri ve sosisleri ekleyin. Üzerine mayonez ekleyin. Dilerseniz başka soslar da kullanabilir ya da sade tercih edebilirsiniz. Sosisli sandviç hazır. Afiyet olsun!"
+                ],
+                "kaynak": "yemek.com",
+                "url": "https://yemek.com/tarif/sosisli-sandvic/"
+              }
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nSosisli sandviç, pişmiş sosis içeren bir sandviçtir. Genellikle sıcak ve yumuşak olarak hazırlanmış sosisler, sosis uzunluğunda -ya da daha kısa- sandviç ekmeklerinin içine konulur. Sosis tat verici garnitürler ve soslar ile zenginleştirilerek yenecek duruma gelir. [1]\n\n### ▸ İlgili\n\nSosisler piştikten sonra sandviç ekmeğinin içerisine marul, patates kızartması, sosis, doğranmış turşu, ketçap, mayonez, hardal ekleyerek servis edelim. Dilerseniz pişen sosislerinizin suyundan 1-2 yemek kaşığı kadar sandviç ekmeklerinizin içine gezdirerek de sandviçinizi hazırlayabilirsiniz. [2]\n\nPratik ve doyurucu atıştırmalıklar arasında en sevilenlerden biri olan sosisli sandviç, hızlı hazırlanışı ve zengin içeriğiyle özellikle çocuklar ve gençler için vazgeçilmez bir lezzet haline geliyor. Evde kolayca hazırlayabileceğiniz bu sosisli sandviç tarifi, taze ekmek, sosis ve sevdiğiniz soslarla kişiselleştirilebilir; böylece damak tadınıza göre özgün kombinasyonlar yaratabilirsiniz. Eğer pratik ve lezzetli bir yemek arıyorsanız, bu sosisli sandviç tarifi sayesinde sofralarınız renklenirken, misafirlerinize ya da sevdiklerinize nefis bir sunum yapabilirsiniz. [3]\n\n### ▸ Tarif\n\n**Malzemeler**\n\n- 5 adet baget sandviç ekmeği\n- 5 adet uzun sosis\n- 2 yemek kaşığı ayçiçek yağı\n- 1,5 yemek kaşığı domates salçası\n- 1 litre sıcak su\n- 2 çay kaşığı tuz\n- 1/2 çay kaşığı karabiber\n- 6-7 adet salatalık turşusu (minik kesilmiş)\n- 1/2 adet mor soğan (dilimlenmiş)\n- 2 yemek kaşığı mayonez\n\n**Yapılışı**\n\n1. Sosisli sandviç için genişçe bir tencereye salçayı ve yağı ekleyin. Salçanın kokusu çıkana kadar biraz kavurun.\n2. Üzerine sıcak suyu, tuzu ve karabiberi ekleyip karıştırın ve 5 dakika kadar kaynatın.\n3. Sosislere çapraz şekillerde minik kesikler atın ve yağ eklediğiniz tavada, dış kısımları hafif kızarana kadar pişirin.\n4. Kaynayan salçalı suyun içerisine sosisleri atın ve yaklaşık 15 dakika kısık ateşte, sosisler şişip tamamen haşlanana kadar pişirin.\n5. Kullanacağınız ekmekleri boydan, tamamen ayrılmayacak şekilde kesin ve bir tavada iç kısımlarını kızartın.\n6. Ekmeklerinizin içerisine turşu dilimleri, mor soğan dilimleri ve sosisleri ekleyin. Üzerine mayonez ekleyin. Dilerseniz başka soslar da kullanabilir ya da sade tercih edebilirsiniz. Sosisli sandviç hazır. Afiyet olsun!\n\n[4]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "nefisyemektarifleri.com",
+            "lezzet.com.tr",
+            "yemek.com"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:19:09",
+          "tur_no": 5,
+          "girdi": {
+            "tip": "text",
+            "deger": "kalorisi ne kadar"
+          },
+          "obje": {
+            "ad_tr": "sosisli sandviç"
+          },
+          "arama_izi": {
+            "sorgular": [
+              "sosisli sandviç kalorisi ne kadar"
+            ],
+            "aday": 9,
+            "sayfa": 8,
+            "blok": 1
+          },
+          "bloklar": [
+            {
+              "baslik": "Cevap",
+              "sorgu": "sosisli sandviç kalorisi ne kadar",
+              "paragraflar": [
+                {
+                  "metin": "Sosisli Sandviç Kalori Değeri: Bu besinin 100 gramında 253 kcal kalori, ayrıca besinin 1 Porsiyon (Orta) yani 175 gramlık miktarında Sosisli Sandviç 443 kalori bulunmaktadır.",
+                  "kaynak": "fitekran.com",
+                  "url": "https://www.fitekran.com/besin-degeri/sosisli-sandvic/"
+                },
+                {
+                  "metin": "Günlük hayatta tüketilen besinlerin kalori miktarı ile ilgili bilgili sahibi olmak önemlidir. Sosisli Sandviç kalori değeri de bu noktada oldukça araştırılır. Peki, Sosisli Sandviç kaç kalori, besin değeri nedir? İşte, Sosisli Sandviç kalorisi ve besin değeri miktarı ile ilgili tüm detaylar.",
+                  "kaynak": "haberturk.com",
+                  "url": "https://www.haberturk.com/kac-kalori/sosisli-sandvic-besin-degeri"
+                },
+                {
+                  "metin": "Benzer ürün ortalamasına göre enerji farkı +53.5 kcal. Benzer besinler arasında Sosisli Sandviç, Azaltılmış Yağ, Sosisli Sandviç, Dana, Sosisli Sandviç, Et Ve Kümes Hayvanı, Sosisli Sandviç, Hindi gibi seçenekler var. Eğer hedefiniz daha düşük enerji ise listeden daha hafif alternatiflere, daha yoğun bir profil arıyorsanız bu besinin güçlü taraflarına odaklanabilirsiniz.",
+                  "kaynak": "besinanaliz.com",
+                  "url": "https://www.besinanaliz.com/foods/hot-dog-belirtilmemis"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Cevap\n\nSosisli Sandviç Kalori Değeri: Bu besinin 100 gramında 253 kcal kalori, ayrıca besinin 1 Porsiyon (Orta) yani 175 gramlık miktarında Sosisli Sandviç 443 kalori bulunmaktadır. [1]\n\nGünlük hayatta tüketilen besinlerin kalori miktarı ile ilgili bilgili sahibi olmak önemlidir. Sosisli Sandviç kalori değeri de bu noktada oldukça araştırılır. Peki, Sosisli Sandviç kaç kalori, besin değeri nedir? İşte, Sosisli Sandviç kalorisi ve besin değeri miktarı ile ilgili tüm detaylar. [2]\n\nBenzer ürün ortalamasına göre enerji farkı +53.5 kcal. Benzer besinler arasında Sosisli Sandviç, Azaltılmış Yağ, Sosisli Sandviç, Dana, Sosisli Sandviç, Et Ve Kümes Hayvanı, Sosisli Sandviç, Hindi gibi seçenekler var. Eğer hedefiniz daha düşük enerji ise listeden daha hafif alternatiflere, daha yoğun bir profil arıyorsanız bu besinin güçlü taraflarına odaklanabilirsiniz. [3]\n",
+          "kaynaklar": [
+            "fitekran.com",
+            "haberturk.com",
+            "besinanaliz.com"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:19:49",
+          "tur_no": 6,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/keman.jpg"
+          },
+          "siniflandirici": {
+            "ad_tr": "gitar",
+            "guven": 0.17,
+            "onay": false
+          },
+          "obje": {
+            "ad_tr": "keman",
+            "etiket": "violin",
+            "guven": 0.87
+          },
+          "anahtar_kelimeler": [
+            "yaylı çalgı",
+            "müzik",
+            "klasik müzik",
+            "enstrüman",
+            "konser"
+          ],
+          "baglam": null,
+          "arama_niyeti": "keman",
+          "arama_izi": {
+            "sorgular": [
+              "keman nedir",
+              "keman tarihçesi",
+              "keman nasıl çalınır"
+            ],
+            "vikipedi": true,
+            "arama_hatasi": [
+              "keman nasıl çalınır: DDGSException('No results found.')"
+            ],
+            "aday": 9,
+            "sayfa": 8,
+            "blok": 3
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "keman nedir",
+              "paragraflar": [
+                {
+                  "metin": "Keman veya viyolon, yaylı çalgılar ailesinin en küçük ve en yüksek tonda çalan üyesidir. Viyola ve viyolonsel ile aynı aileye mensup olan keman, dört tele sahiptir. Bu teller en pes tondan en tiz tona doğru sol (G), re (D), la (A) ve mi (E) olarak akort edilir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Keman"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Tarihçe",
+              "sorgu": "keman tarihçesi",
+              "paragraflar": [
+                {
+                  "metin": "Orta Doğu'da Bizans, lir adı altında ilkel bir keman çeşidi geliştirmiştir. Günümüzdeki anlamda keman ilk olarak 14. yüzyılda Kuzey İtalya'da ortaya çıktı. Bu dönemden sonra keman Avrupa'da yayıldı. İlk keman yapımcılarının Rebec, Rönesans da Fer tarafından Orta Çağ'da İtalya'da Lira da Braci, Fransa'da Viel adlarıyla kullanılan yaylı çalgıları kemanın atası sayılır. Lavignac, kemanın Oğuz kemençesinden alındığını yazar. Bazı kaynaklarda ise Arapların rebabından geliştirildiği öne sürülmüştür. 16. ve 17. yüzyıldaki keman yapım ustaları Nicolo Amati, Paolo Maggini, Giuseppe Guarneru, Antonio Stradivarius kemana son şeklini vermişlerdir. Keman asıl biçimini korumakla birlikte 19. yüzyılda bazı değişikliklere uğradı. Çağdaş kemanda gövde ve sap daha uzun, köprü daha yüksektir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Keman#Tarihçe"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Nasıl çalınır",
+              "sorgu": "keman nasıl çalınır",
+              "paragraflar": [
+                {
+                  "metin": "Keman çalmak için yapılması gerekenler arasında nota dizilimini iyi kavramak bulunmaktadır. Nota dizilimini öğrenmek düzenli aralıklarla keman çalmakla olur. Aksi takdirde keman çalmayı öğrenmek zorlaşacaktır. Keman nedir ne işe yarar söylemek gerekirse de, yaylı müzik aletlerinden en çok tercih edilendir. Keman çalmak tutku meselesidir. Keman çalmak isteyenler iyi bir müzik kulağına ve el becerisine sahip olmalıdır. Fakat her yaştan insan düzenli bir pratik ile keman çalmayı öğrenebilir.",
+                  "kaynak": "elitmuzik.com.tr",
+                  "url": "https://www.elitmuzik.com.tr/blog/keman-nedir"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nKeman veya viyolon, yaylı çalgılar ailesinin en küçük ve en yüksek tonda çalan üyesidir. Viyola ve viyolonsel ile aynı aileye mensup olan keman, dört tele sahiptir. Bu teller en pes tondan en tiz tona doğru sol (G), re (D), la (A) ve mi (E) olarak akort edilir. [1]\n\n### ▸ Tarihçe\n\nOrta Doğu'da Bizans, lir adı altında ilkel bir keman çeşidi geliştirmiştir. Günümüzdeki anlamda keman ilk olarak 14. yüzyılda Kuzey İtalya'da ortaya çıktı. Bu dönemden sonra keman Avrupa'da yayıldı. İlk keman yapımcılarının Rebec, Rönesans da Fer tarafından Orta Çağ'da İtalya'da Lira da Braci, Fransa'da Viel adlarıyla kullanılan yaylı çalgıları kemanın atası sayılır. Lavignac, kemanın Oğuz kemençesinden alındığını yazar. Bazı kaynaklarda ise Arapların rebabından geliştirildiği öne sürülmüştür. 16. ve 17. yüzyıldaki keman yapım ustaları Nicolo Amati, Paolo Maggini, Giuseppe Guarneru, Antonio Stradivarius kemana son şeklini vermişlerdir. Keman asıl biçimini korumakla birlikte 19. yüzyılda bazı değişikliklere uğradı. Çağdaş kemanda gövde ve sap daha uzun, köprü daha yüksektir. [1]\n\n### ▸ Nasıl çalınır\n\nKeman çalmak için yapılması gerekenler arasında nota dizilimini iyi kavramak bulunmaktadır. Nota dizilimini öğrenmek düzenli aralıklarla keman çalmakla olur. Aksi takdirde keman çalmayı öğrenmek zorlaşacaktır. Keman nedir ne işe yarar söylemek gerekirse de, yaylı müzik aletlerinden en çok tercih edilendir. Keman çalmak tutku meselesidir. Keman çalmak isteyenler iyi bir müzik kulağına ve el becerisine sahip olmalıdır. Fakat her yaştan insan düzenli bir pratik ile keman çalmayı öğrenebilir. [2]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "elitmuzik.com.tr"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:20:29",
+          "tur_no": 7,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/pizza.jpg",
+            "metin": "evde nasıl yapılır"
+          },
+          "siniflandirici": {
+            "ad_tr": "pizza",
+            "guven": 0.84,
+            "onay": true
+          },
+          "obje": {
+            "ad_tr": "pizza",
+            "etiket": "pizza",
+            "guven": 0.84
+          },
+          "anahtar_kelimeler": [
+            "hamurlu yemek",
+            "İtalyan mutfağı",
+            "sos"
+          ],
+          "baglam": {
+            "onceki_obje": "sosisli sandviç",
+            "ortak_kelime": null,
+            "aile": "yemek"
+          },
+          "arama_niyeti": "pizza evde nasıl yapılır",
+          "arama_izi": {
+            "sorgular": [
+              "pizza nedir",
+              "pizza evde nasıl yapılır"
+            ],
+            "vikipedi": true,
+            "arama_hatasi": [
+              "pizza evde nasıl yapılır: DDGSException(DDGSException(\"RequestError: RequestError('error sending request for url (https://search.yahoo.com/search;_ylt=oOL9Og2vuV7rJQvZR7flaxIv;_ylu=OxG8vwkg8jIidI_FVI7ucR5ywocL7z5_YpBgfS7SySTrT2k?p=pizza+evde+nas%C4%B1l+yap%C4%B1l%C4%B1r) > peer closed connection without sending TLS close_notify: https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof')\"))"
+            ],
+            "aday": 4,
+            "sayfa": 4,
+            "blok": 2
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "pizza nedir",
+              "paragraflar": [
+                {
+                  "metin": "Pizza, domates, peynir ve genellikle çeşitli diğer malzemelerle (mantar, soğan, zeytin, ananas, et vb.) yenen bir yemektir. Üstü genellikle yuvarlak, düz bir mayalı buğday bazlı hamur tabanından oluşan İtalyan kökenli bir yemektir. Geleneksel olarak taş fırında yüksek sıcaklıkta pişirilir. Küçük bir pizzaya bazen pizzetta denir. Pizza yapan bir kişi pizzaiolo olarak bilinir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Pizza"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Cevap",
+              "sorgu": "pizza evde nasıl yapılır",
+              "paragraflar": [
+                {
+                  "metin": "Pizza, genellikle yuvarlak bir hamur üzerine domates sosu, peynir ve çeşitli malzemeler eklenerek hazırlanan bir İtalyan yemeğidir. İnce veya kalın hamurla yapılabilir ve farklı pişirme yöntemleriyle hazırlanabilir.",
+                  "kaynak": "umutlutarifler.com",
+                  "url": "https://www.umutlutarifler.com/pizza-nedir/"
+                },
+                {
+                  "metin": "Geleneksel olarak, Napoli'de yapılan pizza, ince hamur üzerine domates sosu, mozzarella peyniri ve taze malzemelerle hazırlanır. Ancak dünya çapında pizza çeşitliliği, farklı kültürlerin damak zevkine hitap edecek şekilde genişledi. Bugün artık pizzalar, peynir, sebzeler, etler ve çeşitli soslarla zenginleştirilmiş durumda.",
+                  "kaynak": "firtinahaber.com",
+                  "url": "https://firtinahaber.com/haber/17620362/pizza-nedir-nasil-yapilir-tarifi-nedir-kokeni-nereden-gelir"
+                },
+                {
+                  "metin": "Elimizle yine toparlayıp havasını aldıktan sonra 2 eşit parçaya bölelim. Eğer ince hamurlu pizza hazırlamak istiyorsanız aynı hamuru 3 parçaya da bölebilirsiniz.",
+                  "kaynak": "nefisyemektarifleri.com",
+                  "url": "https://www.nefisyemektarifleri.com/video/evde-pizza-nasil-yapilir/"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nPizza, domates, peynir ve genellikle çeşitli diğer malzemelerle (mantar, soğan, zeytin, ananas, et vb.) yenen bir yemektir. Üstü genellikle yuvarlak, düz bir mayalı buğday bazlı hamur tabanından oluşan İtalyan kökenli bir yemektir. Geleneksel olarak taş fırında yüksek sıcaklıkta pişirilir. Küçük bir pizzaya bazen pizzetta denir. Pizza yapan bir kişi pizzaiolo olarak bilinir. [1]\n\n### ▸ Cevap\n\nPizza, genellikle yuvarlak bir hamur üzerine domates sosu, peynir ve çeşitli malzemeler eklenerek hazırlanan bir İtalyan yemeğidir. İnce veya kalın hamurla yapılabilir ve farklı pişirme yöntemleriyle hazırlanabilir. [2]\n\nGeleneksel olarak, Napoli'de yapılan pizza, ince hamur üzerine domates sosu, mozzarella peyniri ve taze malzemelerle hazırlanır. Ancak dünya çapında pizza çeşitliliği, farklı kültürlerin damak zevkine hitap edecek şekilde genişledi. Bugün artık pizzalar, peynir, sebzeler, etler ve çeşitli soslarla zenginleştirilmiş durumda. [3]\n\nElimizle yine toparlayıp havasını aldıktan sonra 2 eşit parçaya bölelim. Eğer ince hamurlu pizza hazırlamak istiyorsanız aynı hamuru 3 parçaya da bölebilirsiniz. [4]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "umutlutarifler.com",
+            "firtinahaber.com",
+            "nefisyemektarifleri.com"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:21:09",
+          "tur_no": 8,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/fotograf-makinesi.jpg"
+          },
+          "siniflandirici": {
+            "ad_tr": "fotoğraf makinesi",
+            "guven": 0.8,
+            "onay": true
+          },
+          "obje": {
+            "ad_tr": "fotoğraf makinesi",
+            "etiket": "camera",
+            "guven": 0.8
+          },
+          "anahtar_kelimeler": [
+            "fotoğrafçılık",
+            "lens",
+            "çekim"
+          ],
+          "baglam": null,
+          "arama_niyeti": "fotoğraf makinesi",
+          "arama_izi": {
+            "sorgular": [
+              "fotoğraf makinesi nedir",
+              "fotoğraf makinesi türleri nelerdir",
+              "fotoğraf makinesi nerelerde kullanılır"
+            ],
+            "vikipedi": true,
+            "aday": 20,
+            "sayfa": 7,
+            "blok": 3
+          },
+          "bloklar": [
+            {
+              "baslik": "Tanım",
+              "sorgu": "fotoğraf makinesi nedir",
+              "paragraflar": [
+                {
+                  "metin": "Fotoğraf makinesi ışık ile resim çizmeye yarayan cihazdır. Tek veya temel amacı hareketsiz görüntülerin (fotoğrafların) kaydedilmesidir. Temel düzeyde, fotoğraf makineleri kapalı kutulardır. Geleneksel fotoğrafçılıkta, görüntü, kameraya yerleştirilen ışığa duyarlı fotoğrafik malzemeye ışık tutularak fotokimyasal olarak yakalanır.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Foto%C4%9Fraf_makinesi"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Çeşitleri",
+              "sorgu": "fotoğraf makinesi türleri nelerdir",
+              "paragraflar": [
+                {
+                  "metin": "35 mm makineler, refleks makineleri, compact makineler, körüklü makineler, minyatür makineler, stüdyo makineleri, sualtı makineleri, polaroid makineler, otomatik ve yarı otomatik makineler, dijital makineler gibi çok değişik tipte ve özelliktedir. Film boyutuna göre ise, büyük boy fotoğraf makineleri(9 x 12, 13 x 18 cm), orta boy fotoğraf makineleri (6 x 4,5 cm, 6 x 6 cm, 6 x 7 cm, 6 x 8 cm ve 6 x 9 cm), küçük boy fotoğraf makineleri (24 x 36 mm), minyatür fotoğraf makineleri (gizli çekim için kullanılan çok küçük makinalar), Polaroid fotoğraf makineleri, dijital-sayısal fotoğraf makineleri olarak sınıflanabilir.",
+                  "kaynak": "tr.wikipedia.org",
+                  "url": "https://tr.wikipedia.org/wiki/Foto%C4%9Fraf_makinesi#Diğer_sınıflamalar"
+                }
+              ],
+              "yapi": null
+            },
+            {
+              "baslik": "Kullanım alanları",
+              "sorgu": "fotoğraf makinesi nerelerde kullanılır",
+              "paragraflar": [
+                {
+                  "metin": "Fotoğraf makinesi lens çeşitleri arasında pek çok model öne çıkar. Canon, Nikon, Panasonic gibi markalar fotoğraf makinesi lens modelleri ile kullanıcılarının ihtiyaçlarını karşılarlar. Peki lens çeşitleri arasından nasıl seçim yapılır? Hangi lensleri, hangi ortamlarda ve çekim tekniklerinde kullanacağınızı ise sayfamızda yer alan önerilerde bulabilirsiniz.",
+                  "kaynak": "fotolifeakademi.com",
+                  "url": "https://fotolifeakademi.com/fotograf-makineleri-ekipmanlari/fotograf-makinesi-lens-cesitleri"
+                }
+              ],
+              "yapi": null
+            }
+          ],
+          "metin": "### ▸ Tanım\n\nFotoğraf makinesi ışık ile resim çizmeye yarayan cihazdır. Tek veya temel amacı hareketsiz görüntülerin (fotoğrafların) kaydedilmesidir. Temel düzeyde, fotoğraf makineleri kapalı kutulardır. Geleneksel fotoğrafçılıkta, görüntü, kameraya yerleştirilen ışığa duyarlı fotoğrafik malzemeye ışık tutularak fotokimyasal olarak yakalanır. [1]\n\n### ▸ Çeşitleri\n\n35 mm makineler, refleks makineleri, compact makineler, körüklü makineler, minyatür makineler, stüdyo makineleri, sualtı makineleri, polaroid makineler, otomatik ve yarı otomatik makineler, dijital makineler gibi çok değişik tipte ve özelliktedir. Film boyutuna göre ise, büyük boy fotoğraf makineleri(9 x 12, 13 x 18 cm), orta boy fotoğraf makineleri (6 x 4,5 cm, 6 x 6 cm, 6 x 7 cm, 6 x 8 cm ve 6 x 9 cm), küçük boy fotoğraf makineleri (24 x 36 mm), minyatür fotoğraf makineleri (gizli çekim için kullanılan çok küçük makinalar), Polaroid fotoğraf makineleri, dijital-sayısal fotoğraf makineleri olarak sınıflanabilir. [1]\n\n### ▸ Kullanım alanları\n\nFotoğraf makinesi lens çeşitleri arasında pek çok model öne çıkar. Canon, Nikon, Panasonic gibi markalar fotoğraf makinesi lens modelleri ile kullanıcılarının ihtiyaçlarını karşılarlar. Peki lens çeşitleri arasından nasıl seçim yapılır? Hangi lensleri, hangi ortamlarda ve çekim tekniklerinde kullanacağınızı ise sayfamızda yer alan önerilerde bulabilirsiniz. [2]\n",
+          "kaynaklar": [
+            "tr.wikipedia.org",
+            "fotolifeakademi.com"
+          ],
+          "durum": "tamam"
+        },
+        {
+          "zaman": "2026-09-07T05:21:49",
+          "tur_no": 9,
+          "girdi": {
+            "tip": "path",
+            "deger": "ornek-gorseller/kaya.jpg"
+          },
+          "uzlasma": {
+            "onceki_obje": "parmak arası terlik"
+          },
+          "obje": {
+            "ad_tr": "atlama tahtası",
+            "etiket": "diving board",
+            "guven": 0.06
+          },
+          "anahtar_kelimeler": [
+            "rafting",
+            "yüzme",
+            "balık"
+          ],
+          "baglam": null,
+          "arama_niyeti": "atlama tahtası",
+          "arama_izi": {
+            "sorgular": [
+              "atlama tahtası nedir"
+            ],
+            "vikipedi": false,
+            "aday": 5,
+            "sayfa": 5,
+            "blok": 0
+          },
+          "durum": "metin_yok"
+        }
+      ]
+    }
+  ]
+}

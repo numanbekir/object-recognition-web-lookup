@@ -38,7 +38,12 @@ python3 main.py
 Görsel adresi ya da dosya yolu girilir, dosyayı terminale sürüklemek de çalışır.
 Görselin yanına bir soru yazılırsa o turun araması soruya göre kurulur.
 Görsel analizinden sonra düz metin yazılırsa aynı obje bağlamında yeni arama
-yapılır. Çıkmak için q yazılır.
+yapılır. Çıkmak için q yazılır ya da ctrl+c basılır.
+
+ornek-gorseller klasöründe denemek için serbest lisanslı görseller vardır, dosya
+yolunu vermek ya da dosyayı pencereye sürüklemek yeter. Görsellerin kaynak ve
+lisans bilgileri aynı klasördeki gorsel-kaynaklari.md dosyasındadır. ornek-kayit.json
+bu görsellerle yapılmış bir oturumun kaydıdır.
 
 Debug seçeneği her adımın kararlarını gösterir, plain seçeneği terminal arayüzü
 yerine düz satır modunu açar.
@@ -52,8 +57,8 @@ python3 main.py --plain
 
 1. Görüntü yüklenir, doğrulanır ve modele hazırlanır.
 2. Görüş modeli görüntüyü kodlar, 1200 obje adıyla karşılaştırır ve en yakın adı
-   obje olarak seçer. Kendi eğittiğimiz sınıflandırıcı ikinci görüş verir ve
-   sıfır atış emin değilken öne geçer. Aynı vektör 480 tema kavramıyla
+   obje olarak seçer. Kendi eğittiğim sınıflandırıcı ikinci görüş verir ve
+   sıfır atış emin değilken öne geçer. Aynı vektör 484 tema kavramıyla
    karşılaştırılır, en güçlü temaların Türkçe karşılıkları anahtar kelime olur.
 3. Obje adı, rol etiketli anahtar kelimeler ve önceki turun bağlamından kural
    tabanlı bir Türkçe arama cümlesi kurulur.
@@ -77,10 +82,12 @@ python3 main.py --plain
 - app/session.py, sohbet bağlamı ve hafıza
 - app/storage.py, kayıt dosyası
 - app/ui.py, terminal arayüzü
+- app/render.py, blokların markdown metnine çevrilmesi
 - data klasörü, obje adları, tema haritası, kelime rolleri ve blok şeması
 - training klasörü, sınıflandırıcı eğitimi
 - tests klasörü, birim testleri
-- ornek_kayit.json, görev senaryolarıyla üretilmiş örnek kayıt dosyası
+- ornek-gorseller klasörü, deneme görselleri ve kaynak bilgileri
+- ornek-kayit.json, örnek görsellerle üretilmiş kayıt dosyası
 
 Sınıflandırıcıyı yeniden eğitmek için önce öznitelikler çıkarılır, sonra
 eğitim çalıştırılır. Veri seti ilk çalıştırmada indirilir.
@@ -100,4 +107,4 @@ Testler şu komutla çalışır.
 python3 -m unittest discover -s tests -t .
 ```
 
-Model tercihi gerekçeleri ve teknik ayrıntılar RAPOR.md dosyasındadır.
+Model tercihi gerekçeleri ve teknik ayrıntılar teknik-rapor.md dosyasındadır.

@@ -64,7 +64,7 @@ class VisionModel:
         self._preprocess = None
         self._object_features = None
         self._theme_features = None
-        self._probe = None  # kendi eğittiğimiz sınıflandırıcı, varsa ikinci görüş
+        self._probe = None  # kendi eğittiğim sınıflandırıcı, varsa ikinci görüş
 
     # hazırlık
 
