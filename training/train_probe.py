@@ -16,7 +16,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import config  # noqa: E402
+from app import config
 
 FEATURES = Path(__file__).parent / "data" / "caltech101_clip.npz"
 MAPPING = Path(__file__).parent / "caltech_to_lvis.json"

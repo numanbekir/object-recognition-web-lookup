@@ -15,7 +15,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.vision import VisionModel, OBJECT_PROMPTS  # noqa: E402
+from app.vision import VisionModel, OBJECT_PROMPTS
 
 DATA_DIR = Path(__file__).parent / "data"
 OUTPUT = DATA_DIR / "caltech101_clip.npz"

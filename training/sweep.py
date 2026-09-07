@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from training.train_probe import FEATURES, SEED, VAL_RATIO, accuracy, stratified_split, train  # noqa: E402
+from training.train_probe import FEATURES, SEED, VAL_RATIO, accuracy, stratified_split, train
 
 LEARNING_RATES = (0.001, 0.005, 0.01, 0.02)
 WEIGHT_DECAYS = (0.0, 0.0001, 0.001)
