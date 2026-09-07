@@ -97,6 +97,17 @@ def is_single_source(text: str) -> bool:
     return len(tokens) == 1 and _looks_like_source(tokens[0])
 
 
+def split_source_text(raw: str):
+    """Girdi bir kaynak ve ardından metinse ikisini ayırır, değilse kaynak boş döner."""
+    try:
+        tokens = shlex.split(raw.strip())
+    except ValueError:
+        return "", raw
+    if len(tokens) > 1 and _looks_like_source(tokens[0]) and not find_sources(" ".join(tokens[1:])):
+        return tokens[0], " ".join(tokens[1:])
+    return "", raw
+
+
 def normalize_schemeless(text: str):
     """Şemasız adresleri https ile tamamlar."""
     if " " in text:
@@ -388,7 +399,7 @@ def _refine_turn(value: str, session: SessionContext, storage: Storage, view):
 
 def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel,
                  session: SessionContext, storage: Storage, view,
-                 intent: IntentBuilder = None, planner: BlockPlanner = None):
+                 intent: IntentBuilder = None, planner: BlockPlanner = None, user_text: str = ""):
     """Bir kullanıcı turunu işler ve sonuçları görünüm nesnesine kademeli olarak verir.
 
     Görünüm nesnesi head, definition, body, progress, message, detail, saved ve
@@ -418,6 +429,8 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
 
     # görüntü
     record = _new_record(storage, kind, value)
+    if user_text:
+        record["girdi"]["metin"] = user_text
     view.progress("görüntü yükleniyor")
     try:
         image = loader.load(value, kind)
@@ -442,19 +455,24 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
                       "guven": round(prediction.confidence, 2)}
     record["anahtar_kelimeler"] = words
 
-    # bağlam, önceki turla ortak kelime varsa o tur aynı konudadır
-    shared = session.shared_context(object_tr, words)
-    context_words, previous = [], None
+    # bağlam, önceki tur aynı aileden ya da ortak kelimeliyse aynı konudadır
+    family = planner.family(words)
+    shared = session.shared_context(object_tr, words, family, planner.default_family)
+    context_words, previous, common = [], None, None
     if shared:
         previous, common = shared
-        context_words = [common]
-        view.detail("bağlam", f"{previous} ile ortak kelime, {common}")
-        record["baglam"] = {"onceki_obje": previous, "ortak_kelime": common}
+        context_words = [common] if common else []
+        view.detail("bağlam", f"{previous} ile aynı konu, {family}"
+                    + (f", ortak kelime {common}" if common else ""))
+        record["baglam"] = {"onceki_obje": previous, "ortak_kelime": common, "aile": family}
     else:
         record["baglam"] = None
 
-    # arama niyeti, objeden emin değilsek kelimeler sorguya girmez
-    if confident:
+    # arama niyeti, kullanıcı ne istediğini yazdıysa niyet odur, objeden emin değilsek
+    # kelimeler sorguya girmez
+    if user_text:
+        query = WebSearcher.build_query(object_tr, user_text=user_text)
+    elif confident:
         query = intent.build(object_tr, words, previous)
     else:
         query = object_tr
@@ -463,13 +481,22 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
     notes = []
     if not confident:
         notes.append("Tam emin olamadım, diğer adaylar " + ", ".join(n for n, _ in prediction.alternatives))
-    if session.times_seen(object_tr):
+    repeat = session.times_seen(object_tr)
+    if repeat:
         notes.append("Bu obje hakkında daha önce konuştuk, bu kez farklı kaynaklardan devam ediyorum.")
     view.head(object_tr, prediction.confidence, words, query, note=" · ".join(notes),
-              confident=confident, size=f"{image.width}x{image.height}")
+              confident=confident, size=f"{image.width}x{image.height}",
+              previous=previous if previous and previous.split()[-1] == object_tr.split()[-1] else None)
+    if shared:
+        injected = previous.split()[-1] == object_tr.split()[-1]  # ad birleştiyse sorguya girdi
+        view.context_note(previous, FAMILY_LABELS.get(family, family), injected and not user_text)
 
-    # bilgi blokları
-    blocks = planner.plan(object_tr, words, query, confident=confident)
+    # bilgi blokları, kullanıcı soru yazdıysa tanım ve cevap yeter
+    if user_text:
+        blocks = [InfoBlock("Tanım", f"{object_tr} nedir", ["nedir", "tanım"], section_hints=["tarih"]),
+                  InfoBlock("Cevap", query, user_text.split(), limit=config.MAX_PASSAGES)]
+    else:
+        blocks = planner.plan(object_tr, words, query, confident=confident)
     view.detail("bloklar", f"aile {planner.family(words)}, " + ", ".join(b.title for b in blocks))
     found, trace = _gather_blocks(object_tr, blocks, words, context_words, view, session=session)
     record["arama_izi"] = trace
@@ -484,8 +511,13 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
     _save(storage, record, "tamam", view)
 
     # bağlam güncellenir
-    session.add_turn(object_tr, words)
-    view.context(session.summary_line())
+    session.add_turn(object_tr, words, family)
+    view.context(session.turn_count, object_tr, previous if shared else None,
+                 FAMILY_LABELS.get(family, family), session.chain(family), repeat)
+
+
+FAMILY_LABELS = {"yemek": "yemekler", "canlı": "canlılar", "enstrüman": "enstrümanlar",
+                 "taşıt": "taşıtlar", "ürün": "ürünler"}
 
 
 # arayüzler
@@ -503,7 +535,8 @@ class PlainView:
         self.console = self.console or Console()
         self.console.print(Markdown(text))
 
-    def head(self, object_tr, confidence, keywords, intent, note="", confident=True, size=""):
+    def head(self, object_tr, confidence, keywords, intent, note="", confident=True, size="",
+             previous=None):
         if confidence is None:
             print(f"\n{tr_capitalize(object_tr)}")
         elif confident:
@@ -538,8 +571,19 @@ class PlainView:
     def saved(self, turn_no):
         print(f"kaydedildi · {turn_no}. tur")
 
-    def context(self, line):
-        print(f"↻ {line}")
+    def context_note(self, previous, family_label, injected):
+        line = f"↻ önceki tur {previous} ile aynı konu, {family_label}"
+        print(line + (f" · sorguya {previous} eklendi" if injected else ""))
+
+    def context(self, turn_no, object_tr, previous, family_label, chain, repeat):
+        if previous:
+            print(f"↻ {turn_no}. tur · {family_label} konusu sürüyor · " + ", ".join(chain))
+        elif repeat:
+            print(f"↻ {turn_no}. tur · {object_tr} yeniden · yeni kaynaklar")
+        elif turn_no == 1:
+            print(f"↻ Sohbet başladı · {object_tr}")
+        else:
+            print(f"↻ {turn_no}. tur · konu {object_tr} · yeni konu")
 
 
 def run_plain(args, loader, vision, session, storage, storage_note):
@@ -566,14 +610,16 @@ def run_plain(args, loader, vision, session, storage, storage_note):
         except (KeyboardInterrupt, EOFError):
             print("\nGörüşmek üzere!")
             return
-        kind, value = classify_input(raw)
+        source, user_text = split_source_text(raw)
+        kind, value = classify_input(source or raw)
         if kind == "empty":
             continue
         if kind == "quit":
             print("Görüşmek üzere!")
             return
         try:
-            process_turn(kind, value, loader, vision, session, storage, view)
+            process_turn(kind, value, loader, vision, session, storage, view,
+                         user_text=user_text if source else "")
         except KeyboardInterrupt:
             print("İşlemi iptal ettim.")
         except Exception as error:
@@ -598,7 +644,8 @@ def run(args):
     from app.ui import ChatApp
     tools = SimpleNamespace(is_single_source=is_single_source,
                             find_sources=find_sources,
-                            is_unsupported_file=is_unsupported_file)
+                            is_unsupported_file=is_unsupported_file,
+                            split_source_text=split_source_text)
     app = ChatApp(loader, vision, session, storage, process_turn,
                   classify_input, tools, debug=args.debug, storage_note=storage_note)
     farewell = app.run()

@@ -12,7 +12,7 @@ from app.session import SessionContext
 from app.storage import Storage
 from app.vision import VisionModel
 from app import config
-from main import classify_input, find_sources, normalize_schemeless
+from main import classify_input, find_sources, normalize_schemeless, split_source_text
 
 ROLES = {"aile", "alan", "nitelik", "kullanım", "bileşen", "malzeme"}
 
@@ -27,6 +27,12 @@ class InputTest(unittest.TestCase):
         self.assertEqual(normalize_schemeless("www.x.com/a.jpg"), "https://www.x.com/a.jpg")
         self.assertEqual(classify_input("/yok/boyle/bir/dosya.png")[0], "missing_file")
         self.assertEqual(classify_input("ftp://x.com/a.jpg")[0], "bad_scheme")
+
+    def test_source_with_question(self):
+        self.assertEqual(split_source_text("/tmp/a.jpg kalorisi ne kadar"), ("/tmp/a.jpg", "kalorisi ne kadar"))
+        self.assertEqual(split_source_text("https://x.com/a.jpg"), ("", "https://x.com/a.jpg"))
+        self.assertEqual(split_source_text("kalorisi ne kadar"), ("", "kalorisi ne kadar"))
+        self.assertEqual(split_source_text("a.jpg b.png"), ("", "a.jpg b.png"))  # iki kaynak, ayrılmaz
 
     def test_text_and_multi(self):
         self.assertEqual(classify_input("fiyatları ne kadar"), ("text", "fiyatları ne kadar"))
@@ -86,14 +92,26 @@ class VisionRankingTest(unittest.TestCase):
 class SessionTest(unittest.TestCase):
     def test_shared_context_and_window(self):
         session = SessionContext(window=2)
-        session.add_turn("sırt çantası", ["aksesuar", "seyahat"])
-        self.assertEqual(session.shared_context("el çantası", ["moda", "aksesuar"]),
+        session.add_turn("sırt çantası", ["aksesuar", "seyahat"], "ürün")
+        self.assertEqual(session.shared_context("el çantası", ["moda", "aksesuar"], "ürün"),
                          ("sırt çantası", "aksesuar"))
-        self.assertIsNone(session.shared_context("pizza", ["fast food"]))
-        session.add_turn("el çantası", ["moda"])
-        session.add_turn("pizza", ["fast food"])
+        self.assertIsNone(session.shared_context("pizza", ["fast food"], "yemek"))
+        self.assertIsNone(session.shared_context("telefon", ["teknoloji"], "ürün"))  # varsayılan aile yetmez
+        session.add_turn("el çantası", ["moda"], "ürün")
+        session.add_turn("pizza", ["fast food"], "yemek")
         self.assertEqual([e["obje"] for e in session.entries], ["el çantası", "pizza"])
-        self.assertIn("→", session.summary_line())
+
+    def test_family_link_and_chain(self):
+        session = SessionContext()
+        session.add_turn("zürafa", ["hayvan", "doğa"], "canlı")
+        session.add_turn("aslan", ["yaban hayatı"], "canlı")
+        self.assertEqual(session.shared_context("maymun", ["orman"], "canlı"), ("aslan", None))
+        session.add_turn("maymun", ["orman"], "canlı")
+        self.assertEqual(session.chain("canlı"), ["zürafa", "aslan", "maymun"])
+        session.add_turn("keman", ["müzik"], "enstrüman")
+        self.assertEqual(session.turn_count, 4)  # pencere üç tutsa da sayaç dörttür
+        self.assertEqual(session.chain("enstrüman"), ["keman"])
+        self.assertEqual(session.chain("canlı"), [])
 
     def test_memory_of_shown_sources_and_repeats(self):
         session = SessionContext()

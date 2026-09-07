@@ -86,6 +86,8 @@ ekranda gösterilir hem de arama sorgusudur. Obje güveni eşiğin altındaysa
 anahtar kelimeler de güvenilmez sayılır, sorgu yalnız obje adı olur ve
 yalnız tanım bloğu gösterilir.
 Kullanıcı düz metin yazdığında sorgu obje adı ile metnin birleşimidir.
+Görselle birlikte metin yazıldığında da niyet o metinden kurulur, bloklar
+yalnız tanım ve cevap olur, çünkü kullanıcı ne istediğini söylemiştir.
 
 ## 5. Web araması ve paragraf seçimi
 
@@ -148,11 +150,15 @@ beş makine türünü kısa açıklamalarıyla listeledi.
 
 ## 7. Sohbet bağlamı ve hafıza
 
-Son üç turun objesi ve kelimeleri tutulur. Yeni tur önceki bir turla anahtar
-kelime paylaşıyorsa ya da obje adları ortak kelime içeriyorsa iki tur aynı
-konudadır. Önceki objenin adı arama niyetine katılır ve ortak kelime paragraf
-sıralamasında öncelik verir. Kesişim yoksa konu değişmiş sayılır ve eski tur
-aramaya karışmaz.
+Son üç turun objesi, kelimeleri ve ailesi tutulur. Yeni tur önceki bir turla
+anahtar kelime paylaşıyorsa, obje adları ortak kelime içeriyorsa ya da ikisi
+aynı aileye giriyorsa iki tur aynı konudadır. Varsayılan ürün ailesinde aile
+tek başına yetmez, ortak kelime de gerekir, aksi halde çanta ile telefon
+aynı konu sayılırdı. Bağ kurulunca önceki objenin adı arama niyetine
+katılabilir ve ortak kelime paragraf sıralamasında öncelik verir. Ekranda
+kartın başında önceki turla kurulan bağ, giriş alanının altında ise sohbet
+satırı görünür ve aynı ailede kalan ardışık objeleri sıralar. Bağ yoksa
+konu değişmiş sayılır ve eski tur aramaya karışmaz.
 
 Oturum gösterilen kaynak adreslerini hatırlar. Aynı obje ikinci kez geldiğinde
 tanım tekrarlanmaz, daha önce gösterilen sayfalar seçilmez ve bloklar yeni
@@ -169,7 +175,10 @@ satırlık ilerleme durur ve adımı söyler. Kart gövdesi markdown olarak
 üretilir ve aynı metin düz modda basılır ve kayıt dosyasına yazılır. Debug
 açıkken kartın altında katlanır bir ayrıntılar bölümü bulunur, adaylar,
 sorgular ve blok kararları orada listelenir. Kaynaklar ile süre ve kayıt
-numarası kartın alt satırındadır.
+numarası kartın alt satırındadır. Bağlam ekranda görünür. Niyet cümlesine
+önceki turdan giren kelimeler işaretlenir, kartın başında önceki turla
+kurulan bağ ve ortak kelime yazılır, giriş alanının altındaki sohbet
+satırı tur sayısını, konuyu ve bağı özetler.
 
 ## 9. Kayıt
 

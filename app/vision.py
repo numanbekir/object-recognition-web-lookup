@@ -101,7 +101,7 @@ class VisionModel:
         if not weights.exists():
             try:
                 self._download(CLIP_URL, weights,
-                               lambda done, total: report("download", "Görüş modeli (CLIP) indiriliyor", done, total))
+                               lambda done, total: report("download", "CLIP indiriliyor", done, total))
             except Exception:
                 pass  # adres değişmişse kütüphanenin kendi indiricisi devralır
         report("load", "Model yükleniyor")
@@ -112,7 +112,7 @@ class VisionModel:
         if cache.exists():
             features = torch.load(cache)
         else:
-            report("encode", "Dağarcık kodlanıyor (tek seferlik)")
+            report("encode", "Dağarcık kodlanıyor, bir kereye mahsus")
             features = {
                 "objects": self._encode_texts(self.labels, OBJECT_PROMPTS),
                 "themes": self._encode_texts([k.replace("_", " ") for k in self.theme_keys],

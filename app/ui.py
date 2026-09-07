@@ -106,6 +106,7 @@ class TurnCard(Vertical):
     TurnCard #cell_object { width: 40; }
     TurnCard #cell_keywords { width: 52; }
     TurnCard #cell_intent { width: 1fr; border-right: none; }
+    TurnCard .card-context { color: $text-muted; margin-bottom: 1; }
     TurnCard .card-note { color: $warning; }
     TurnCard .card-message { color: $warning; margin-top: 1; }
     TurnCard Markdown { margin: 0; padding: 0; background: transparent; }
@@ -165,7 +166,8 @@ class TurnCard(Vertical):
     def _title_case(text: str) -> str:
         return " ".join(("İ" if w[:1] == "i" else w[:1].upper()) + w[1:] for w in text.split())
 
-    def set_head(self, object_tr, confidence, keywords, intent, note="", confident=True, size=""):
+    def set_head(self, object_tr, confidence, keywords, intent, note="", confident=True, size="",
+                 previous=None):
         title = self._title_case(object_tr) if object_tr else ""
         label = "BULUNAN" if confidence is None or confident else "EN YAKIN TAHMİN"
         right = []
@@ -179,7 +181,7 @@ class TurnCard(Vertical):
             ("#cell_object", label, f"[b]{escape(title)}[/b]" + (f"  [dim]{escape(detail)}[/]" if detail else ""),
              title + (f"  {detail}" if detail else "")),
             ("#cell_keywords", "ANAHTAR KELİMELER", escape(words), words),
-            ("#cell_intent", "ARAŞTIR", f"[i]{escape(intent)}[/i]" if intent else "", intent or ""),
+            ("#cell_intent", "ARAŞTIR", self._highlight(intent, previous) if intent else "", intent or ""),
         ]
         for cell_id, name, markup, plain in cells:
             cell = self.query_one(cell_id, Static)
@@ -187,6 +189,20 @@ class TurnCard(Vertical):
             cell.tooltip = f"{name.capitalize()}, {plain}" if plain else None  # kırpılsa da tam içerik görünür
         if note:
             self.mount(Static(escape(note), classes="card-note"), after=self.query_one("#headbox"))
+        self._scroll()
+
+    @staticmethod
+    def _highlight(intent: str, previous) -> str:
+        """Niyet cümlesinde önceki turdan gelen kelimeler turuncu gösterilir."""
+        marked = {w.lower() for w in (previous or "").split()}
+        words = [f"[orange]{escape(w)}[/]" if w.lower() in marked else escape(w) for w in intent.split()]
+        return "[i]" + " ".join(words) + "[/i]"
+
+    def add_context(self, previous, family_label, injected):
+        text = f"↻ önceki tur [orange]{escape(previous)}[/] ile aynı konu, {escape(family_label)}"
+        if injected:
+            text += f" · sorguya [orange]{escape(previous)}[/] eklendi"
+        self.mount(Static(text, classes="card-context"), after=self.query_one("#headbox"))
         self._scroll()
 
     # gövde yazılıyormuş gibi akar
@@ -290,9 +306,13 @@ class CardView:
         self.app = app
         self.card = card
 
-    def head(self, object_tr, confidence, keywords, intent, note="", confident=True, size=""):
+    def head(self, object_tr, confidence, keywords, intent, note="", confident=True, size="",
+             previous=None):
         self.app.call_from_thread(self.card.set_head, object_tr, confidence, keywords, intent,
-                                  note, confident, size)
+                                  note, confident, size, previous)
+
+    def context_note(self, previous, family_label, injected):
+        self.app.call_from_thread(self.card.add_context, previous, family_label, injected)
 
     def definition(self, markdown):
         self.app.call_from_thread(self.card.stream_body, markdown)
@@ -313,8 +333,9 @@ class CardView:
     def saved(self, turn_no):
         self.app.call_from_thread(self.card.set_stat, "kayit", f"{turn_no}. tur")
 
-    def context(self, line):
-        self.app.call_from_thread(self.app._set_context, line)
+    def context(self, turn_no, object_tr, previous, family_label, chain, repeat):
+        self.app.call_from_thread(self.app._set_context, turn_no, object_tr, previous,
+                                  family_label, chain, repeat)
 
     def finish(self, elapsed):
         self.app.call_from_thread(self.card.finish, elapsed)
@@ -362,9 +383,8 @@ class ChatApp(App):
     }
     #inputrow TextArea:focus { background: transparent; }
     #inputrow TextArea .text-area--cursor-line { background: transparent; }
-    #status { height: 3; margin: 0 2 1 2; }
+    #status { height: 2; margin: 0 2 1 2; }
     #status Static { height: 1; color: $text-muted; }
-    #status Static.warn { color: $warning; }
     """
 
     def __init__(self, loader, vision, session, storage, process_turn,
@@ -383,6 +403,9 @@ class ChatApp(App):
         self._status_base = ""
         self._embed_timer = None
         self._flash_timer = None
+        self._spin_timer = None
+        self._spin_text = ""
+        self._spin_frame = 0
         self._embed_start = 0.0
         self._embed_label = ""
         self._tokenizing = False
@@ -406,7 +429,6 @@ class ChatApp(App):
         with Vertical(id="status"):
             yield Static("", id="status1")
             yield Static("", id="statusctx")
-            yield Static("", id="status2")
 
     def on_mount(self):
         if self.storage_note:
@@ -414,9 +436,9 @@ class ChatApp(App):
         self.query_one("#inbox", SourceInput).focus()
         self.set_busy(True)  # tek bilgi kaynağı durum satırıdır
         if self.vision.is_ready_on_disk():
-            self.status_line(0, "Model yükleniyor...")
+            self.spin("Model yükleniyor")
         else:
-            self.status_line(0, "Model hazırlanıyor (ilk çalıştırma)...")
+            self.spin("İlk çalıştırma, model hazırlanıyor")
         self.load_model()
 
     # belirteç, kaynak metnin içinde yaşar
@@ -487,24 +509,39 @@ class ChatApp(App):
 
     # girdi altındaki durum alanı
 
+    SPINNER = ("⏳", "⌛")
+
+    def spin(self, text: str):
+        # model hazır olana kadar birinci satırda dönen turuncu kum saati
+        self._spin_text = text
+        self._spin_tick()
+        if self._spin_timer is None:
+            self._spin_timer = self.set_interval(0.5, self._spin_tick)
+
+    def _spin_tick(self):
+        self._spin_frame = (self._spin_frame + 1) % len(self.SPINNER)
+        self.status_line(0, f"[orange]{self.SPINNER[self._spin_frame]}[/] {self._spin_text}")
+
+    def stop_spin(self):
+        if self._spin_timer is not None:
+            self._spin_timer.stop()
+            self._spin_timer = None
+
     def status_line(self, slot: int, text: str):
         self.query_one(f"#status{slot + 1}", Static).update(text)
 
-    def status_reset(self, line1: str = "", line2: str = ""):
+    def status_reset(self, line1: str = ""):
         self.status_line(0, line1)
-        self.status_line(1, line2)
 
     def status_flash(self, message: str):
-        # 4 saniye uyarı metni görünür
+        # 4 saniye uyarı görünür, ikon turuncu, vurgular metnin içinde işaretlidir
         if self._flash_timer is not None:
             self._flash_timer.stop()
-        self.query_one("#status1", Static).add_class("warn")
-        self.status_line(0, message)
+        self.status_line(0, f"[orange]⚠[/] {message}")
         self._flash_timer = self.set_timer(4.0, self._end_flash)
 
     def _end_flash(self):
         self._flash_timer = None
-        self.query_one("#status1", Static).remove_class("warn")
         self.status_line(0, self._status_base)
 
     def _load_progress(self, stage, label, done=None, total=None):
@@ -516,8 +553,8 @@ class ChatApp(App):
             self.call_from_thread(self._stop_embed_timer)
         text = label
         if total:
-            text += f" · {done / 1e6:.1f}/{total / 1e6:.1f} MB  %{done * 100 // total}"
-        self.call_from_thread(self.status_line, 0, text)
+            text += f" · [orange]{done / 1e6:.0f} / {total / 1e6:.0f} MB[/]"
+        self.call_from_thread(self.spin, text)
 
     def _stop_embed_timer(self):
         if self._embed_timer is not None:
@@ -534,13 +571,15 @@ class ChatApp(App):
 
     def _tick_embed(self):
         minutes, seconds = divmod(int(time.monotonic() - self._embed_start), 60)
-        self.status_line(0, f"{self._embed_label} · geçen süre {minutes}:{seconds:02d}")
+        self.spin(f"{self._embed_label} · [orange]{minutes}:{seconds:02d}[/]")
 
     def _finish_status(self):
         self._stop_embed_timer()
         self._status_phase = "ready"
-        self._status_base = f"Model hazır, {self.vision.vocab_size} kavram."
+        self.stop_spin()
         themes = len(getattr(self.vision, "theme_keys", []) or [])
+        self._status_base = (f"[green]●[/] Hazır · [orange]{self.vision.vocab_size}[/] obje · "
+                             f"[orange]{themes}[/] tema")
         self.query_one("#title", Static).update(
             "[bold cyan]▌ GÖRÜNTÜLÜ SOHBET[/]\n\n"
             f"[dim]CLIP ViT-B/32 · {self.vision.vocab_size} LVIS obje adı · {themes} tema[/]")
@@ -556,12 +595,13 @@ class ChatApp(App):
         log.mount(line)
         log.scroll_end(animate=False)
 
-    def echo_user(self, kind: str, value: str, raw: str):
+    def echo_user(self, kind: str, value: str, raw: str, user_text: str = ""):
         # işlenen her kaynak, giriş yolundan bağımsız girdi belirteciyle aynı rozetle görünür
+        tail = f"  [i]{escape(user_text)}[/i]" if user_text else ""
         if kind == "url":
-            self.add_line(f"[bold cyan]›[/] [bold]\\[URL][/] · {linkify(value)}", "user")
+            self.add_line(f"[bold cyan]›[/] [bold]\\[URL][/] · {linkify(value)}{tail}", "user")
         elif kind == "path":
-            self.add_line(f"[bold cyan]›[/] [bold]\\[Görsel][/] · {escape(value)}", "user")
+            self.add_line(f"[bold cyan]›[/] [bold]\\[Görsel][/] · {escape(value)}{tail}", "user")
         else:
             self.add_line(f"[bold cyan]›[/] {escape(raw.strip())}", "user")
 
@@ -575,15 +615,23 @@ class ChatApp(App):
         log.scroll_end(animate=False)
         return card
 
-    def _set_context(self, line: str):
-        # input altındaki kalıcı satır iç durumu değil damıtılmış özeti gösterir
-        text = f"↻ {escape(line)}" if line else ""
+    def _set_context(self, turn_no, object_tr, previous, family_label, chain, repeat):
+        # giriş altındaki kalıcı satır sohbetin özetini gösterir, kart o turu
+        n = f"[orange]{turn_no}.[/] tur"
+        if previous:
+            names = ", ".join(f"[orange]{escape(name)}[/]" for name in chain)
+            text = f"↻ {n} · {escape(family_label)} konusu sürüyor · {names}"
+        elif repeat:
+            text = f"↻ {n} · [orange]{escape(object_tr)}[/] yeniden · yeni kaynaklar"
+        elif turn_no == 1:
+            text = f"↻ Sohbet başladı · [orange]{escape(object_tr)}[/]"
+        else:
+            text = f"↻ {n} · konu [orange]{escape(object_tr)}[/] · yeni konu"
         self.query_one("#statusctx", Static).update(text)
 
-    def set_busy(self, busy: bool, note: str = ""):
+    def set_busy(self, busy: bool):
         box = self.query_one("#inbox", SourceInput)
         box.disabled = busy
-        self.status_line(1, note if busy else "")
         if not busy:
             box.focus()
 
@@ -619,17 +667,16 @@ class ChatApp(App):
             return
         sources = self.tools.find_sources(text)
         if sources and self.attached_source:
-            self.status_flash("Aynı anda tek görsel işleyebiliyorum. "
-                              "Önce eldekini gönderir ya da kaldırır mısın?")
+            self.status_flash("Aynı anda [orange]tek görsel[/] analiz edilir, önce eldekini gönder ya da kaldır")
             return
         if len(sources) >= 2:
-            self.status_flash("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel bırakır mısın?")
+            self.status_flash("Birden çok görsel bırakıldı, [orange]tek görsel[/] yeter")
             return
         if self.tools.is_single_source(text):
             self.attach_source(sources[0] if sources else text)
             return
         if self.tools.is_unsupported_file(text):
-            self.status_flash("Bu dosya türünü desteklemiyorum. JPG ya da PNG gibi bir görsel bırakır mısın?")
+            self.status_flash("Bu dosya bir görsel değil, [orange]JPG[/] ya da [orange]PNG[/] bekleniyor")
             return
         box.insert(text)
         box.focus()
@@ -644,22 +691,21 @@ class ChatApp(App):
         raw = box.text
 
         if self.attached_source and self.attached_token in raw:
-            remaining = raw.replace(self.attached_token, "").strip()
-            if remaining:
-                # görsel ve mesaj birleşimi ileride gelecek, sessiz kayıp olmasın
-                self.status_flash("Görselle mesajı birlikte işleme özelliği yakında; "
-                                  "şimdilik görseli tek başına gönderir misin?")
-                return
+            # görselle birlikte yazılan metin o turun sorusu olur
+            user_text = raw.replace(self.attached_token, "").strip()
             source = self.attached_source
             self._drop_attachment()
             self._clear_input(box)
             kind, value = self.classify_input(source)
-            self.echo_user(kind, value, source)
-            self.set_busy(True, "işleniyor...")
-            self.run_turn(kind, value)
+            self.echo_user(kind, value, source, user_text)
+            self.set_busy(True)
+            self.run_turn(kind, value, user_text)
             return
 
-        kind, value = self.classify_input(raw)
+        source, user_text = self.tools.split_source_text(raw)
+        kind, value = self.classify_input(source or raw)
+        if not source:
+            user_text = ""
         if kind == "empty":
             return
         if kind == "quit":
@@ -667,12 +713,12 @@ class ChatApp(App):
             return
         if kind == "multi":
             # girdi silinmez ki kullanıcı fazlalığı çıkarabilsin
-            self.status_flash("Aynı anda tek görsel işleyebiliyorum. Tek bir görsel ya da URL verir misin?")
+            self.status_flash("Metinde iki kaynak var, [orange]tek görsel[/] ya da adres yeter")
             return
         self._clear_input(box)
-        self.echo_user(kind, value, raw)
-        self.set_busy(True, "işleniyor...")
-        self.run_turn(kind, value)
+        self.echo_user(kind, value, raw, user_text)
+        self.set_busy(True)
+        self.run_turn(kind, value, user_text)
 
     def _clear_input(self, box: SourceInput):
         self._tokenizing = True
@@ -681,12 +727,12 @@ class ChatApp(App):
         self._resize_input()
 
     @work(thread=True)
-    def run_turn(self, kind: str, value: str):
+    def run_turn(self, kind: str, value: str, user_text: str = ""):
         start = time.perf_counter()
         view = CardView(self, self.call_from_thread(self.open_card))
         try:
             self.process_turn(kind, value, self.loader, self.vision, self.session,
-                              self.storage, view)
+                              self.storage, view, user_text=user_text)
         except Exception as error:
             # tek turda oluşan sorun uygulamayı kapatmasın
             view.message("Beklenmeyen bir sorun oluştu. Tekrar dener misin?")
