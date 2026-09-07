@@ -10,7 +10,7 @@ from rich.markup import escape
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Collapsible, Markdown, Static, TextArea
 
 URL_PATTERN = re.compile(r"https?://\S+")

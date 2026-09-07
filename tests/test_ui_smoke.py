@@ -5,7 +5,7 @@ import unittest
 
 from textual.widgets import Markdown, Static
 
-from app.ui import ChatApp, TurnCard
+from app.ui import ChatApp
 
 
 class DummyVision:
