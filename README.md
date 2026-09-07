@@ -12,9 +12,11 @@ Python 3.10 ve üzeri gerekir. Uygulama tamamen işlemci üzerinde çalışır.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
+
+Bağımlılık dosyası torch için işlemci sürümünün indeksini içerir, böylece
+kurulum iki yüz megabayt civarında kalır ve ekran kartı sürümü inmez.
 
 İlk komut "ensurepip is not available" hatası verirse sistemde sanal ortam
 paketi eksiktir. Ya python3-venv paketi kurulur ya da virtualenv kullanılır.
