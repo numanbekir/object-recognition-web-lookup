@@ -71,12 +71,43 @@ kümesine ayrıldı.
 Eğitim kodu training klasöründedir. Öznitelik çıkarma scripti görselleri
 kodlayıp tek dosyaya yazar, eğitim scripti sınıflandırıcıyı eğitir. Eğitim
 döngüsü tarafımızdan yazılmıştır. Çapraz entropi kaybı, Adam eniyileyici,
-öğrenme oranı 0.005, ağırlık çürümesi 0.0001, yığın boyutu 128, en fazla
-üç yüz epoch ve doğrulama kaybı on epoch iyileşmezse erken durdurma.
+yığın boyutu 128, en fazla üç yüz epoch ve doğrulama kaybı on epoch
+iyileşmezse erken durdurma.
 
-Sonuçlar aynı doğrulama kümesinde ölçüldü. Eğitilen sınıflandırıcı yüzde 94
-civarı doğruluk verirken sıfır atış aynı kümede yüzde 86 verdi. Sekiz puanlık
-fark, alan verisiyle eğitimin genel modele katkısını gösterir.
+Öğrenme oranı ve ağırlık çürümesi tarama ile seçildi. Tarama scripti dört
+öğrenme oranı ve üç çürüme değerini aynı eğitim ve doğrulama kümesinde
+denedi. Sonuçlar doğrulama doğruluğudur.
+
+| Öğrenme oranı | Çürüme 0 | Çürüme 0.0001 | Çürüme 0.001 |
+|---|---|---|---|
+| 0.001 | 0.955 | 0.935 | 0.806 |
+| 0.005 | 0.954 | 0.936 | 0.803 |
+| 0.01 | 0.953 | 0.935 | 0.806 |
+| 0.02 | 0.953 | 0.934 | 0.792 |
+
+Belirleyici olan ağırlık çürümesidir, öğrenme oranı yalnız yakınsama hızını
+değiştirir. Çürüme arttıkça doğruluk düşer, çünkü giriş vektörleri birim
+uzunluktadır ve sınıfları ayırmak için ağırlıkların büyümesi gerekir.
+
+Doğruluk tek ölçüt değildir. Uygulama sınıflandırıcının görüşünü güvenine
+göre kullanır, bu yüzden güvenlerin anlamlı olması gerekir. Aynı doğrulama
+kümesinde yanlış tahminlerin güveni de ölçüldü.
+
+| Çürüme | Doğruluk | Yanlış tahminde ortalama güven | Yanlış ve güven 0.8 üstü |
+|---|---|---|---|
+| 0 | 0.953 | 0.64 | yüzde 21 |
+| 0.0001 | 0.935 | 0.27 | yüzde 0 |
+| 0.001 | 0.806 | 0.05 | yüzde 0 |
+
+Çürümesiz model eğitim örneklerini ezberler ve yanlış tahminlerinde bile
+yüksek güven verir, yanlışların beşte biri 0.8 üstü güvenle gelir. Böyle bir
+görüş uygulamada sıfır atışın doğru cevabını yanlışla değiştirebilir,
+ölçümde demlik görselini sürahi yaptı. Çürüme 0.0001 iki puan doğruluk
+kaybeder ama yanlış tahminlerde güven düşük kalır ve hiçbiri eşiği geçmez.
+Seçilen değerler öğrenme oranı 0.01 ve çürüme 0.0001. Erken durdurma bu
+ayarda yetmiş epoch civarında devreye girer. Eğitim doğruluğu yüzde 97,
+doğrulama yüzde 93.5, sıfır atış aynı kümede yüzde 86. Yedi puanlık fark,
+alan verisiyle eğitimin genel modele katkısını gösterir.
 
 Uygulamada sınıflandırıcı ikinci görüştür. Sınıfları obje listesindeki
 adlara bir eşleme dosyasıyla bağlanır, 99 sınıfın 57'sinin karşılığı vardır.

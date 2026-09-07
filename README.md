@@ -79,7 +79,11 @@ eğitim çalıştırılır. Veri seti ilk çalıştırmada indirilir.
 ```bash
 python3 training/prepare_features.py
 python3 training/train_probe.py
+python3 training/sweep.py
 ```
+
+Üçüncü komut isteğe bağlıdır, öğrenme oranı ve ağırlık çürümesi için tarama
+tablosu basar.
 
 Testler şu komutla çalışır.
 
