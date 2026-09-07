@@ -121,7 +121,10 @@ bloklardır. Her tur tanım bloğuyla başlar. Arama niyeti obje adından farkl�
 ilgili bloğu gelir. Ardından aileye özgü bloklar gelir. Yemekte tarif ve
 tarihçe, enstrümanda tarihçe ve nasıl çalınır, canlıda özellikleri ve yaşam
 alanı, taşıtta tarihçe ve türleri, diğer ürünlerde çeşitleri ve kullanım
-alanları. Aile, anahtar kelimelerin aile rolündeki kelimelerinden bulunur.
+alanları. Aile, anahtar kelimelerin aile ve alan rolündeki kelimelerinden
+bulunur; havacılık ya da denizcilik gibi alan kelimeleri taşıt ailesini
+işaret eder. Taşıtlarda kullanım kelimesi niyete girmez, çünkü seyahat
+uçakları gibi tamlamalar doğal değildir.
 Şema veri klasöründeki blok dosyasında durur.
 
 Her blok kendi sorgusunu atar, sorgular ikişer paralel gönderilir ve tüm

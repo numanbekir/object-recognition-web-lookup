@@ -34,9 +34,9 @@ class BlockPlanner:
                                    if spec.get("varsayilan"))
 
     def family(self, keywords: list) -> str:
-        """Anahtar kelimelerin aile rolündekilerine bakar, ilk eşleşen şema kazanır."""
+        """Anahtar kelimelerin aile ve alan rolündekilerine bakar, ilk eşleşen şema kazanır."""
         for word in keywords:
-            if self.roles.get(word) == "aile" and word in self.family_of_word:
+            if self.roles.get(word) in ("aile", "alan") and word in self.family_of_word:
                 return self.family_of_word[word]
         return self.default_family
 

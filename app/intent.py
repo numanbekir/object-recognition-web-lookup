@@ -20,6 +20,8 @@ SOFTENING = {"k": "ğ", "p": "b", "t": "d", "ç": "c"}  # ünsüz yumuşaması
 POSSESSIVE_ENDINGS = ("sı", "si", "su", "sü", "ı", "i", "u", "ü")
 MAX_PER_ROLE = 2
 OPPOSITES = (("kadın", "erkek"), ("yaz", "kış"))  # birlikte gelirse ikisi de anlamsızdır
+VEHICLE_WORDS = {"taşıt", "motorlu taşıt", "ticari araç", "toplu taşıma", "havacılık", "denizcilik",
+                 "demiryolu", "otomobil", "ulaşım"}  # taşıtlarda kullanım kelimesi tamlama kurmaz
 FOOD_FAMILIES = {"yemek", "fast food", "atıştırmalık", "aperatif yemek", "yemek tarifi",
                  "hamurlu yemek", "sokak lezzeti", "ev yemeği", "tarif", "tatlı", "fırın ürünü",
                  "et ürünü", "süt ürünü", "sebze", "meyve", "içecek", "şekerleme", "deniz ürünü"}
@@ -126,6 +128,8 @@ class IntentBuilder:
         if by_role.get("bileşen"):
             parts.append(join_list([w + harmony(w, "lı") for w in by_role["bileşen"]]))
         uses = by_role.get("kullanım", [])
+        if any(word in VEHICLE_WORDS for word in keywords):
+            uses = []  # "seyahat uçakları" gibi doğal olmayan tamlamalar üretmemek için
         if uses and " " not in subject:
             # tek kelimeli objede kullanım kelimesi tamlama kurar
             phrase = join_list(uses) + " " + (possessive(subject) if food else plural_possessive(subject))

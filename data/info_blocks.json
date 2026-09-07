@@ -65,7 +65,9 @@
    "enstrüman",
    "müzik aleti",
    "yaylı çalgı",
-   "tuşlu çalgı"
+   "tuşlu çalgı",
+   "müzik",
+   "klasik müzik"
   ],
   "bloklar": [
    {
@@ -168,7 +170,12 @@
    "taşıt",
    "motorlu taşıt",
    "ticari araç",
-   "toplu taşıma"
+   "toplu taşıma",
+   "havacılık",
+   "denizcilik",
+   "demiryolu",
+   "otomobil",
+   "ulaşım"
   ],
   "bloklar": [
    {

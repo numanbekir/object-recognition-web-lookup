@@ -30,11 +30,12 @@ STOPWORDS = {
 NOISE_PATTERNS = ("çerez", "kvkk", "sepet", "giriş yap", "üye ol", "©", "tıkla",
                   "gizlilik politikası", "tüm hakları", "sitemiz", "web sitemiz",
                   # birinci şahıs blog anlatısı bilgi değil deneyimdir
-                  "yollardayım", "kullanıyorum", "eminim", "bence", "benim ", "ben de")
+                  "yollardayım", "kullanıyorum", "eminim", "bence", "benim ", "ben de",
+                  "satın al", "bilet", "sipariş ver")
 # tarif ve soru-cevap sitelerinin bilgi taşımayan kalıp cümleleri kırpılır
 TAIL_PATTERNS = re.compile(
     r"\s*(Peki[;,]?\s[^.!?]*[.!?]|İşte[^.!?]*\.{2,}|Afiyet olsun!?|Hadi [^.!?]*[.!?])\s*$")
-LEAD_PATTERNS = re.compile(r"^(C|Cevap|Soru|S|Sonuç|Özetle|Not)\s*:\s*")
+LEAD_PATTERNS = re.compile(r"^(?:(?:C|Cevap|Soru|S|Sonuç|Özetle|Not)\s*:\s*|[^.!?:]{3,80}\?:\s*)")
 
 
 class Passage:

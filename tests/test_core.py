@@ -144,6 +144,8 @@ class ExtractorTest(unittest.TestCase):
                 "Peki; sandviç nasıl yapılır? İşte tarifi ve malzemeleri... Afiyet olsun!")
         self.assertEqual(ContentExtractor.clean(text),
                          "Sandviç pratik bir yiyecektir ve her öğünde tüketilebilir.")
+        glued = "Cruise Gemisi Nasıl Bir Gemidir?: İçinde konaklama olanağı bulunan gemilerdir."
+        self.assertEqual(ContentExtractor.clean(glued), "İçinde konaklama olanağı bulunan gemilerdir.")
 
     def test_block_hints_and_threshold(self):
         page = SearchResult("x", "https://x.com/a")

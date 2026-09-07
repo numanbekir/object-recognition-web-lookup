@@ -40,7 +40,11 @@ class BlockPlannerTest(unittest.TestCase):
         roles = json.loads(config.WORD_ROLES_PATH.read_text(encoding="utf-8"))
         for name, spec in self.planner.schema.items():
             for word in spec["aileler"]:
-                self.assertEqual(roles.get(word), "aile", f"{word} ({name}) aile rolünde değil")
+                self.assertIn(roles.get(word), ("aile", "alan"), f"{word} ({name}) aile ya da alan rolünde değil")
+
+    def test_vehicles_recognised_by_domain_words(self):
+        self.assertEqual(self.planner.family(["havacılık", "seyahat"]), "taşıt")
+        self.assertEqual(self.planner.family(["denizcilik", "ulaşım"]), "taşıt")
 
 
 if __name__ == "__main__":
