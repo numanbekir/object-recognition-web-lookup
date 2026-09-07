@@ -14,6 +14,16 @@ kelime üretmek ve obje ile kelimelerden anlamlı metin derlemek. İlk ikisi tek
 bir görüş modeliyle, üçüncüsü kendi yazdığım bilgi erişim ve doğal dil
 üretim kurallarıyla çözülür.
 
+Girdi güvenilmez kabul edilir. Adres yalnız http ve https şemalarıyla kabul
+edilir, iç ağ ve yerel makine adreslerine istek atılmaz, yönlendirmeler elle
+izlenir ve her durak aynı denetimden geçer. İndirme akışlı yapılır ve yirmi
+megabaytta kesilir, sunucunun web sayfası döndürmesi ayrı bir mesajla
+bildirilir. Dosya içeriği uzantıya değil gerçek çözümlemeye göre doğrulanır,
+telefon fotoğraflarının yön bilgisi düzeltilir, tüm görüntüler RGB'ye
+çevrilir, çok kareli formatlarda ilk kare alınır. Çok küçük görüntüler
+reddedilir, çok büyükler bellek için küçültülür. Her hata kullanıcıya ne
+yapması gerektiğini söyleyen tek cümlelik bir mesajla döner ve döngü sürer.
+
 ## 2. Obje tespiti
 
 Kullanılan model açık kaynak CLIP ViT-B/32 modelidir. Model yüz milyonlarca
@@ -133,6 +143,20 @@ temanın yüzde on beşinin ve mutlak eşiğin üstündeki temalardan kelime al�
 Her temadan önce bir kelime alınır ki liste tek temaya kilitlenmesin. Objenin
 kendi adı kelime olarak tekrar edilmez. Eşik üçten az kelime bırakırsa
 sıradaki temalardan üçe tamamlanır.
+
+Tema listesi sezgiyle yazılmadı. Obje listesindeki 1200 ismin her birinin
+WordNet üst kavram zincirlerini çıkardım ve her kavramın kaç objenin atası
+olduğunu saydım. Az sayıda kavram objelerin büyük kısmını topluyor, yiyecek
+iki yüz, kap yüz yetmiş iki, giysi doksan yedi objenin atasıdır. Kavramlar bu
+sıralı listeden iki şartla seçildi. Çok objeyi kapsamalı ve arama sorgusuna
+değer katmalı. Listenin tepesindeki cihaz, örtü ve katı madde gibi en geniş
+kavramlar ikinci şartı sağlamadığı için bilinçli olarak dışarıda kaldı, şişe
+açacağı için cihaz kelimesi aramaya bir şey katmaz. Olay ve eylem gibi soyut
+kavramlar fotoğraf dağarcığına yabancı olduğu için elendi. Zinciri yalnız bu
+dışlanan kavramlardan geçen objelere kendi adlarıyla tema girdisi yazıldı.
+Türkçe değerler ders kitabı kategorisi değil arama dilidir, yangın güvenliği
+ve toplu taşıma gibi tek başına aranabilir ifadeler seçildi. Bugünkü
+haritada 153 kavram girdisi ve 331 obje adıyla eşleşen girdi vardır.
 
 Kelimeler görüntüye özgüdür. Aynı obje farklı görsellerde farklı kelimeler
 alabilir, bu da sohbet bağlamının ayırt edici olmasını sağlar.
@@ -277,10 +301,33 @@ niyeti, arama izi, başlıklı bilgi blokları ve her paragrafın kaynağı ile
 turun durumu kaydedilir. Dosya önce geçici
 dosyaya yazılıp atomik taşınır.
 
-## 11. Sınırlılıklar
+## 11. Kütüphane tercihleri
+
+Arama için ddgs kullanılır. Resmi arama servisleri anahtar ve hesap
+gerektirir, bu da tek komutla çalıştırma şartıyla çelişir. Anahtarsız
+çalışan diğer kütüphaneler bot engeline takılıp öngörülemez biçimde kırılır.
+Servisin geçici hataları bir kez yeniden deneme ve Vikipedi yedeğiyle
+karşılanır.
+
+Sayfa gövdesini çıkarmak için trafilatura kullanılır. Gezinme ve reklam
+temizliğinde en isabetli sonucu veren ve aktif bakımda olan kütüphane budur.
+Çıkarımdan sonraki paragraf seçimi, benzerlik hesabı ve yapı çıkarımı kendi
+kodumdur.
+
+Cevap üretiminde dil modeli kullanılmaz. Görev cevapların web sayfası
+içeriğinden gelmesini ister. Servis tabanlı bir model anahtar bağımlılığıyla
+tek komutla çalışmayı bozar, yerel bir model projeyi şişirir ve
+değerlendirilen şeyin bilgi erişim hattı yerine modelin yazı becerisi olmasına
+yol açar.
+
+Kayıt için veritabanı yerine düz json dosyası seçildi. Kurulum gerektirmez,
+tek komutla çalışır, insan gözüyle okunur ve bağlam sürdürmenin veri kaynağı
+olarak aynı şemayı kullanır.
+
+## 12. Sınırlılıklar
 
 Karışık sahnelerde sınıflandırma belirsiz kalır, bu durumda düşük güven
-mesajı verilir. Tema dağarcığı elle derlenmiştir, kapsam dışı bir alanda
+mesajı verilir. Tema haritası kapalı bir listedir, kapsam dışı bir alanda
 kelimeler genel kalabilir. Arama servisi yoğun kullanımda istek sınırlar, bu
 durumda kalan sorgular ve Vikipedi ile devam edilir. Yapılandırılmış çıkarım
 sayfa yapısına bağlıdır, standart dışı sayfalarda düz paragrafa düşülür.
