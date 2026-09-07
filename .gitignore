@@ -7,3 +7,5 @@ __pycache__/
 *.part
 records.json
 records.json.*
+training/data/
+!models/probe.pt

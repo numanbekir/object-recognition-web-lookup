@@ -43,8 +43,9 @@ python3 main.py --plain
 
 1. Görüntü yüklenir, doğrulanır ve modele hazırlanır.
 2. Görüş modeli görüntüyü kodlar, 1200 obje adıyla karşılaştırır ve en yakın adı
-   obje olarak seçer. Aynı vektör 480 tema kavramıyla karşılaştırılır, en güçlü
-   temaların Türkçe karşılıkları anahtar kelime olur.
+   obje olarak seçer. Kendi eğittiğimiz sınıflandırıcı ikinci görüş verir ve
+   sıfır atış emin değilken öne geçer. Aynı vektör 480 tema kavramıyla
+   karşılaştırılır, en güçlü temaların Türkçe karşılıkları anahtar kelime olur.
 3. Obje adı, rol etiketli anahtar kelimeler ve önceki turun bağlamından kural
    tabanlı bir Türkçe arama cümlesi kurulur.
 4. Objenin ailesine göre bilgi blokları planlanır. Her blok kendi sorgusunu atar.
@@ -68,8 +69,17 @@ python3 main.py --plain
 - app/storage.py, kayıt dosyası
 - app/ui.py, terminal arayüzü
 - data klasörü, obje adları, tema haritası, kelime rolleri ve blok şeması
+- training klasörü, sınıflandırıcı eğitimi
 - tests klasörü, birim testleri
 - ornek_kayit.json, görev senaryolarıyla üretilmiş örnek kayıt dosyası
+
+Sınıflandırıcıyı yeniden eğitmek için önce öznitelikler çıkarılır, sonra
+eğitim çalıştırılır. Veri seti ilk çalıştırmada indirilir.
+
+```bash
+python3 training/prepare_features.py
+python3 training/train_probe.py
+```
 
 Testler şu komutla çalışır.
 

@@ -41,6 +41,9 @@ class Prediction:
         self.alternatives = alternatives  # türkçe ad ve güven çiftleri
         self.candidates = list(candidates)  # sıralı ingilizce aday ve skor çiftleri
         self.reconciled_from = None  # uzlaşma kuralı objeyi değiştirdiyse eski türkçe ad
+        self.probe = None  # eğitilmiş sınıflandırıcının türkçe adı ve güveni, varsa
+        self.confirmed = False  # sınıflandırıcı sıfır atışla aynı cevabı verdi
+        self.zero_shot_confidence = confidence  # onaydan önceki güven, temaların güvenilirliği için
 
 
 class Keyword:
@@ -61,6 +64,7 @@ class VisionModel:
         self._preprocess = None
         self._object_features = None
         self._theme_features = None
+        self._probe = None  # kendi eğittiğimiz sınıflandırıcı, varsa ikinci görüş
 
     # hazırlık
 
@@ -122,6 +126,8 @@ class VisionModel:
             torch.save(features, cache)
         self._object_features = features["objects"]
         self._theme_features = features["themes"]
+        if config.PROBE_PATH.exists():
+            self._probe = torch.load(config.PROBE_PATH)
 
     @staticmethod
     def _download(url: str, dest: Path, progress):
@@ -187,16 +193,54 @@ class VisionModel:
         prediction = Prediction(label, name_tr, confidence, alternatives, ranked)
 
         themes_ranked = self.rank(theme_scores, self.theme_keys, len(self.theme_keys))
-        chosen = self.reconcile(ranked, themes_ranked, self.names_tr)
+        probe_label, probe_conf = self.probe_opinion(features)
+        prediction.probe = (self.turkish_name(probe_label), probe_conf) if probe_label else None
+        if probe_label == label and probe_conf >= config.PROBE_MIN_CONFIDENCE:
+            # iki görüş uyuşuyor, bu bir onaydır; güven sınıflandırıcınınki kadar yükselir
+            prediction.confidence = max(confidence, probe_conf)
+            prediction.confirmed = True
+            chosen = None
+        else:
+            chosen = self.merge_opinions(ranked, probe_label, probe_conf) \
+                or self.reconcile(ranked, themes_ranked, self.names_tr)
         if chosen and chosen != label:
             # obje ve tema görüşleri çelişiyor, temalarla uyumlu aday öne alınır
-            score = dict(ranked)[chosen]
+            score = dict(ranked).get(chosen, probe_conf)  # aday değilse sınıflandırıcının güveni
             others = [(self.turkish_name(o), s) for o, s in ranked if o != chosen]
+            probe_info = prediction.probe
             prediction = Prediction(chosen, self.turkish_name(chosen), score, others, ranked)
             prediction.reconciled_from = name_tr
+            prediction.probe = probe_info
         keywords = self.keywords_from_themes(theme_scores, self.theme_keys, self.themes,
                                              prediction.name_tr, config.MAX_KEYWORDS)
         return prediction, keywords
+
+    def probe_opinion(self, features):
+        """Eğitilmiş sınıflandırıcının obje listesindeki karşılığı ve güveni, yoksa boş."""
+        import torch
+        if self._probe is None:
+            return "", 0.0
+        with torch.no_grad():
+            scores = (features @ self._probe["weight"].T + self._probe["bias"]).softmax(dim=-1)
+        index = int(scores.argmax())
+        return self._probe["lvis"][index], float(scores[index])
+
+    @staticmethod
+    def merge_opinions(candidates: list, probe_label: str, probe_conf: float):
+        """Sınıflandırıcı emin ve sıfır atış değilse sınıflandırıcının adayı seçilir.
+
+        Sınıflandırıcı yalnız kendi sınıflarını bilir, obje listesinin tamamını
+        değil. Görüşü ancak obje listesinde karşılığı varsa sayılır. Cevabı sıfır
+        atış adayları arasındaysa iki görüş uyuşuyor demektir ve düşük eşik yeter,
+        değilse tek başına çok emin olmalıdır. Sıfır atış zaten eminse dokunulmaz.
+        """
+        if not probe_label or not candidates:
+            return None
+        if candidates[0][1] >= config.RECONCILE_MAX_CONFIDENCE or candidates[0][0] == probe_label:
+            return None
+        among = any(label == probe_label for label, _ in candidates)
+        threshold = config.PROBE_MIN_CONFIDENCE if among else config.PROBE_SOLO_CONFIDENCE
+        return probe_label if probe_conf >= threshold else None
 
     @staticmethod
     def reconcile(candidates: list, themes_ranked: list, names_tr: dict, top_themes: int = 5):

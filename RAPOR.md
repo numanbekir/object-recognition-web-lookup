@@ -53,7 +53,47 @@ ortalama güven 0.62 oldu. Karışık sahne ve alakasız görsel düşük güven
 eşiğinin altında kalarak emin olamadım mesajı aldı. Alışılmadık bir sosisli
 görseli pide olarak sınıflandı, klasik sosisli görsellerinde güven 0.90 oldu.
 
-## 3. Anahtar kelimeler
+## 3. Kendi eğittiğimiz sınıflandırıcı
+
+Sıfır atış sınıflandırmanın yanına kendi eğittiğimiz küçük bir model eklendi.
+Model, CLIP görüntü kodlayıcısının ürettiği 512 boyutlu birim vektörü girdi
+alan tek katmanlı doğrusal bir sınıflandırıcıdır. Görüntü kodlayıcı donmuş
+tutulur, yalnız bu katman eğitilir. İşlemci üzerinde dakikalar içinde
+eğitilebilen ve sıfır atıştan iyi sonuç veren tek makul seçenek budur,
+sıfırdan bir evrişimli ağ günlerce sürer ve daha kötü kalır.
+
+Veri seti Caltech-101'dir. Yüz bir nesne sınıfı ve yaklaşık dokuz bin görsel
+içerir, torchvision üzerinden indirilir. Yüz ve arka plan sınıfları çıkarıldı,
+sınıflar dengesiz olduğu için her sınıftan en fazla altmış görsel alındı.
+Toplam 5173 görsel ve 99 sınıf kaldı. Her sınıftan yüzde yirmi doğrulama
+kümesine ayrıldı.
+
+Eğitim kodu training klasöründedir. Öznitelik çıkarma scripti görselleri
+kodlayıp tek dosyaya yazar, eğitim scripti sınıflandırıcıyı eğitir. Eğitim
+döngüsü tarafımızdan yazılmıştır. Çapraz entropi kaybı, Adam eniyileyici,
+öğrenme oranı 0.005, ağırlık çürümesi 0.0001, yığın boyutu 128, en fazla
+üç yüz epoch ve doğrulama kaybı on epoch iyileşmezse erken durdurma.
+
+Sonuçlar aynı doğrulama kümesinde ölçüldü. Eğitilen sınıflandırıcı yüzde 94
+civarı doğruluk verirken sıfır atış aynı kümede yüzde 86 verdi. Sekiz puanlık
+fark, alan verisiyle eğitimin genel modele katkısını gösterir.
+
+Uygulamada sınıflandırıcı ikinci görüştür. Sınıfları obje listesindeki
+adlara bir eşleme dosyasıyla bağlanır, 99 sınıfın 57'sinin karşılığı vardır.
+Sıfır atış emin değilse sınıflandırıcının cevabına bakılır. Cevap sıfır
+atışın adayları arasındaysa iki görüş uyuşuyor demektir ve 0.5 güven yeter,
+aday değilse tek başına 0.8 güven gerekir. Ölçümde bu iki eşik, telefon
+görselinde doğru cevabı seçerken demlik görselinde yanlış sürahi cevabını
+geçirmedi. Sıfır atış eminse dokunulmaz, böylece 1200 isimlik kapsam
+korunur. İki görüş aynı cevabı veriyorsa bu bir onaydır, güven
+sınıflandırıcının güvenine yükselir ve tema uzlaşma kuralı çalışmaz. Hangi görüşün seçildiği
+kayda ve ayrıntılara yazılır.
+
+Sınırlılık. Caltech sınıfları görev senaryolarındaki objelerin bir kısmını
+kapsar, gerisinde sınıflandırıcının görüşü olmaz. Model dosyası küçüktür ve
+teslimle birlikte gelir, veri seti gelmez, eğitim scripti yeniden indirir.
+
+## 4. Anahtar kelimeler
 
 Görev tanımındaki görüntüden öznitelik çıkarıp önceden belirlenmiş
 özniteliklerle karşılaştırma yaklaşımı uygulanır. Tema haritası dosyasında
@@ -67,7 +107,7 @@ sıradaki temalardan üçe tamamlanır.
 Kelimeler görüntüye özgüdür. Aynı obje farklı görsellerde farklı kelimeler
 alabilir, bu da sohbet bağlamının ayırt edici olmasını sağlar.
 
-## 4. Arama niyeti
+## 5. Arama niyeti
 
 Obje adı, anahtar kelimeler ve bağlamdan kural tabanlı doğal dil üretimiyle
 Türkçe bir arama cümlesi kurulur. Her anahtar kelimenin kelime rolleri
@@ -89,7 +129,7 @@ Kullanıcı düz metin yazdığında sorgu obje adı ile metnin birleşimidir.
 Görselle birlikte metin yazıldığında da niyet o metinden kurulur, bloklar
 yalnız tanım ve cevap olur, çünkü kullanıcı ne istediğini söylemiştir.
 
-## 5. Web araması ve paragraf seçimi
+## 6. Web araması ve paragraf seçimi
 
 Vikipedi için önce tam başlıkla sayfa istenir, bulunamazsa arama yapılır.
 Anlam ayrımı sayfaları ve objeden söz etmeyen sayfalar atlanır. Giriş tek
@@ -114,7 +154,7 @@ hazır kütüphane kullanılmadan yazılmıştır. Türkçe ekleri hoş görmek 
 kelimelerin ilk beş harfi kök olarak kullanılır. Kaynak başına bir paragraf
 alınır, Jaccard benzerliği yüksek tekrarlar elenir.
 
-## 6. Bilgi blokları
+## 7. Bilgi blokları
 
 Çıktı düz bir paragraf listesi değil, objenin ailesine göre başlıklı
 bloklardır. Her tur tanım bloğuyla başlar. Arama niyeti obje adından farklıysa
@@ -151,7 +191,7 @@ metin olarak sunulur. Ölçümde sosisli için tarif bloğu on maddelik malzeme
 listesi ve altı adımlık yapılış verdi. Fotoğraf makinesi için çeşitleri bloğu
 beş makine türünü kısa açıklamalarıyla listeledi.
 
-## 7. Sohbet bağlamı ve hafıza
+## 8. Sohbet bağlamı ve hafıza
 
 Son üç turun objesi, kelimeleri ve ailesi tutulur. Yeni tur önceki bir turla
 anahtar kelime paylaşıyorsa, obje adları ortak kelime içeriyorsa ya da ikisi
@@ -168,7 +208,7 @@ tanım tekrarlanmaz, daha önce gösterilen sayfalar seçilmez ve bloklar yeni
 kaynaklarla dolar. Hiç yeni kaynak kalmazsa önceki kaynaklara dönülür ve bu
 kullanıcıya söylenir.
 
-## 8. Arayüz
+## 9. Arayüz
 
 Terminal arayüzü her turu tek bir kart olarak gösterir. Kart girdiden hemen
 sonra açılır ve kademeli dolar. Obje adı, güven, anahtar kelimeler ve arama
@@ -183,14 +223,14 @@ numarası kartın alt satırındadır. Bağlam ekranda görünür. Niyet cümles
 kurulan bağ ve ortak kelime yazılır, giriş alanının altındaki sohbet
 satırı tur sayısını, konuyu ve bağı özetler.
 
-## 9. Kayıt
+## 10. Kayıt
 
 Her tur kayıt dosyasında oturum bloğu altına yazılır. Girdi, obje ve güven,
 anahtar kelimeler, bağlam, arama niyeti, arama izi, başlıklı bilgi blokları
 ve her paragrafın kaynağı ile turun durumu kaydedilir. Dosya önce geçici
 dosyaya yazılıp atomik taşınır.
 
-## 10. Sınırlılıklar
+## 11. Sınırlılıklar
 
 Karışık sahnelerde sınıflandırma belirsiz kalır, bu durumda düşük güven
 mesajı verilir. Tema dağarcığı elle derlenmiştir, kapsam dışı bir alanda

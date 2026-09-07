@@ -445,6 +445,11 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
     prediction, keywords = vision.analyze(image)
     object_tr = prediction.name_tr
     view.detail("adaylar", "; ".join(f"{vision.turkish_name(l)} {s:.2f}" for l, s in prediction.candidates))
+    if prediction.probe:
+        view.detail("sınıflandırıcı", f"{prediction.probe[0]} {prediction.probe[1]:.2f}"
+                    + (" · sıfır atışı onayladı" if prediction.confirmed else ""))
+        record["siniflandirici"] = {"ad_tr": prediction.probe[0], "guven": round(prediction.probe[1], 2),
+                                    "onay": prediction.confirmed}
     if prediction.reconciled_from:
         view.detail("uzlaşma", f"{prediction.reconciled_from} yerine temalarla uyumlu aday, {object_tr}")
         record["uzlasma"] = {"onceki_obje": prediction.reconciled_from}
@@ -470,9 +475,11 @@ def process_turn(kind: str, value: str, loader: ImageLoader, vision: VisionModel
 
     # arama niyeti, kullanıcı ne istediğini yazdıysa niyet odur, objeden emin değilsek
     # kelimeler sorguya girmez
+    # temalar sıfır atışın görüşüdür, sınıflandırıcı onayı onları güvenilir kılmaz
+    words_reliable = prediction.zero_shot_confidence >= config.MIN_CONFIDENCE
     if user_text:
         query = WebSearcher.build_query(object_tr, user_text=user_text)
-    elif confident:
+    elif confident and words_reliable:
         query = intent.build(object_tr, words, previous)
     else:
         query = object_tr

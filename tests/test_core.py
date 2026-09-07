@@ -62,6 +62,15 @@ class VisionRankingTest(unittest.TestCase):
         self.assertEqual(VisionModel.rank([0.1, 0.7, 0.2], ["a", "b", "c"], 2),
                          [("b", 0.7), ("c", 0.2)])
 
+    def test_merge_opinions(self):
+        unsure = [("sweatshirt", 0.40), ("shoe", 0.30)]
+        self.assertEqual(VisionModel.merge_opinions(unsure, "shoe", 0.55), "shoe")  # adaylarda, düşük eşik
+        self.assertIsNone(VisionModel.merge_opinions(unsure, "shoe", 0.4))  # sınıflandırıcı emin değil
+        self.assertIsNone(VisionModel.merge_opinions(unsure, "pitcher", 0.7))  # aday değil, yüksek eşik
+        self.assertEqual(VisionModel.merge_opinions(unsure, "pitcher", 0.9), "pitcher")
+        self.assertIsNone(VisionModel.merge_opinions([("shoe", 0.8)], "boot", 0.9))  # sıfır atış emin
+        self.assertIsNone(VisionModel.merge_opinions(unsure, "", 0.9))  # obje listesinde karşılığı yok
+
     def test_reconcile_picks_theme_backed_candidate_when_unsure(self):
         names = {"sweatshirt": "spor giyim", "shoe": "ayakkabı", "trousers": "pantolon"}
         candidates = [("sweatshirt", 0.47), ("shoe", 0.30), ("trousers", 0.05)]
