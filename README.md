@@ -27,6 +27,7 @@ python3 main.py
 ```
 
 Görsel adresi ya da dosya yolu girilir, dosyayı terminale sürüklemek de çalışır.
+Görselin yanına bir soru yazılırsa o turun araması soruya göre kurulur.
 Görsel analizinden sonra düz metin yazılırsa aynı obje bağlamında yeni arama
 yapılır. Çıkmak için q yazılır.
 

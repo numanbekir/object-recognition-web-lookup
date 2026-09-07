@@ -125,13 +125,6 @@ def pick_list(lists: list, label_hints: tuple, max_items: int) -> dict:
     return None
 
 
-def pick_sections(sections: list, anchor_stems: list, limit: int) -> list:
-    """Obje kökünü içeren başlıkları önceliklendirir, asgari başlık sayısını ister."""
-    related = [s for s in sections if any(stem in s["baslik"].lower() for stem in anchor_stems)]
-    chosen = related if len(related) >= MIN_HEADINGS else sections
-    return chosen[:limit] if len(chosen) >= MIN_HEADINGS else []
-
-
 STEP_HINTS = ("yapılış", "yapılışı", "hazırlan", "nasıl yapılır", "tarifi", "adım")
 
 
