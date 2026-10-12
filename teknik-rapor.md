@@ -9,7 +9,7 @@ anahtar kelimeler üretir, web üzerinden objeyle ilgili bilgi derler ve bunlar�
 kaydeder. Akış kullanıcı çıkana kadar sürer ve önceki turlar sonraki aramaları
 etkiler.
 
-Görev üç alt probleme ayrılır. Görüntüden obje adı çıkarmak, objeden anahtar
+Problem üç alt parçaya ayrılır. Görüntüden obje adı çıkarmak, objeden anahtar
 kelime üretmek ve obje ile kelimelerden anlamlı metin derlemek. İlk ikisi tek
 bir görüş modeliyle, üçüncüsü kendi yazdığım bilgi erişim ve doğal dil
 üretim kurallarıyla çözülür.
@@ -44,7 +44,7 @@ kümeli YOLO11n modeli seksen sınıfla sınırlıdır, kapsam dışı objede se
 kalır ya da en yakın sınıfa zorlar. Ölçümde keman görselini makas olarak
 sınıfladı. Açık dağarcıklı YOLO-World modeli isim listesi büyüdükçe skor
 seyrelmesi yaşar, aynı objeyi yirmi isimli listede bulurken bin isimli
-listede bulamadı. Ayrıca bu görev konum bilgisi istemez, görselde ön plana
+listede bulamadı. Ayrıca burada konum bilgisi gerekmez, görselde ön plana
 çıkan tek obje olduğu varsayılır. CLIP binlerce isim arasında ayrım yapabilir,
 aynı öznitelik vektörü hem obje adını hem temaları verir ve işlemci üzerinde
 görüntü başına elli milisaniyede çalışır.
@@ -56,8 +56,8 @@ güveni 0.5 altındaysa ve en güçlü temalardan birinin adı obje listesinde d
 bulunuyorsa ve bu ad obje adayları arasındaysa, o aday obje olarak seçilir.
 Güven yüksekken kural çalışmaz.
 
-Ölçüm on dört görsellik bir test setiyle yapıldı. Sette görev
-senaryolarındaki yedi obje ile keman, fotoğraf makinesi, demlik, karışık bir
+Ölçüm on dört görsellik bir test setiyle yapıldı. Sette gündelik
+yedi obje ile keman, fotoğraf makinesi, demlik, karışık bir
 sahne ve alakasız bir görsel vardır. Ön planda tek obje olan on iki görselin
 on biri doğru bulundu. Karışık sahne ve alakasız görsel düşük güven eşiğinin
 altında kalarak emin olamadım mesajı aldı.
@@ -129,14 +129,14 @@ korunur. İki görüş aynı cevabı veriyorsa bu bir onaydır, güven
 sınıflandırıcının güvenine yükselir ve tema uzlaşma kuralı çalışmaz. Hangi
 görüşün seçildiği kayda ve ayrıntılara yazılır.
 
-Sınırlılık. Caltech sınıfları görev senaryolarındaki objelerin bir kısmını
+Sınırlılık. Caltech sınıfları test setindeki objelerin bir kısmını
 kapsar, gerisinde sınıflandırıcının görüşü olmaz. Model dosyası küçüktür ve
-teslimle birlikte gelir, veri seti gelmez, eğitim scripti yeniden indirir.
+depoyla birlikte gelir, veri seti gelmez, eğitim scripti yeniden indirir.
 
 ## 4. Anahtar kelimeler
 
-Görev tanımındaki görüntüden öznitelik çıkarıp önceden belirlenmiş
-özniteliklerle karşılaştırma yaklaşımı uygulanır. Tema haritası dosyasında
+Görüntüden öznitelik çıkarıp önceden belirlenmiş özniteliklerle
+karşılaştırma yaklaşımı uygulanır. Tema haritası dosyasında
 484 tema kavramı bulunur. Her kavramın İngilizce bir adı ve Türkçe anahtar
 kelimeleri vardır. Görüntü vektörü bu temalarla karşılaştırılır. En iyi
 temanın yüzde on beşinin ve mutlak eşiğin üstündeki temalardan kelime alınır.
@@ -314,11 +314,10 @@ temizliğinde en isabetli sonucu veren ve aktif bakımda olan kütüphane budur.
 Çıkarımdan sonraki paragraf seçimi, benzerlik hesabı ve yapı çıkarımı kendi
 kodumdur.
 
-Cevap üretiminde dil modeli kullanılmaz. Görev cevapların web sayfası
-içeriğinden gelmesini ister. Servis tabanlı bir model anahtar bağımlılığıyla
+Cevap üretiminde dil modeli kullanılmaz. Cevapların web sayfası
+içeriğinden gelmesi hedeflenir. Servis tabanlı bir model anahtar bağımlılığıyla
 tek komutla çalışmayı bozar, yerel bir model projeyi şişirir ve
-değerlendirilen şeyin bilgi erişim hattı yerine modelin yazı becerisi olmasına
-yol açar.
+işin ağırlığını bilgi erişim hattından modelin yazı becerisine kaydırır.
 
 Kayıt için veritabanı yerine düz json dosyası seçildi. Kurulum gerektirmez,
 tek komutla çalışır, insan gözüyle okunur ve bağlam sürdürmenin veri kaynağı
