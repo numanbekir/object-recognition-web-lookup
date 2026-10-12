@@ -5,6 +5,8 @@ objeyi tanır, objeye uygun anahtar kelimeler çıkarır, web üzerinde arama ya
 objeyle ilgili bilgileri başlıklı bloklar halinde sunar. Her tur kayıt dosyasına
 yazılır ve sohbet bağlamı oturum boyunca sürdürülür.
 
+![Keman görseliyle yapılmış bir tur](ekran-goruntusu.png)
+
 ## Kurulum
 
 Python 3.10 ve üzeri gerekir. Uygulama tamamen işlemci üzerinde çalışır.
