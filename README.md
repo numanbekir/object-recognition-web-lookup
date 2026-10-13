@@ -1,4 +1,4 @@
-# Görüntülü Sohbet Uygulaması
+# Object Recognition and Web Lookup
 
 Kullanıcının verdiği adresteki ya da yerel dosyadaki görüntünün ön planındaki
 objeyi tanır, objeye uygun anahtar kelimeler çıkarır, web üzerinde arama yapıp
