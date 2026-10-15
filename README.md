@@ -1,15 +1,21 @@
 # Object Recognition and Web Lookup
 
-Kullanıcının verdiği adresteki ya da yerel dosyadaki görüntünün ön planındaki
-objeyi tanır, objeye uygun anahtar kelimeler çıkarır, web üzerinde arama yapıp
-objeyle ilgili bilgileri başlıklı bloklar halinde sunar. Her tur kayıt dosyasına
-yazılır ve sohbet bağlamı oturum boyunca sürdürülür.
+[Türkçe](README.tr.md)
 
-![Keman görseliyle yapılmış bir tur](ekran-goruntusu.png)
+Recognizes the main object in an image given as a URL or a local file, picks
+keywords that fit the object, searches the web and presents what it finds as
+titled blocks with sources. Every turn is written to a record file, and the
+chat context is kept for the whole session.
 
-## Kurulum
+The interface and the collected information are in Turkish.
 
-Python 3.10 ve üzeri gerekir. Uygulama tamamen işlemci üzerinde çalışır.
+![A turn with a violin photo](demo.png)
+
+Violin photo: "Old violin.jpg", Frinck51, CC BY-SA 3.0, Wikimedia Commons.
+
+## Installation
+
+Requires Python 3.10 or later. The application runs entirely on the CPU.
 
 ```bash
 python3 -m venv .venv
@@ -17,84 +23,86 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Bağımlılık dosyası torch için işlemci sürümünün indeksini içerir, böylece
-kurulum iki yüz megabayt civarında kalır ve ekran kartı sürümü inmez.
+The requirements file points to the CPU build of torch, so the install stays
+around two hundred megabytes and the GPU build is not downloaded.
 
-İlk komut "ensurepip is not available" hatası verirse sistemde sanal ortam
-paketi eksiktir. Ya python3-venv paketi kurulur ya da virtualenv kullanılır.
+If the first command fails with "ensurepip is not available", the system is
+missing the venv package. Either install python3-venv or use virtualenv.
 
 ```bash
 pip install --user virtualenv
 virtualenv .venv
 ```
 
-Görüş modelinin ağırlığı ilk çalıştırmada bir kereye mahsus indirilir, ardından
-dağarcık kodlanıp models klasörüne önbelleklenir. İlk açılış bağlantı hızına
-göre birkaç dakika sürer, sonraki açılışlar birkaç saniyedir. Kütüphane
-uyarıları app.log dosyasına yazılır.
+The vision model weights are downloaded once on the first run, then the
+vocabulary is encoded and cached in the models folder. The first start takes a
+few minutes depending on the connection, later starts take a few seconds.
+Library warnings are written to app.log.
 
-## Kullanım
+## Usage
 
 ```bash
 python3 main.py
 ```
 
-Görsel adresi ya da dosya yolu girilir, dosyayı terminale sürüklemek de çalışır.
-Görselin yanına bir soru yazılırsa o turun araması soruya göre kurulur.
-Görsel analizinden sonra düz metin yazılırsa aynı obje bağlamında yeni arama
-yapılır. Çıkmak için q yazılır ya da ctrl+c basılır.
+Enter an image URL or a file path. Dragging the file into the terminal also
+works. If a question is written next to the image, the search for that turn is
+built from the question. Plain text written after an image analysis starts a
+new search about the same object. Type q or press ctrl+c to quit.
 
-ornek-gorseller klasöründe denemek için serbest lisanslı görseller vardır, dosya
-yolunu vermek ya da dosyayı pencereye sürüklemek yeter. Görsellerin kaynak ve
-lisans bilgileri aynı klasördeki gorsel-kaynaklari.md dosyasındadır. ornek-kayit.json
-bu görsellerle yapılmış bir oturumun kaydıdır.
+The ornek-gorseller folder has freely licensed images to try. Give the file
+path or drag the file into the window. Sources and licenses of the images are
+in gorsel-kaynaklari.md in the same folder. ornek-kayit.json is the record of
+a session run with these images.
 
-Debug seçeneği her adımın kararlarını gösterir, plain seçeneği terminal arayüzü
-yerine düz satır modunu açar.
+The debug option shows the decisions of each step, the plain option replaces
+the terminal interface with plain line output.
 
 ```bash
 python3 main.py --debug
 python3 main.py --plain
 ```
 
-## Nasıl çalışır
+## How it works
 
-1. Görüntü yüklenir, doğrulanır ve modele hazırlanır.
-2. Görüş modeli görüntüyü kodlar, 1200 obje adıyla karşılaştırır ve en yakın adı
-   obje olarak seçer. Kendi eğittiğim sınıflandırıcı ikinci görüş verir ve
-   sıfır atış emin değilken öne geçer. Aynı vektör 484 tema kavramıyla
-   karşılaştırılır, en güçlü temaların Türkçe karşılıkları anahtar kelime olur.
-3. Obje adı, rol etiketli anahtar kelimeler ve önceki turun bağlamından kural
-   tabanlı bir Türkçe arama cümlesi kurulur.
-4. Objenin ailesine göre bilgi blokları planlanır. Her blok kendi sorgusunu atar.
-   Tarif blokları sayfanın yapısından malzeme ve adım listesi, çeşit blokları alt
-   başlık listesi çıkarır. Diğer bloklar Vikipedi bölümünden ya da tf-idf ile
-   seçilmiş paragraftan dolar.
-5. Bloklar başlıklı ve numaralı kaynaklı tek metin olarak gösterilir ve kayıt
-   dosyasına yazılır. Oturum, gösterilen kaynakları hatırlar.
+1. The image is loaded, validated and prepared for the model.
+2. The vision model encodes the image, compares it with 1200 object names and
+   picks the closest name as the object. A classifier I trained gives a second
+   opinion and takes over when the zero-shot result is not confident. The same
+   vector is compared with 484 theme concepts, and the Turkish terms of the
+   strongest themes become the keywords.
+3. A rule-based Turkish search sentence is built from the object name, the
+   keywords tagged with their roles and the context of the previous turn.
+4. Information blocks are planned based on the object's family. Each block
+   runs its own query. Recipe blocks extract ingredient and step lists from
+   the page structure, variety blocks extract subheading lists. Other blocks
+   are filled from a Wikipedia section or a paragraph selected with tf-idf.
+5. The blocks are shown as one text with headings and numbered sources and
+   are written to the record file. The session remembers the sources it has
+   shown.
 
-## Dosyalar
+## Files
 
-- main.py, girdi ayrıştırma ve tur akışı
-- app/image_loader.py, görüntü okuma ve doğrulama
-- app/vision.py, görüş modeliyle obje ve tema çıkarımı
-- app/intent.py, anahtar kelimelerden Türkçe arama niyeti üretimi
-- app/blocks.py, objenin ailesine göre bilgi bloklarını planlama
-- app/structure.py, sayfa yapısından liste, adım ve alt başlık çıkarımı
-- app/search.py, Vikipedi ve arama motoru sorguları
-- app/extractor.py, sayfa indirme ve paragraf seçimi
-- app/session.py, sohbet bağlamı ve hafıza
-- app/storage.py, kayıt dosyası
-- app/ui.py, terminal arayüzü
-- app/render.py, blokların markdown metnine çevrilmesi
-- data klasörü, obje adları, tema haritası, kelime rolleri ve blok şeması
-- training klasörü, sınıflandırıcı eğitimi
-- tests klasörü, birim testleri
-- ornek-gorseller klasörü, deneme görselleri ve kaynak bilgileri
-- ornek-kayit.json, örnek görsellerle üretilmiş kayıt dosyası
+- main.py, input parsing and turn flow
+- app/image_loader.py, image loading and validation
+- app/vision.py, object and theme extraction with the vision model
+- app/intent.py, Turkish search intent from keywords
+- app/blocks.py, planning information blocks by object family
+- app/structure.py, extracting lists, steps and subheadings from page structure
+- app/search.py, Wikipedia and search engine queries
+- app/extractor.py, page download and paragraph selection
+- app/session.py, chat context and memory
+- app/storage.py, record file
+- app/ui.py, terminal interface
+- app/render.py, converting blocks to markdown text
+- data folder, object names, theme map, word roles and block schema
+- training folder, classifier training
+- tests folder, unit tests
+- ornek-gorseller folder, sample images and their sources
+- ornek-kayit.json, record file produced with the sample images
 
-Sınıflandırıcıyı yeniden eğitmek için önce öznitelikler çıkarılır, sonra
-eğitim çalıştırılır. Veri seti ilk çalıştırmada indirilir.
+To retrain the classifier, extract the features first, then run the training.
+The dataset is downloaded on the first run.
 
 ```bash
 python3 training/prepare_features.py
@@ -102,19 +110,20 @@ python3 training/train_probe.py
 python3 training/sweep.py
 ```
 
-Üçüncü komut isteğe bağlıdır, öğrenme oranı ve ağırlık çürümesi için tarama
-tablosu basar.
+The third command is optional. It prints a sweep table for learning rate and
+weight decay.
 
-Testler şu komutla çalışır.
+Run the tests with this command.
 
 ```bash
 python3 -m unittest discover -s tests -t .
 ```
 
-Uygulama Linux, macOS ve Windows üzerinde çalışır. Windows'ta python3 yerine
-python komutu kullanılır ve sanal ortam etkinleştirme komutu
-.venv\Scripts\activate biçimindedir. Windows'ta arayüzün düzgün görünmesi
-için eski komut istemi yerine Windows Terminal uygulaması kullanılmalıdır,
-düz mod her ikisinde çalışır.
+The application runs on Linux, macOS and Windows. On Windows, use python
+instead of python3, and activate the virtual environment with
+.venv\Scripts\activate. On Windows, use the Windows Terminal app instead of
+the old command prompt for the interface to display correctly. Plain mode
+works in both.
 
-Model tercihi gerekçeleri ve teknik ayrıntılar teknik-rapor.md dosyasındadır.
+The reasons behind the model choice and the technical details are in
+technical-report.md. The Turkish version is teknik-rapor.md.
