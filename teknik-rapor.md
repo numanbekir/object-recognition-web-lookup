@@ -201,14 +201,16 @@ kez daha denenir.
 Sayfaların ana metni çıkarılır ve paragraflara bölünür. Paragraf yüz elli ile
 dokuz yüz karakter arasında olmalı, nokta ile bitmeli, Türkçe bağlaç içermeli,
 objeden söz etmeli ve site kalıntısı taşımamalıdır. Tarif ve soru cevap
-sitelerinin bilgi taşımayan kalıp cümleleri paragraftan kırpılır. Adaylar obje
-adı ve anahtar kelimelerden kurulan sorguya tf-idf kosinüs benzerliğiyle
-sıralanır. Terim sıklığı, kökün paragraftaki sayısının paragraftaki toplam kök
-sayısına oranıdır. Ters belge sıklığı, aday sayısı artı birin kökü içeren
-paragraf sayısı artı bire oranının doğal logaritması artı birdir. Bu hesap
-hazır kütüphane kullanılmadan yazılmıştır. Türkçe ekleri hoş görmek için
-kelimelerin ilk beş harfi kök olarak kullanılır. Kaynak başına bir paragraf
-alınır, Jaccard benzerliği yüksek tekrarlar elenir.
+sitelerinin bilgi taşımayan kalıp cümleleri paragraftan kırpılır. Yazının
+kendisinden söz eden ya da okura söz veren paragraflar, bu yazıda diye
+başlayan ya da sayfa başlığındaki soruya atıf yapan blog giriş ve kapanışları
+gibi, tümüyle elenir. Adaylar obje adı ve anahtar kelimelerden kurulan sorguya
+tf-idf kosinüs benzerliğiyle sıralanır. Terim sıklığı, kökün paragraftaki
+sayısının paragraftaki toplam kök sayısına oranıdır. Ters belge sıklığı, aday
+sayısı artı birin kökü içeren paragraf sayısı artı bire oranının doğal
+logaritması artı birdir. Bu hesap hazır kütüphane kullanılmadan yazılmıştır.
+Türkçe ekleri hoş görmek için kelimelerin ilk beş harfi kök olarak kullanılır.
+Kaynak başına bir paragraf alınır, Jaccard benzerliği yüksek tekrarlar elenir.
 
 ## 7. Bilgi blokları
 

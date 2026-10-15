@@ -222,15 +222,18 @@ The main text of the pages is extracted and split into paragraphs. A paragraph
 must be between one hundred fifty and nine hundred characters, end with a
 period, contain Turkish conjunctions, mention the object and carry no site
 leftovers. Boilerplate sentences on recipe and Q&A sites that carry no
-information are trimmed from the paragraph. Candidates are ranked by tf-idf
-cosine similarity to a query built from the object name and the keywords. Term
-frequency is the count of a stem in the paragraph divided by the total number
-of stems in the paragraph. Inverse document frequency is the natural logarithm
-of the number of candidates plus one, divided by the number of paragraphs that
-contain the stem plus one, plus one. This calculation was written without a
-ready-made library. To tolerate Turkish suffixes, the first five letters of a
-word are used as its stem. One paragraph is taken per source, and duplicates
-with high Jaccard similarity are removed.
+information are trimmed from the paragraph. Paragraphs that talk about the
+article itself or make promises to the reader, such as blog intros and outros
+that start with "in this article" or refer back to the question in the page
+title, are dropped entirely. Candidates are ranked by tf-idf cosine similarity
+to a query built from the object name and the keywords. Term frequency is the
+count of a stem in the paragraph divided by the total number of stems in the
+paragraph. Inverse document frequency is the natural logarithm of the number
+of candidates plus one, divided by the number of paragraphs that contain the
+stem plus one, plus one. This calculation was written without a ready-made
+library. To tolerate Turkish suffixes, the first five letters of a word are
+used as its stem. One paragraph is taken per source, and duplicates with high
+Jaccard similarity are removed.
 
 ## 7. Information blocks
 

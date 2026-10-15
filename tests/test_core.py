@@ -165,6 +165,20 @@ class ExtractorTest(unittest.TestCase):
         glued = "Cruise Gemisi Nasıl Bir Gemidir?: İçinde konaklama olanağı bulunan gemilerdir."
         self.assertEqual(ContentExtractor.clean(glued), "İçinde konaklama olanağı bulunan gemilerdir.")
 
+    def test_rules_reject_blog_intro(self):
+        intro = ("Tüm müzik aletlerinde olduğu gibi keman çalmak da uzun bir çalışma gerektirir. "
+                 "Endişelenmenize gerek yok, bu yazıda keman çalmayı detaylı bir şekilde öğreneceksiniz.")
+        promise = ("Keman çalmaya başlamadan önce doğru duruşu bilmek gerekir ve aşağıda bunun "
+                   "adımlarını sırasıyla bulabileceksiniz, ardından ilk notalara geçilir.")
+        fact = ("Keman dört telli bir çalgıdır ve teller en pes tondan en tize doğru sol, re, la "
+                "ve mi olarak akort edilir, ses yay ile tellerin titreştirilmesiyle elde edilir.")
+        self.assertFalse(ContentExtractor._passes_rules(intro, ["keman"]))
+        self.assertFalse(ContentExtractor._passes_rules(promise, ["keman"]))
+        outro = ("İşte keman çalmak, bu beş temel adımın sabırla bir araya getirilmesidir. Artık "
+                 "\"keman nasıl çalınır?\" sorusunun cevabının somut adımlardan geçtiğini biliyorsunuz.")
+        self.assertFalse(ContentExtractor._passes_rules(outro, ["keman"]))
+        self.assertTrue(ContentExtractor._passes_rules(fact, ["keman"]))
+
     def test_block_hints_and_threshold(self):
         page = SearchResult("x", "https://x.com/a")
         history = ("Keman ilk kez 16. yüzyılda İtalya'da ortaya çıkmış, Cremona'daki ustaların "

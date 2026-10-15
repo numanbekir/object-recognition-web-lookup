@@ -32,6 +32,13 @@ NOISE_PATTERNS = ("çerez", "kvkk", "sepet", "giriş yap", "üye ol", "©", "tı
                   # birinci şahıs blog anlatısı bilgi değil deneyimdir
                   "yollardayım", "kullanıyorum", "eminim", "bence", "benim ", "ben de",
                   "satın al", "bilet", "sipariş ver")
+# yazının kendisinden söz eden ya da okura söz veren paragraf blog girişidir, bilgi taşımaz
+META_PATTERNS = ("bu yazıda", "yazımızda", "bu makalede", "makalemizde", "bu içerikte",
+                 "içeriğimizde", "bu rehberde", "rehberimizde", "endişelenmenize gerek",
+                 "merak etmeyin", "doğru yerdesiniz", "bilgi kirliliği", "biliyorsunuz",
+                 # sayfa başlığındaki soruya atıf yapan giriş ve kapanış paragrafları
+                 "sorusunun cevab", "sorusunun yanıt", "sorusuna cevap", "sorusuna yanıt")
+READER_PROMISE = re.compile(r"\w+(?:ecek|acak)s[iı]n[iı]z\b")  # alabileceksiniz, öğreneceksiniz
 # tarif ve soru-cevap sitelerinin bilgi taşımayan kalıp cümleleri kırpılır
 TAIL_PATTERNS = re.compile(
     r"\s*(Peki[;,]?\s[^.!?]*[.!?]|İşte[^.!?]*\.{2,}|Afiyet olsun!?|Hadi [^.!?]*[.!?])\s*$")
@@ -160,6 +167,8 @@ class ContentExtractor:
         if len(STOPWORDS.intersection(WORD.findall(lower))) < 2:
             return False
         if any(noise in lower for noise in NOISE_PATTERNS):
+            return False
+        if any(meta in lower for meta in META_PATTERNS) or READER_PROMISE.search(lower):
             return False
         # paragraf objeden söz etmeli, her kök ayrı ya da bitişik ifade
         return all(term in lower for term in anchor)
